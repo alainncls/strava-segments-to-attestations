@@ -1,0 +1,44 @@
+{
+  "name": "strava-segments-to-attestations",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Create Verax attestations for Strava segments you've completed",
+  "keywords": [
+    "strava",
+    "verax",
+    "attestation",
+    "linea",
+    "blockchain"
+  ],
+  "license": "MIT",
+  "author": "alain.linea.eth",
+  "type": "module",
+  "scripts": {
+    "build": "pnpm -r build",
+    "clean": "pnpm -r clean && rm -rf node_modules",
+    "dev": "pnpm -r --parallel run dev",
+    "format": "prettier --check .",
+    "format:fix": "prettier --write .",
+    "preinstall": "npx only-allow@1.2.2 pnpm",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "test": "pnpm -r test",
+    "test:coverage": "pnpm -r test:coverage"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.25.0",
+    "@types/node": "catalog:",
+    "eslint": "catalog:",
+    "eslint-config-prettier": "catalog:",
+    "globals": "catalog:",
+    "prettier": "catalog:",
+    "prettier-plugin-solidity": "^1.4.2",
+    "typescript": "catalog:",
+    "typescript-eslint": "catalog:"
+  },
+  "packageManager": "pnpm@10.6.2",
+  "engines": {
+    "node": ">=22.21.1",
+    "pnpm": ">=10.6.2"
+  }
+}

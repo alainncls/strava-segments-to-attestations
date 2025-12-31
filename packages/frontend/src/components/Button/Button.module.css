@@ -1,0 +1,67 @@
+.button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  font-family: inherit;
+  font-size: 0.875rem;
+  font-weight: 600;
+  padding: 0.625rem 1.25rem;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Primary variant */
+.primary {
+  background: linear-gradient(135deg, var(--strava-orange) 0%, var(--strava-orange-dark) 100%);
+  color: white;
+}
+
+.primary:hover:not(:disabled) {
+  background: linear-gradient(135deg, var(--strava-orange-light) 0%, var(--strava-orange) 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(252, 82, 0, 0.3);
+}
+
+/* Secondary variant */
+.secondary {
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-color-light);
+  color: var(--text-primary);
+}
+
+.secondary:hover:not(:disabled) {
+  background: var(--bg-card-hover);
+  border-color: var(--text-muted);
+}
+
+/* Outline variant */
+.outline {
+  background: transparent;
+  border: 1px solid var(--border-color-light);
+  color: var(--text-primary);
+}
+
+.outline:hover:not(:disabled) {
+  background: var(--bg-tertiary);
+  border-color: var(--strava-orange);
+}
+
+/* Size variants */
+.sm {
+  font-size: 0.75rem;
+  padding: 0.5rem 0.875rem;
+}
+
+.lg {
+  font-size: 1rem;
+  padding: 0.875rem 1.5rem;
+}

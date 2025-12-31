@@ -1,0 +1,10 @@
+node_modules
+dist
+build
+coverage
+artifacts
+cache
+typechain-types
+.netlify
+pnpm-lock.yaml
+*.md

@@ -1,0 +1,42 @@
+{
+  "name": "@strava-attestations/contracts",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "clean": "hardhat clean && rm -rf cache artifacts typechain-types",
+    "compile": "hardhat compile",
+    "deploy:mainnet": "hardhat run scripts/deploy.ts --network linea",
+    "deploy:sepolia": "hardhat run scripts/deploy.ts --network linea-sepolia",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "lint": "eslint . && solhint 'src/**/*.sol'",
+    "lint:fix": "eslint . --fix && solhint 'src/**/*.sol' --fix",
+    "schema:mainnet": "hardhat run scripts/createSchema.ts --network linea",
+    "schema:sepolia": "hardhat run scripts/createSchema.ts --network linea-sepolia",
+    "test": "vitest run",
+    "test:coverage": "vitest run --coverage",
+    "test:watch": "vitest"
+  },
+  "dependencies": {
+    "@openzeppelin/contracts": "catalog:",
+    "@openzeppelin/contracts-upgradeable": "4.9.6",
+    "@verax-attestation-registry/verax-contracts": "catalog:",
+    "@verax-attestation-registry/verax-sdk": "catalog:"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.25.0",
+    "@nomicfoundation/hardhat-verify": "^3.0.0",
+    "@nomicfoundation/hardhat-viem": "^3.0.0",
+    "eslint": "catalog:",
+    "eslint-config-prettier": "catalog:",
+    "globals": "catalog:",
+    "hardhat": "catalog:",
+    "prettier": "catalog:",
+    "solhint": "^5.0.5",
+    "typescript": "catalog:",
+    "typescript-eslint": "catalog:",
+    "viem": "catalog:",
+    "vitest": "catalog:"
+  }
+}

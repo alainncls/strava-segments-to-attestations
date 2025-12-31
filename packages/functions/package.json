@@ -1,0 +1,25 @@
+{
+  "name": "@strava-attestations/functions",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "tsc",
+    "clean": "rm -rf dist",
+    "dev": "dotenv -e .env -- netlify functions:serve --functions src --port 8888",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "dependencies": {
+    "@strava-attestations/shared": "workspace:*",
+    "viem": "catalog:"
+  },
+  "devDependencies": {
+    "@netlify/functions": "^5.1.2",
+    "@types/node": "catalog:",
+    "dotenv-cli": "catalog:",
+    "netlify-cli": "catalog:",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
+  }
+}

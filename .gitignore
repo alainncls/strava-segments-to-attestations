@@ -1,0 +1,17 @@
+node_modules/
+
+dist/
+build/
+.netlify/
+artifacts/
+cache/
+typechain-types/
+coverage/
+*.lcov
+*.tsbuildinfo
+
+.env
+
+.idea/
+.DS_Store
+
