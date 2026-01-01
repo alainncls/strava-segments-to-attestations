@@ -45,13 +45,16 @@ createAppKit({
   metadata,
   themeMode: 'dark',
   themeVariables: {
-    '--w3m-accent': '#fc5200',
-    '--w3m-color-mix': '#fc5200',
-    '--w3m-color-mix-strength': 20,
+    '--w3m-accent': '#ff6b1a',
+    '--w3m-color-mix': '#111216',
+    '--w3m-color-mix-strength': 0,
+    '--w3m-border-radius-master': '14px',
   },
   features: {
-    analytics: false,
+    analytics: true,
     onramp: false,
+    socials: false,
+    email: false,
   },
 });
 
