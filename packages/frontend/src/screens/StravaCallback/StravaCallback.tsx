@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { useStravaAuth } from '../../hooks/useStravaAuth';
-import { API_URL } from '../../utils/constants';
+import { useStravaAuth } from '@/hooks/useStravaAuth.ts';
+import { API_URL } from '@/utils/constants.ts';
 import Loader from '../../components/Loader/Loader';
+import Footer from '../../components/Footer/Footer';
 import styles from './StravaCallback.module.css';
 
 export default function StravaCallback(): React.JSX.Element {
@@ -34,7 +35,8 @@ export default function StravaCallback(): React.JSX.Element {
         });
 
         if (!response.ok) {
-          throw new Error('Failed to exchange authorization code');
+          setError('Failed to exchange authorization code');
+          return;
         }
 
         const data = await response.json();
@@ -67,6 +69,7 @@ export default function StravaCallback(): React.JSX.Element {
   return (
     <div className={styles.container}>
       <Loader loading message="Completing authentication..." />
+      <Footer isStravaConnected={false} />
     </div>
   );
 }

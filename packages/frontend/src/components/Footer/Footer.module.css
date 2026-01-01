@@ -2,7 +2,7 @@
   margin-top: auto;
   background: var(--bg-secondary);
   border-top: 1px solid var(--border-color);
-  padding: 1.5rem 0;
+  padding: 1.5rem 0 calc(1.5rem + env(safe-area-inset-bottom, 0));
 }
 
 .container {
@@ -46,6 +46,17 @@
 
 .separator {
   color: var(--text-muted);
+  margin: 0 4px;
+}
+
+.aboutLink {
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+  transition: color 0.2s ease;
+}
+
+.aboutLink:hover {
+  color: var(--strava-orange);
 }
 
 .stravaLink {
@@ -117,5 +128,38 @@
   .right {
     width: 100%;
     justify-content: center;
+  }
+}
+
+@media (max-width: 480px) {
+  .footer {
+    padding: 1rem 0 calc(1rem + env(safe-area-inset-bottom, 0));
+  }
+
+  .container {
+    gap: 0.75rem;
+  }
+
+  .copyright,
+  .link {
+    font-size: 0.8125rem;
+  }
+
+  .aboutLink {
+    font-size: 0.8125rem;
+  }
+
+  .stravaLogo {
+    height: 28px;
+  }
+
+  .iconLink {
+    width: 32px;
+    height: 32px;
+  }
+
+  .icon {
+    width: 16px;
+    height: 16px;
   }
 }

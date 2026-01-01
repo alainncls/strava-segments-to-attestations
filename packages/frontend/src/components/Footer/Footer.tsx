@@ -1,16 +1,29 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 import styles from './Footer.module.css';
 import poweredByStrava from '../../assets/powered-by-strava.svg';
 import githubIcon from '../../assets/github-icon.svg';
 import xIcon from '../../assets/x-icon.svg';
 import veraxLogo from '../../assets/verax-logo.svg';
 
-export default function Footer(): React.JSX.Element {
+interface FooterProps {
+  isStravaConnected?: boolean;
+}
+
+export default function Footer({ isStravaConnected = true }: FooterProps): React.JSX.Element {
   return (
     <footer className={styles.footer}>
       <div className={styles.container}>
         <div className={styles.left}>
           <p className={styles.copyright}>
+            {isStravaConnected && (
+              <>
+                <Link to="/about" className={styles.aboutLink}>
+                  About
+                </Link>
+                <span className={styles.separator}>•</span>
+              </>
+            )}
             Built with ❤️ by{' '}
             <a
               href="https://alainnicolas.com"

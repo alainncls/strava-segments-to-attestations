@@ -5,8 +5,8 @@ import Loader from '../../components/Loader/Loader';
 import StravaLoginButton from '../../components/StravaLoginButton/StravaLoginButton';
 import Activities from '../../components/Activities/Activities';
 import SegmentsModal from '../../components/SegmentsModal/SegmentsModal';
-import { useStravaAuth } from '../../hooks/useStravaAuth';
-import { useActivities } from '../../hooks/useActivities';
+import { useStravaAuth } from '@/hooks/useStravaAuth.ts';
+import { useActivities } from '@/hooks/useActivities.ts';
 import type { Activity } from '../../types';
 import styles from './Home.module.css';
 
@@ -109,7 +109,7 @@ export default function Home(): React.JSX.Element {
         accessToken={auth.accessToken || ''}
       />
 
-      <Footer />
+      <Footer isStravaConnected={isAuthenticated} />
     </>
   );
 }

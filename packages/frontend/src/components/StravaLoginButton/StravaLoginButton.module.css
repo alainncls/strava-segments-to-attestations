@@ -6,6 +6,8 @@
   transition:
     transform 0.2s ease,
     opacity 0.2s ease;
+  width: 100%;
+  max-width: 320px;
 }
 
 .button:hover {
@@ -18,12 +20,14 @@
 }
 
 .image {
-  height: 48px;
+  width: 100%;
+  height: auto;
   display: block;
 }
 
 @media (min-resolution: 2dppx) {
   .image {
-    height: 48px;
+    width: 100%;
+    height: auto;
   }
 }

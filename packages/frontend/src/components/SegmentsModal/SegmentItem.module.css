@@ -66,6 +66,7 @@
   cursor: pointer;
   transition: all 0.2s ease;
   white-space: nowrap;
+  min-height: 44px;
 }
 
 .attestBtn:hover:not(:disabled) {
@@ -105,5 +106,12 @@
 
   .attestBtn {
     justify-content: center;
+    width: 100%;
+  }
+}
+
+@media (max-width: 640px) {
+  .attestBtn {
+    width: 100%;
   }
 }

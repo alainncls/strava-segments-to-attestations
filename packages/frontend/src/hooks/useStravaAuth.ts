@@ -81,7 +81,9 @@ export function useStravaAuth(): UseStravaAuthReturn {
       });
 
       if (!response.ok) {
-        throw new Error('Failed to refresh token');
+        console.error('Failed to refresh token');
+        logout();
+        return null;
       }
 
       const data = (await response.json()) as {

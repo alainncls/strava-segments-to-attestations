@@ -9,9 +9,9 @@ import {
   SCHEMA_ID,
   linea,
   ATTESTATION_FEE,
-} from '../../utils/constants';
-import { parseWalletError, isUserRejection } from '../../utils/errors';
-import { STRAVA_PORTAL_ABI } from '../../abi/StravaPortal';
+} from '@/utils/constants.ts';
+import { parseWalletError, isUserRejection } from '@/utils/errors.ts';
+import { STRAVA_PORTAL_ABI } from '@/abi/StravaPortal.ts';
 import { Modal } from '../Modal';
 import { Button } from '../Button';
 import SegmentItem from './SegmentItem';
@@ -88,10 +88,13 @@ export default function SegmentsModal({
 
       if (!signResponse.ok) {
         const errorData = (await signResponse.json()) as { error?: string; tokenExpired?: boolean };
-        if (errorData.tokenExpired) {
-          throw new Error('Your Strava session has expired. Please reconnect.');
-        }
-        throw new Error(errorData.error || 'Failed to sign segment');
+        setError(
+          errorData.tokenExpired
+            ? 'Your Strava session has expired. Please reconnect.'
+            : errorData.error || 'Failed to sign segment',
+        );
+        setLoadingSegmentId(null);
+        return;
       }
 
       const signedSegment: SignedSegment = await signResponse.json();

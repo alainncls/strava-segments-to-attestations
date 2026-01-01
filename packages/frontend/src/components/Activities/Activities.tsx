@@ -1,6 +1,6 @@
 import React from 'react';
 import type { Activity } from '../../types';
-import { formatDistance, formatDate, getActivityIcon } from '../../utils/format';
+import { formatDistance, formatDate, getActivityIcon } from '@/utils/format.ts';
 import { Button } from '../Button';
 import styles from './Activities.module.css';
 

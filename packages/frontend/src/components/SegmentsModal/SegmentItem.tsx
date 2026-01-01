@@ -1,6 +1,6 @@
 import React from 'react';
 import type { Segment } from '../../types';
-import { formatDistance, getActivityIcon } from '../../utils/format';
+import { formatDistance, getActivityIcon } from '@/utils/format.ts';
 import styles from './SegmentItem.module.css';
 
 interface SegmentItemProps {

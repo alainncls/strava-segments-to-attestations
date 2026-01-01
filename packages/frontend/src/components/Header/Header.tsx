@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAppKit } from '@reown/appkit/react';
 import { useAccount } from 'wagmi';
@@ -18,13 +18,24 @@ export default function Header({
 }: HeaderProps): React.JSX.Element {
   const { open } = useAppKit();
   const { address, isConnected } = useAccount();
+  const [isScrolled, setIsScrolled] = useState(false);
+
+  useEffect(() => {
+    const handleScroll = (): void => {
+      setIsScrolled(window.scrollY > 20);
+    };
+
+    handleScroll();
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   const formatAddress = (addr: string): string => {
     return `${addr.slice(0, 6)}...${addr.slice(-4)}`;
   };
 
   return (
-    <header className={styles.header}>
+    <header className={`${styles.header} ${isScrolled ? styles.scrolled : ''}`}>
       <div className={styles.container}>
         <Link to="/" className={styles.logo}>
           <img src={logoEthOrange} alt="Segment Attestations logo" className={styles.logoIcon} />
@@ -32,9 +43,11 @@ export default function Header({
         </Link>
 
         <nav className={styles.nav}>
-          <Link to="/about" className={styles.navLink}>
-            About
-          </Link>
+          {!isStravaConnected && (
+            <Link to="/about" className={`${styles.navLink} ${styles.navLinkCta}`}>
+              About
+            </Link>
+          )}
 
           {isStravaConnected && athleteName && (
             <div className={styles.stravaStatus}>

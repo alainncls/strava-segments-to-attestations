@@ -88,7 +88,7 @@ export default function About(): React.JSX.Element {
         </div>
       </main>
 
-      <Footer />
+      <Footer isStravaConnected={false} />
     </>
   );
 }

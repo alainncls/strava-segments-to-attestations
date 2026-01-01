@@ -6,8 +6,8 @@ import { STRAVA_AUTH_URL, STRAVA_CLIENT_ID, STRAVA_REDIRECT_URL } from '../../ut
 export default function StravaLoginButton(): React.JSX.Element {
   const handleLogin = (): void => {
     const scope = 'read,activity:read_all';
-    const authUrl = `${STRAVA_AUTH_URL}?client_id=${STRAVA_CLIENT_ID}&redirect_uri=${STRAVA_REDIRECT_URL}&response_type=code&scope=${scope}`;
-    window.location.href = authUrl;
+
+    window.location.href = `${STRAVA_AUTH_URL}?client_id=${STRAVA_CLIENT_ID}&redirect_uri=${STRAVA_REDIRECT_URL}&response_type=code&scope=${scope}`;
   };
 
   return (

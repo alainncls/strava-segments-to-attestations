@@ -33,7 +33,10 @@ export function useActivities(
         headers: { Authorization: `Bearer ${token}` },
       });
 
-      if (!response.ok) throw new Error('Failed to fetch activity details');
+      if (!response.ok) {
+        console.error('Failed to fetch activity details');
+        return [];
+      }
 
       const data: ActivityDetails = await response.json();
 
@@ -99,7 +102,10 @@ export function useActivities(
           },
         );
 
-        if (!response.ok) throw new Error('Failed to fetch activities');
+        if (!response.ok) {
+          console.error('Failed to fetch activities');
+          return;
+        }
 
         const data = await response.json();
 
