@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { useAppKit } from '@reown/appkit/react';
 import { useAccount } from 'wagmi';
 import styles from './Header.module.css';
+import logoEthOrange from '../../assets/logo-eth-orange.svg';
 
 interface HeaderProps {
   isStravaConnected: boolean;
@@ -26,7 +27,7 @@ export default function Header({
     <header className={styles.header}>
       <div className={styles.container}>
         <Link to="/" className={styles.logo}>
-          <span className={styles.logoIcon}>🏃</span>
+          <img src={logoEthOrange} alt="Segment Attestations logo" className={styles.logoIcon} />
           <span className={styles.logoText}>Segment Attestations</span>
         </Link>
 
