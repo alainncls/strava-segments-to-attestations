@@ -3,65 +3,55 @@ packages:
 
 catalog:
   # Build tools
-  '@vitejs/plugin-react': ^4.5.0
-  vite: ^7.3.0
+  '@vitejs/plugin-react': ^4.7.0
+  vite: ^7.3.2
 
   # Linting & Formatting
-  eslint: ^9.25.0
-  eslint-config-prettier: ^10.1.2
+  eslint: ^9.39.4
+  eslint-config-prettier: ^10.1.8
   eslint-plugin-react: ^7.37.5
   eslint-plugin-react-hooks: ^5.2.0
-  globals: ^16.0.0
-  prettier: ^3.5.3
-  typescript-eslint: ^8.30.1
+  globals: ^16.5.0
+  prettier: ^3.8.3
+  typescript-eslint: ^8.59.1
 
   # OpenZeppelin (must match verax-contracts requirements)
   '@openzeppelin/contracts': 4.9.6
 
   # React
-  react: ^19.1.0
-  react-dom: ^19.1.0
-  react-router-dom: ^7.5.0
+  react: ^19.2.5
+  react-dom: ^19.2.5
+  react-router-dom: ^7.14.2
 
   # Solidity
-  hardhat: ^3.1.0
+  hardhat: ^3.4.2
 
   # Testing
-  '@testing-library/jest-dom': ^6.6.3
-  '@testing-library/react': ^16.3.0
-  '@vitest/coverage-v8': ^3.1.1
-  chai: ^5.2.0
-  vitest: ^3.1.1
+  '@testing-library/jest-dom': ^6.9.1
+  '@testing-library/react': ^16.3.2
+  '@vitest/coverage-v8': ^3.2.4
+  vitest: ^3.2.4
 
   # Types
-  '@types/node': ^22.15.3
-  '@types/react': ^19.1.2
-  '@types/react-dom': ^19.1.2
+  '@types/node': ^22.19.17
+  '@types/react': ^19.2.14
+  '@types/react-dom': ^19.2.3
 
   # TypeScript
-  typescript: ^5.8.0
+  typescript: ^5.9.3
 
   # Netlify
   dotenv-cli: ^8.0.0
-  netlify-cli: ^23.13.0
+  netlify-cli: ^23.15.1
 
   # Verax
   '@verax-attestation-registry/verax-contracts': ^10.0.0
-  '@verax-attestation-registry/verax-sdk': ^5.0.0
+  '@verax-attestation-registry/verax-sdk': ^5.4.0
 
   # Wagmi & Viem
-  '@tanstack/react-query': ^5.72.2
-  '@reown/appkit': ^1.8.15
-  '@reown/appkit-adapter-wagmi': ^1.8.15
-  viem: ^2.28.0
-  wagmi: ^3.1.0
-
-overrides:
-  bl@<0.9.5: '>=0.9.5'
-  bl@<1.2.3: '>=1.2.3'
-  cookie@<0.7.0: '>=0.7.0'
-  nanoid@>=4.0.0 <5.0.9: '>=5.0.9'
-  parse-duration@<2.1.3: '>=2.1.3'
-  semver@<4.3.2: '>=4.3.2'
-  semver@<5.7.2: '>=5.7.2'
-  tmp@<=0.2.3: '>=0.2.4'
+  '@tanstack/react-query': ^5.100.6
+  '@reown/appkit': ^1.8.19
+  '@reown/appkit-adapter-wagmi': ^1.8.19
+  '@wagmi/connectors': ^8.0.7
+  viem: ^2.48.4
+  wagmi: ^3.6.7

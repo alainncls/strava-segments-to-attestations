@@ -15,7 +15,7 @@
     "viem": "catalog:"
   },
   "devDependencies": {
-    "@netlify/functions": "^5.1.2",
+    "@netlify/functions": "^5.2.0",
     "@types/node": "catalog:",
     "dotenv-cli": "catalog:",
     "netlify-cli": "catalog:",

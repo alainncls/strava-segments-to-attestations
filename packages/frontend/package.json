@@ -17,6 +17,7 @@
     "@reown/appkit-adapter-wagmi": "catalog:",
     "@strava-attestations/shared": "workspace:*",
     "@tanstack/react-query": "catalog:",
+    "@wagmi/connectors": "catalog:",
     "react": "catalog:",
     "react-dom": "catalog:",
     "react-router-dom": "catalog:",
