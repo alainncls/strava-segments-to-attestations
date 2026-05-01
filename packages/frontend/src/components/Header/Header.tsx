@@ -21,13 +21,31 @@ export default function Header({
   const [isScrolled, setIsScrolled] = useState(false);
 
   useEffect(() => {
+    let frameId: number | null = null;
+
     const handleScroll = (): void => {
-      setIsScrolled(window.scrollY > 20);
+      if (frameId !== null) {
+        return;
+      }
+
+      frameId = window.requestAnimationFrame(() => {
+        frameId = null;
+        const nextIsScrolled = window.scrollY > 20;
+        setIsScrolled((currentIsScrolled) =>
+          currentIsScrolled === nextIsScrolled ? currentIsScrolled : nextIsScrolled,
+        );
+      });
     };
 
     handleScroll();
     window.addEventListener('scroll', handleScroll, { passive: true });
-    return () => window.removeEventListener('scroll', handleScroll);
+    return () => {
+      if (frameId !== null) {
+        window.cancelAnimationFrame(frameId);
+      }
+
+      window.removeEventListener('scroll', handleScroll);
+    };
   }, []);
 
   const formatAddress = (addr: string): string => {

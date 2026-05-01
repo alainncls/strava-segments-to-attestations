@@ -9,6 +9,19 @@ const initialState: AuthState = {
   athlete: null,
 };
 
+function parseStoredAthlete(value: string | null): StravaAthlete | null {
+  if (!value) {
+    return null;
+  }
+
+  try {
+    return JSON.parse(value) as StravaAthlete;
+  } catch {
+    sessionStorage.removeItem(STORAGE_KEYS.ATHLETE);
+    return null;
+  }
+}
+
 interface UseStravaAuthReturn {
   auth: AuthState;
   isLoading: boolean;
@@ -35,7 +48,7 @@ export function useStravaAuth(): UseStravaAuthReturn {
     const athleteStr = sessionStorage.getItem(STORAGE_KEYS.ATHLETE);
 
     if (accessToken && refreshToken && expiresAt) {
-      const athlete = athleteStr ? (JSON.parse(athleteStr) as StravaAthlete) : null;
+      const athlete = parseStoredAthlete(athleteStr);
       setAuth({
         accessToken,
         refreshToken,

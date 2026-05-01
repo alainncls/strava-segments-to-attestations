@@ -29,6 +29,8 @@ export function Modal({
   );
 
   useEffect(() => {
+    const previousBodyOverflow = document.body.style.overflow;
+
     if (show) {
       document.addEventListener('keydown', handleKeyDown);
       document.body.style.overflow = 'hidden';
@@ -36,7 +38,7 @@ export function Modal({
 
     return () => {
       document.removeEventListener('keydown', handleKeyDown);
-      document.body.style.overflow = '';
+      document.body.style.overflow = previousBodyOverflow;
     };
   }, [show, handleKeyDown]);
 

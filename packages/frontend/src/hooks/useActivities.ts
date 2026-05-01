@@ -40,19 +40,23 @@ export function useActivities(
 
       const data: ActivityDetails = await response.json();
 
-      const segments: Segment[] =
-        data.segment_efforts?.map((effort) => ({
+      const segmentsById = new Map<number, Segment>();
+
+      for (const effort of data.segment_efforts ?? []) {
+        if (segmentsById.has(effort.segment.id)) {
+          continue;
+        }
+
+        segmentsById.set(effort.segment.id, {
           id: effort.segment.id,
           name: effort.segment.name,
           distance: effort.segment.distance,
           activityType: effort.segment.activity_type,
           completionDate: effort.start_date,
-        })) || [];
+        });
+      }
 
-      // Deduplicate segments by ID
-      return segments.filter(
-        (segment, index, self) => self.findIndex((s) => s.id === segment.id) === index,
-      );
+      return Array.from(segmentsById.values());
     },
     [],
   );
@@ -72,10 +76,12 @@ export function useActivities(
         }),
       );
 
+      const enrichedById = new Map(enriched.map((activity) => [activity.id, activity]));
+
       setActivities((prev) =>
-        prev.map((a) => {
-          const enrichedActivity = enriched.find((e) => e.id === a.id);
-          return enrichedActivity ?? a;
+        prev.map((activity) => {
+          const enrichedActivity = enrichedById.get(activity.id);
+          return enrichedActivity ?? activity;
         }),
       );
     },

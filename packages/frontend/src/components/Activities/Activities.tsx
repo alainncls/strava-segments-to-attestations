@@ -1,7 +1,7 @@
 import React from 'react';
 import type { Activity } from '../../types';
 import { formatDistance, formatDate, getActivityIcon } from '@/utils/format.ts';
-import { Button } from '../Button';
+import { Button } from '../Button/Button';
 import styles from './Activities.module.css';
 
 interface ActivitiesProps {

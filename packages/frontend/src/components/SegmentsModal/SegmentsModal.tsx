@@ -12,8 +12,8 @@ import {
 } from '@/utils/constants.ts';
 import { parseWalletError, isUserRejection } from '@/utils/errors.ts';
 import { STRAVA_PORTAL_ABI } from '@/abi/StravaPortal.ts';
-import { Modal } from '../Modal';
-import { Button } from '../Button';
+import { Modal } from '../Modal/Modal';
+import { Button } from '../Button/Button';
 import SegmentItem from './SegmentItem';
 import styles from './SegmentsModal.module.css';
 

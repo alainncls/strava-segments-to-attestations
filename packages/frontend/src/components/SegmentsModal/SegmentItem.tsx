@@ -1,6 +1,6 @@
 import React from 'react';
 import type { Segment } from '../../types';
-import { formatDistance, getActivityIcon } from '@/utils/format.ts';
+import { formatDistance, formatSegmentDate, getActivityIcon } from '@/utils/format.ts';
 import styles from './SegmentItem.module.css';
 
 interface SegmentItemProps {
@@ -39,7 +39,7 @@ export default function SegmentItem({
           {segment.completionDate && (
             <>
               <span className={styles.separator}>•</span>
-              <span>{new Date(segment.completionDate).toLocaleDateString()}</span>
+              <span>{formatSegmentDate(segment.completionDate)}</span>
             </>
           )}
         </div>

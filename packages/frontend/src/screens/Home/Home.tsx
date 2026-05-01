@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import Header from '../../components/Header/Header';
 import Footer from '../../components/Footer/Footer';
 import Loader from '../../components/Loader/Loader';
@@ -32,18 +32,21 @@ export default function Home(): React.JSX.Element {
   const [selectedActivity, setSelectedActivity] = useState<Activity | undefined>();
   const [showModal, setShowModal] = useState(false);
 
-  const onActivityClick = async (activityId: number): Promise<void> => {
-    const activity = await handleActivityClick(activityId);
-    if (activity) {
-      setSelectedActivity(activity);
-      setShowModal(true);
-    }
-  };
+  const onActivityClick = useCallback(
+    async (activityId: number): Promise<void> => {
+      const activity = await handleActivityClick(activityId);
+      if (activity) {
+        setSelectedActivity(activity);
+        setShowModal(true);
+      }
+    },
+    [handleActivityClick],
+  );
 
-  const handleModalHide = (): void => {
+  const handleModalHide = useCallback((): void => {
     setShowModal(false);
     setSelectedActivity(undefined);
-  };
+  }, []);
 
   if (authLoading) {
     return <Loader loading message="Loading..." />;
