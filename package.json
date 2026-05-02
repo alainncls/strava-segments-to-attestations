@@ -19,7 +19,7 @@
     "dev": "pnpm -r --parallel run dev",
     "format": "prettier --check .",
     "format:fix": "prettier --write .",
-    "preinstall": "npx only-allow@1.2.2 pnpm",
+    "preinstall": "node -e \"const execPath=process.env.npm_execpath||'';if(!process.env.PNPM_SCRIPT_SRC_DIR&&!/[\\\\/]pnpm(?:\\\\.cjs)?$/.test(execPath)){console.error('Use pnpm install for installation in this project.');process.exit(1)}\"",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "test": "pnpm -r test",
@@ -36,9 +36,9 @@
     "typescript": "catalog:",
     "typescript-eslint": "catalog:"
   },
-  "packageManager": "pnpm@10.6.2",
+  "packageManager": "pnpm@11.0.3",
   "engines": {
     "node": ">=24.14.1",
-    "pnpm": ">=10.6.2"
+    "pnpm": ">=11.0.3"
   }
 }

@@ -30,7 +30,7 @@ This application allows athletes to create cryptographically verifiable proofs o
 ## Prerequisites
 
 - **Node.js** 24.14.1 or higher
-- **pnpm** 10.6.2 or higher (other package managers are not supported)
+- **pnpm** 11.0.3 or higher (other package managers are not supported)
 
 ## Quick Start
 

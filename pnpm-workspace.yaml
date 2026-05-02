@@ -1,5 +1,14 @@
 packages:
   - 'packages/*'
+allowBuilds:
+  '@parcel/watcher': true
+  '@reown/appkit': true
+  bufferutil: true
+  esbuild: true
+  netlify-cli: true
+  sharp: true
+  unix-dgram: true
+  utf-8-validate: true
 
 catalog:
   # Build tools
