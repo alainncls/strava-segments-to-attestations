@@ -14,6 +14,8 @@
     "lint:fix": "eslint . --fix && solhint 'src/**/*.sol' --fix",
     "schema:mainnet": "hardhat run scripts/createSchema.ts --network linea",
     "schema:sepolia": "hardhat run scripts/createSchema.ts --network linea-sepolia",
+    "pretest": "hardhat compile",
+    "pretest:coverage": "hardhat compile",
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",
     "test:watch": "vitest"
