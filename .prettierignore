@@ -2,6 +2,10 @@ node_modules
 dist
 build
 coverage
+playwright-report
+test-results
+packages/frontend/playwright-report
+packages/frontend/test-results
 artifacts
 cache
 typechain-types

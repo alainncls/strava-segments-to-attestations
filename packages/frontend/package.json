@@ -9,6 +9,9 @@
     "dev": "vite",
     "preview": "vite preview",
     "test": "vitest run",
+    "pretest:e2e": "pnpm build",
+    "preview:e2e": "vite preview --host 127.0.0.1 --port 4177",
+    "test:e2e": "playwright test",
     "test:coverage": "vitest run --coverage",
     "test:watch": "vitest"
   },
@@ -25,6 +28,7 @@
     "wagmi": "catalog:"
   },
   "devDependencies": {
+    "@playwright/test": "1.59.1",
     "@testing-library/jest-dom": "catalog:",
     "@testing-library/react": "catalog:",
     "@types/react": "catalog:",

@@ -23,6 +23,7 @@
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "test": "pnpm -r test",
+    "test:e2e": "pnpm --filter @strava-attestations/frontend test:e2e",
     "test:coverage": "pnpm -r test:coverage"
   },
   "devDependencies": {
