@@ -3,7 +3,19 @@ import type { SensitiveString } from 'hardhat/types/config';
 import HardhatViem from '@nomicfoundation/hardhat-viem';
 import HardhatVerify from '@nomicfoundation/hardhat-verify';
 
-process.loadEnvFile();
+function loadOptionalEnvFile(): void {
+  try {
+    process.loadEnvFile();
+  } catch (error) {
+    if (typeof error === 'object' && error !== null && 'code' in error && error.code === 'ENOENT') {
+      return;
+    }
+
+    throw error;
+  }
+}
+
+loadOptionalEnvFile();
 
 export default defineConfig({
   plugins: [HardhatViem, HardhatVerify],
