@@ -39,7 +39,7 @@ catalog:
   '@wagmi/connectors': ^8.0.7
 
   # Netlify
-  dotenv-cli: ^8.0.0
+  dotenv-cli: ^11.0.0
 
   # Linting & Formatting
   eslint: ^9.39.4
@@ -50,7 +50,7 @@ catalog:
 
   # Solidity
   hardhat: ^3.4.2
-  netlify-cli: ^23.15.1
+  netlify-cli: ^26.0.0
   prettier: ^3.8.3
 
   # React
