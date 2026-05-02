@@ -21,14 +21,16 @@ function monitorRuntime(page: Page): RuntimeMonitor {
 
   page.on('requestfailed', (request) => {
     const url = new URL(request.url());
+    const resourceType = request.resourceType();
 
-    if (url.origin !== 'http://127.0.0.1:4177' || request.resourceType() === 'document') {
+    if (
+      url.origin !== 'http://127.0.0.1:4177' ||
+      !['font', 'image', 'script', 'stylesheet'].includes(resourceType)
+    ) {
       return;
     }
 
-    assetFailures.push(
-      `${request.resourceType()} ${request.url()} ${request.failure()?.errorText}`,
-    );
+    assetFailures.push(`${resourceType} ${request.url()} ${request.failure()?.errorText}`);
   });
 
   return {
