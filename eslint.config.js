@@ -3,6 +3,8 @@ import tseslint from 'typescript-eslint';
 import eslintConfigPrettier from 'eslint-config-prettier';
 import globals from 'globals';
 
+const tsconfigRootDir = import.meta.dirname;
+
 export default tseslint.config(
   js.configs.recommended,
   ...tseslint.configs.recommended,
@@ -11,6 +13,9 @@ export default tseslint.config(
     languageOptions: {
       ecmaVersion: 2022,
       sourceType: 'module',
+      parserOptions: {
+        tsconfigRootDir,
+      },
       globals: {
         ...globals.node,
         ...globals.es2022,
