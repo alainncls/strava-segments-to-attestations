@@ -12,8 +12,34 @@ allowBuilds:
 
 catalog:
   # Build tools
-  '@vitejs/plugin-react': ^4.7.0
-  vite: ^7.3.2
+  '@opentelemetry/api': ^1.9.0
+
+  # OpenZeppelin (must match verax-contracts requirements)
+  '@openzeppelin/contracts': 4.9.6
+  '@reown/appkit': ^1.8.19
+  '@reown/appkit-adapter-wagmi': ^1.8.19
+
+  # Wagmi & Viem
+  '@tanstack/react-query': ^5.100.6
+
+  # Testing
+  '@testing-library/jest-dom': ^6.9.1
+  '@testing-library/react': ^16.3.2
+
+  # Types
+  '@types/node': ^24.12.2
+  '@types/react': ^19.2.14
+  '@types/react-dom': ^19.2.3
+
+  # Verax
+  '@verax-attestation-registry/verax-contracts': ^10.0.0
+  '@verax-attestation-registry/verax-sdk': ^5.4.0
+  '@vitejs/plugin-react': ^6.0.1
+  '@vitest/coverage-v8': ^4.1.5
+  '@wagmi/connectors': ^8.0.7
+
+  # Netlify
+  dotenv-cli: ^8.0.0
 
   # Linting & Formatting
   eslint: ^9.39.4
@@ -21,46 +47,23 @@ catalog:
   eslint-plugin-react: ^7.37.5
   eslint-plugin-react-hooks: ^5.2.0
   globals: ^16.5.0
-  prettier: ^3.8.3
-  typescript-eslint: ^8.59.1
 
-  # OpenZeppelin (must match verax-contracts requirements)
-  '@openzeppelin/contracts': 4.9.6
+  # Solidity
+  hardhat: ^3.4.2
+  netlify-cli: ^23.15.1
+  prettier: ^3.8.3
 
   # React
   react: ^19.2.5
   react-dom: ^19.2.5
   react-router-dom: ^7.14.2
 
-  # Solidity
-  hardhat: ^3.4.2
-
-  # Testing
-  '@testing-library/jest-dom': ^6.9.1
-  '@testing-library/react': ^16.3.2
-  '@vitest/coverage-v8': ^3.2.4
-  vitest: ^3.2.4
-
-  # Types
-  '@types/node': ^24.12.2
-  '@types/react': ^19.2.14
-  '@types/react-dom': ^19.2.3
-
   # TypeScript
   typescript: ^5.9.3
-
-  # Netlify
-  dotenv-cli: ^8.0.0
-  netlify-cli: ^23.15.1
-
-  # Verax
-  '@verax-attestation-registry/verax-contracts': ^10.0.0
-  '@verax-attestation-registry/verax-sdk': ^5.4.0
-
-  # Wagmi & Viem
-  '@tanstack/react-query': ^5.100.6
-  '@reown/appkit': ^1.8.19
-  '@reown/appkit-adapter-wagmi': ^1.8.19
-  '@wagmi/connectors': ^8.0.7
+  typescript-eslint: ^8.59.1
   viem: ^2.48.4
+  vite: ^8.0.10
+  vitest: ^4.1.5
   wagmi: ^3.6.7
+overrides:
+  '@types/node': ^24.12.2
