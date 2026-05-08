@@ -73,9 +73,29 @@ Remaining local Lighthouse notes:
 
 ## Production Comparison
 
-This section must be completed after the commit is deployed to production.
+Final production deployment verified: Netlify CLI deploy `69fe2639c5d71b4df00a76e0`, published on May 8, 2026 at 18:07:12 UTC.
 
-| Mode | Baseline Performance | Post-Deploy Performance | Baseline LCP | Post-Deploy LCP | Notes |
-| --- | ---: | ---: | ---: | ---: | --- |
-| Mobile | 62 | Pending | 8.6 s | Pending | Awaiting production deployment. |
-| Desktop | 93 | Pending | 1.6 s | Pending | Awaiting production deployment. |
+The deployment was performed from a clean worktree based on `origin/main` after the automatic Netlify builds for the intermediate commits were canceled by newer builds. A follow-up Netlify config correction removed SPA route redirects that caused self-redirects under CLI deploy processing.
+
+| Mode | Baseline Performance | Final Performance | Baseline LCP | Final LCP | Final Accessibility | Final Best Practices | Final SEO | Final Agentic Browsing |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| Mobile | 62 | 98 | 8.6 s | 0.8 s | 100 | 100 | 100 | 100 |
+| Desktop | 93 | 100 | 1.6 s | 0.3 s | 100 | 100 | 100 | 100 |
+
+Final production HTTP and render checks:
+
+- `/robots.txt` returns `200` text/plain and points to `https://strava.alainnicolas.fr/sitemap.xml`.
+- `/sitemap.xml` returns `200` application/xml and contains the canonical home and about URLs.
+- `/llms.txt` returns `200` text/plain.
+- Unknown URLs return the static `404.html` with HTTP `404`.
+- `https://strava-attestations.netlify.app/` returns `301` to the canonical custom domain.
+- `/about`, `/about/`, `/oauth`, and `/oauth/` all return `200` without redirect loops. `/about/` renders a canonical tag pointing to `/about`.
+- `/oauth` and `/oauth/` include `X-Robots-Tag: noindex, nofollow`.
+- First-party hashed assets include `Cache-Control: public,max-age=31536000,immutable`.
+- Netlify functions `auth` and `sign` are deployed and respond to unsupported `GET` requests with `405` JSON responses.
+- Desktop and mobile browser render checks found no horizontal overflow.
+
+Remaining production notes:
+
+- Lighthouse still reports unused JavaScript, estimated around 538 KiB after the dependency/security update that reached `main`. The final mobile performance score remains 98, with LCP at 0.8 s and TBT at 160 ms.
+- Lighthouse emitted a source-map warning for the generated wallet chunk during the final run. It did not affect category scores, but it should be revisited if source-map quality becomes important for production debugging.
