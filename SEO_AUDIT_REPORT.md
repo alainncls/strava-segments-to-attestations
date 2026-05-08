@@ -73,9 +73,9 @@ Remaining local Lighthouse notes:
 
 ## Production Comparison
 
-Final production deployment verified: Netlify CLI deploy `69fe2639c5d71b4df00a76e0`, published on May 8, 2026 at 18:07:12 UTC.
+Final production verification completed on May 8, 2026 after publishing the Netlify redirect configuration through the Netlify CLI.
 
-The deployment was performed from a clean worktree based on `origin/main` after the automatic Netlify builds for the intermediate commits were canceled by newer builds. A follow-up Netlify config correction removed SPA route redirects that caused self-redirects under CLI deploy processing.
+The deployment was performed from a clean worktree based on `origin/main` after the automatic Netlify builds for the intermediate commits were canceled by newer builds. The final Netlify config keeps SPA routes as `200` rewrites and avoids redirect rules that caused self-redirects under CLI deploy processing.
 
 | Mode | Baseline Performance | Final Performance | Baseline LCP | Final LCP | Final Accessibility | Final Best Practices | Final SEO | Final Agentic Browsing |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
