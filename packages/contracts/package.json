@@ -22,7 +22,6 @@
   },
   "dependencies": {
     "@openzeppelin/contracts": "catalog:",
-    "@openzeppelin/contracts-upgradeable": "4.9.6",
     "@verax-attestation-registry/verax-contracts": "catalog:",
     "@verax-attestation-registry/verax-sdk": "catalog:"
   },

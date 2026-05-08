@@ -16,7 +16,6 @@
   },
   "devDependencies": {
     "@netlify/functions": "^5.2.0",
-    "@opentelemetry/api": "catalog:",
     "@types/node": "catalog:",
     "dotenv-cli": "catalog:",
     "netlify-cli": "catalog:",
