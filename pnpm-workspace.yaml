@@ -69,3 +69,5 @@ overrides:
   # GHSA-w5hq-g745-h8pq: Netlify CLI and dev-utils accept the patched uuid 13.x release.
   'netlify-cli>uuid': 13.0.1
   '@netlify/dev-utils>uuid': 13.0.1
+  # GHSA-q3j6-qgpj-74h6: force Verax GraphQL transitive paths onto the patched URI parser.
+  fast-uri: 3.1.2
