@@ -77,7 +77,7 @@ test('renders the OAuth error state instead of crashing', async ({ page }) => {
 
   await expect(page.locator('#root')).not.toBeEmpty();
   await expect(page.getByRole('heading', { name: /authentication error/i })).toBeVisible();
-  await expect(page.getByText(/no authorization code received/i)).toBeVisible();
+  await expect(page.getByText(/invalid authorization state/i)).toBeVisible();
   await expect(page.getByRole('button', { name: /back to home/i })).toBeVisible();
 
   runtime.assertClean();

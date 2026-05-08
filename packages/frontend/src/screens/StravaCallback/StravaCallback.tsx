@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useStravaAuth } from '@/hooks/useStravaAuth.ts';
-import { API_URL } from '@/utils/constants.ts';
+import { API_URL, STORAGE_KEYS } from '@/utils/constants.ts';
 import Loader from '../../components/Loader/Loader';
 import Footer from '../../components/Footer/Footer';
 import styles from './StravaCallback.module.css';
@@ -14,10 +14,19 @@ export default function StravaCallback(): React.JSX.Element {
 
   useEffect(() => {
     const code = searchParams.get('code');
+    const state = searchParams.get('state');
     const errorParam = searchParams.get('error');
+    const expectedState = sessionStorage.getItem(STORAGE_KEYS.OAUTH_STATE);
+
+    sessionStorage.removeItem(STORAGE_KEYS.OAUTH_STATE);
 
     if (errorParam) {
       setError('Authorization was denied. Please try again.');
+      return;
+    }
+
+    if (!state || !expectedState || state !== expectedState) {
+      setError('Invalid authorization state. Please try again.');
       return;
     }
 
@@ -31,7 +40,8 @@ export default function StravaCallback(): React.JSX.Element {
         const response = await fetch(`${API_URL}/auth`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ code }),
+          credentials: 'include',
+          body: JSON.stringify({ code, state }),
         });
 
         if (!response.ok) {

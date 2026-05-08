@@ -29,6 +29,7 @@ describe('StravaPortal Integration', () => {
   const testSchemaId = '0xc1708360b3df59e91dfd33f901c659c0350461e6a30392d1e3218d4847e6b20d' as Hex;
   const testSegmentId = BigInt(12345);
   const testCompletionDate = BigInt(Math.floor(Date.now() / 1000));
+  const testDeadline = BigInt(Math.floor(Date.now() / 1000) + 3600);
   const testFee = parseEther('0.0001');
 
   // Contract instances (initialized in beforeAll)
@@ -38,12 +39,18 @@ describe('StravaPortal Integration', () => {
   let portalHarness: Address;
   let publicClient: PublicClient<Transport, Chain>;
   let walletClient: WalletClient<Transport, Chain, Account>;
+  let userWalletClient: WalletClient<Transport, Chain, Account>;
   let owner: Address;
   let user: Address;
   let chainId: number;
 
   // Helper to sign a segment
-  async function signSegment(segmentId: bigint, subject: Address): Promise<Hex> {
+  async function signSegment(
+    segmentId: bigint,
+    completionDate: bigint,
+    subject: Address,
+    deadline: bigint = testDeadline,
+  ): Promise<Hex> {
     const domain = {
       name: 'VerifyStrava',
       version: '1',
@@ -54,13 +61,17 @@ describe('StravaPortal Integration', () => {
     const types = {
       Segment: [
         { name: 'segmentId', type: 'uint256' },
+        { name: 'completionDate', type: 'uint64' },
         { name: 'subject', type: 'address' },
+        { name: 'deadline', type: 'uint64' },
       ],
     };
 
     const message = {
       segmentId,
+      completionDate,
       subject,
+      deadline,
     };
 
     return await signerAccount.signTypedData({
@@ -71,11 +82,25 @@ describe('StravaPortal Integration', () => {
     });
   }
 
+  // Helper to encode subject as bytes20
+  function encodeSubject(address: Address): Hex {
+    const bytes = address.toLowerCase().slice(2);
+    return `0x${bytes}` as Hex;
+  }
+
   // Helper to encode attestation data
   function encodeAttestationData(segmentId: bigint, completionDate: bigint): Hex {
     return encodeAbiParameters(parseAbiParameters('uint256 segmentId, uint64 completionDate'), [
       segmentId,
       completionDate,
+    ]);
+  }
+
+  // Helper to encode validation payload
+  function encodeValidationPayload(signature: Hex, deadline: bigint = testDeadline): Hex {
+    return encodeAbiParameters(parseAbiParameters('bytes signature, uint64 deadline'), [
+      signature,
+      deadline,
     ]);
   }
 
@@ -93,13 +118,8 @@ describe('StravaPortal Integration', () => {
     owner = walletClient.account.address;
     chainId = await publicClient.getChainId();
 
-    // Get a second account for testing
-    const testWallets = await viem.getWalletClients();
-    if (testWallets && testWallets.length > 1 && testWallets[1]?.account?.address) {
-      user = testWallets[1].account.address;
-    } else {
-      user = owner;
-    }
+    userWalletClient = walletClients[1] ?? primaryWallet;
+    user = userWalletClient.account.address;
 
     // Deploy MockRouter
     const mockRouterArtifact = await hre.artifacts.readArtifact('MockRouter');
@@ -178,29 +198,31 @@ describe('StravaPortal Integration', () => {
         functionName: 'schemaId',
       });
 
-      const contractOwner = await publicClient.readContract({
-        address: portal,
-        abi: portalArtifact.abi,
-        functionName: 'owner',
+      const mockPortalRegistryArtifact = await hre.artifacts.readArtifact('MockPortalRegistry');
+      const portalOwner = await publicClient.readContract({
+        address: mockPortalRegistry,
+        abi: mockPortalRegistryArtifact.abi,
+        functionName: 'getPortalOwner',
+        args: [portal],
       });
 
       expect(fee).toBe(testFee);
       expect(getAddress(storedSignerAddress as string)).toBe(getAddress(signerAddress));
       expect(storedSchemaId).toBe(testSchemaId);
-      expect(getAddress(contractOwner as string)).toBe(getAddress(owner));
+      expect(getAddress(portalOwner as string)).toBe(getAddress(owner));
     });
   });
 
   describe('Signature Verification', () => {
     it('should verify valid signature', async () => {
       const harnessArtifact = await hre.artifacts.readArtifact('StravaPortalHarness');
-      const signature = await signSegment(testSegmentId, user);
+      const signature = await signSegment(testSegmentId, testCompletionDate, user);
 
       const isValid = await publicClient.readContract({
         address: portalHarness,
         abi: harnessArtifact.abi,
         functionName: 'exposed_verifySignature',
-        args: [signature, testSegmentId, user],
+        args: [signature, testSegmentId, testCompletionDate, user, testDeadline],
       });
 
       expect(isValid).toBe(true);
@@ -208,14 +230,28 @@ describe('StravaPortal Integration', () => {
 
     it('should reject signature with wrong segment ID', async () => {
       const harnessArtifact = await hre.artifacts.readArtifact('StravaPortalHarness');
-      const signature = await signSegment(testSegmentId, user);
+      const signature = await signSegment(testSegmentId, testCompletionDate, user);
       const wrongSegmentId = BigInt(99999);
 
       const isValid = await publicClient.readContract({
         address: portalHarness,
         abi: harnessArtifact.abi,
         functionName: 'exposed_verifySignature',
-        args: [signature, wrongSegmentId, user],
+        args: [signature, wrongSegmentId, testCompletionDate, user, testDeadline],
+      });
+
+      expect(isValid).toBe(false);
+    });
+
+    it('should reject signature with wrong completion date', async () => {
+      const harnessArtifact = await hre.artifacts.readArtifact('StravaPortalHarness');
+      const signature = await signSegment(testSegmentId, testCompletionDate, user);
+
+      const isValid = await publicClient.readContract({
+        address: portalHarness,
+        abi: harnessArtifact.abi,
+        functionName: 'exposed_verifySignature',
+        args: [signature, testSegmentId, testCompletionDate + 1n, user, testDeadline],
       });
 
       expect(isValid).toBe(false);
@@ -223,14 +259,14 @@ describe('StravaPortal Integration', () => {
 
     it('should reject signature with wrong subject', async () => {
       const harnessArtifact = await hre.artifacts.readArtifact('StravaPortalHarness');
-      const signature = await signSegment(testSegmentId, user);
+      const signature = await signSegment(testSegmentId, testCompletionDate, user);
       const wrongSubject = getAddress('0x0000000000000000000000000000000000000001');
 
       const isValid = await publicClient.readContract({
         address: portalHarness,
         abi: harnessArtifact.abi,
         functionName: 'exposed_verifySignature',
-        args: [signature, testSegmentId, wrongSubject],
+        args: [signature, testSegmentId, testCompletionDate, wrongSubject, testDeadline],
       });
 
       expect(isValid).toBe(false);
@@ -251,7 +287,9 @@ describe('StravaPortal Integration', () => {
       const types = {
         Segment: [
           { name: 'segmentId', type: 'uint256' },
+          { name: 'completionDate', type: 'uint64' },
           { name: 'subject', type: 'address' },
+          { name: 'deadline', type: 'uint64' },
         ],
       };
 
@@ -259,21 +297,165 @@ describe('StravaPortal Integration', () => {
         domain,
         types,
         primaryType: 'Segment',
-        message: { segmentId: testSegmentId, subject: user },
+        message: {
+          segmentId: testSegmentId,
+          completionDate: testCompletionDate,
+          subject: user,
+          deadline: testDeadline,
+        },
       });
 
       const isValid = await publicClient.readContract({
         address: portalHarness,
         abi: harnessArtifact.abi,
         functionName: 'exposed_verifySignature',
-        args: [wrongSignature, testSegmentId, user],
+        args: [wrongSignature, testSegmentId, testCompletionDate, user, testDeadline],
       });
 
       expect(isValid).toBe(false);
     });
   });
 
+  describe('Attestation Verification', () => {
+    it('should reject an attestation when the completion date is changed after signing', async () => {
+      const harnessArtifact = await hre.artifacts.readArtifact('StravaPortalHarness');
+      const segmentId = 44444n;
+      const signature = await signSegment(segmentId, testCompletionDate, user);
+
+      await expect(
+        userWalletClient.writeContract({
+          address: portalHarness,
+          abi: harnessArtifact.abi,
+          functionName: 'attest',
+          args: [
+            {
+              schemaId: testSchemaId,
+              expirationDate: 0n,
+              subject: encodeSubject(user),
+              attestationData: encodeAttestationData(segmentId, testCompletionDate + 1n),
+            },
+            [encodeValidationPayload(signature)],
+          ],
+          value: testFee,
+        }),
+      ).rejects.toThrow();
+    });
+
+    it('should reject replayed attestations with the same signed payload', async () => {
+      const harnessArtifact = await hre.artifacts.readArtifact('StravaPortalHarness');
+      const segmentId = 55555n;
+      const signature = await signSegment(segmentId, testCompletionDate, user);
+      const attestationPayload = {
+        schemaId: testSchemaId,
+        expirationDate: 0n,
+        subject: encodeSubject(user),
+        attestationData: encodeAttestationData(segmentId, testCompletionDate),
+      };
+      const validationPayload = encodeValidationPayload(signature);
+
+      const hash = await userWalletClient.writeContract({
+        address: portalHarness,
+        abi: harnessArtifact.abi,
+        functionName: 'attest',
+        args: [attestationPayload, [validationPayload]],
+        value: testFee,
+      });
+      await publicClient.waitForTransactionReceipt({ hash });
+
+      await expect(
+        userWalletClient.writeContract({
+          address: portalHarness,
+          abi: harnessArtifact.abi,
+          functionName: 'attest',
+          args: [attestationPayload, [validationPayload]],
+          value: testFee,
+        }),
+      ).rejects.toThrow();
+    });
+
+    it('should reject attestations after the signed deadline', async () => {
+      const harnessArtifact = await hre.artifacts.readArtifact('StravaPortalHarness');
+      const segmentId = 66666n;
+      const expiredDeadline = 1n;
+      const signature = await signSegment(segmentId, testCompletionDate, user, expiredDeadline);
+
+      await expect(
+        userWalletClient.writeContract({
+          address: portalHarness,
+          abi: harnessArtifact.abi,
+          functionName: 'attest',
+          args: [
+            {
+              schemaId: testSchemaId,
+              expirationDate: 0n,
+              subject: encodeSubject(user),
+              attestationData: encodeAttestationData(segmentId, testCompletionDate),
+            },
+            [encodeValidationPayload(signature, expiredDeadline)],
+          ],
+          value: testFee,
+        }),
+      ).rejects.toThrow();
+    });
+  });
+
   describe('Admin Functions', () => {
+    it('should authorize admin calls against the current portal registry owner', async () => {
+      expect(getAddress(user)).not.toBe(getAddress(owner));
+
+      const portalArtifact = await hre.artifacts.readArtifact('StravaPortal');
+      const mockPortalRegistryArtifact = await hre.artifacts.readArtifact('MockPortalRegistry');
+      const newFee = parseEther('0.0003');
+
+      const transferHash = await walletClient.writeContract({
+        address: mockPortalRegistry,
+        abi: mockPortalRegistryArtifact.abi,
+        functionName: 'setPortal',
+        args: [portal, user],
+      });
+      await publicClient.waitForTransactionReceipt({ hash: transferHash });
+
+      await expect(
+        walletClient.writeContract({
+          address: portal,
+          abi: portalArtifact.abi,
+          functionName: 'setFee',
+          args: [newFee],
+        }),
+      ).rejects.toThrow();
+
+      const userSetFeeHash = await userWalletClient.writeContract({
+        address: portal,
+        abi: portalArtifact.abi,
+        functionName: 'setFee',
+        args: [newFee],
+      });
+      await publicClient.waitForTransactionReceipt({ hash: userSetFeeHash });
+
+      const fee = await publicClient.readContract({
+        address: portal,
+        abi: portalArtifact.abi,
+        functionName: 'fee',
+      });
+      expect(fee).toBe(newFee);
+
+      const resetOwnerHash = await walletClient.writeContract({
+        address: mockPortalRegistry,
+        abi: mockPortalRegistryArtifact.abi,
+        functionName: 'setPortal',
+        args: [portal, owner],
+      });
+      await publicClient.waitForTransactionReceipt({ hash: resetOwnerHash });
+
+      const resetFeeHash = await walletClient.writeContract({
+        address: portal,
+        abi: portalArtifact.abi,
+        functionName: 'setFee',
+        args: [testFee],
+      });
+      await publicClient.waitForTransactionReceipt({ hash: resetFeeHash });
+    });
+
     it('should allow owner to set fee', async () => {
       const portalArtifact = await hre.artifacts.readArtifact('StravaPortal');
       const newFee = parseEther('0.0002');

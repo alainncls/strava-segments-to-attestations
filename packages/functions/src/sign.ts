@@ -15,6 +15,7 @@ import { getCorsHeaders, getEnvConfig } from '../lib/env';
 const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
 const RATE_LIMIT_MAX = 10;
 const RATE_LIMIT_WINDOW = 60_000;
+const SIGNATURE_TTL_SECONDS = 10 * 60;
 
 function isRateLimited(ip: string): boolean {
   const now = Date.now();
@@ -58,7 +59,9 @@ async function getActivitySegments(
 async function signSegment(
   walletClient: WalletClient,
   segmentId: number,
+  completionDate: number,
   subject: Address,
+  deadline: number,
   chainId: number,
 ): Promise<Hex> {
   const isMainnet = chainId === linea.id;
@@ -74,7 +77,9 @@ async function signSegment(
   const types = {
     Segment: [
       { name: 'segmentId', type: 'uint256' },
+      { name: 'completionDate', type: 'uint64' },
       { name: 'subject', type: 'address' },
+      { name: 'deadline', type: 'uint64' },
     ],
   } as const;
 
@@ -85,7 +90,9 @@ async function signSegment(
 
   const message = {
     segmentId: BigInt(segmentId),
+    completionDate: BigInt(completionDate),
     subject,
+    deadline: BigInt(deadline),
   };
 
   return await walletClient.signTypedData({
@@ -175,6 +182,8 @@ export default async (req: Request, context: Context): Promise<Response> => {
 
     const isMainnet = chainId === linea.id;
     const chain = isMainnet ? linea : lineaSepolia;
+    const completionDate = Math.floor(new Date(segmentEffort.start_date).getTime() / 1000);
+    const deadline = Math.floor(Date.now() / 1000) + SIGNATURE_TTL_SECONDS;
 
     const walletClient = createWalletClient({
       account: privateKeyToAccount(config.SIGNER_PRIVATE_KEY),
@@ -182,11 +191,19 @@ export default async (req: Request, context: Context): Promise<Response> => {
       transport: http(),
     });
 
-    const signature = await signSegment(walletClient, segmentId, subject as Address, chainId);
+    const signature = await signSegment(
+      walletClient,
+      segmentId,
+      completionDate,
+      subject as Address,
+      deadline,
+      chainId,
+    );
 
     const signedSegment: SignedSegment = {
       segmentId: segmentEffort.segment.id,
-      completionDate: Math.floor(new Date(segmentEffort.start_date).getTime() / 1000),
+      completionDate,
+      deadline,
       signature,
     };
 

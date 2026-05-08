@@ -25,4 +25,5 @@ export const STORAGE_KEYS = {
   REFRESH_TOKEN: 'strava_refresh_token',
   EXPIRES_AT: 'strava_expires_at',
   ATHLETE: 'strava_athlete',
+  OAUTH_STATE: 'strava_oauth_state',
 } as const;

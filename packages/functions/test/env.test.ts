@@ -13,6 +13,7 @@ describe('CORS Headers Logic', () => {
       'Access-Control-Allow-Origin': isAllowed ? origin : allowedOrigins[0] || '',
       'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
       'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+      'Access-Control-Allow-Credentials': 'true',
       'Content-Type': 'application/json',
     };
   }
@@ -53,6 +54,7 @@ describe('CORS Headers Logic', () => {
 
     expect(headers['Access-Control-Allow-Methods']).toBe('GET, POST, OPTIONS');
     expect(headers['Access-Control-Allow-Headers']).toBe('Content-Type, Authorization');
+    expect(headers['Access-Control-Allow-Credentials']).toBe('true');
     expect(headers['Content-Type']).toBe('application/json');
   });
 });
@@ -111,6 +113,13 @@ describe('Rate Limiting Logic', () => {
 });
 
 describe('Input Validation', () => {
+  it('should reject legacy refresh token auth requests', () => {
+    const body = { refresh_token: 'stolen-token' };
+    const hasSupportedGrant = 'code' in body;
+
+    expect(hasSupportedGrant).toBe(false);
+  });
+
   it('should validate Ethereum address format', () => {
     const addressRegex = /^0x[a-fA-F0-9]{40}$/;
 

@@ -43,11 +43,4 @@ export const STRAVA_PORTAL_ABI = [
     stateMutability: 'view',
     type: 'function',
   },
-  {
-    inputs: [],
-    name: 'owner',
-    outputs: [{ name: '', type: 'address' }],
-    stateMutability: 'view',
-    type: 'function',
-  },
 ] as const;

@@ -19,12 +19,15 @@ describe('StravaPortal', () => {
   // Test data
   const testSegmentId = BigInt(12345);
   const testCompletionDate = BigInt(Math.floor(Date.now() / 1000));
+  const testDeadline = BigInt(Math.floor(Date.now() / 1000) + 3600);
   const testFee = BigInt('100000000000000'); // 0.0001 ETH
 
   // Helper to create EIP-712 signature
   async function signSegment(
     segmentId: bigint,
+    completionDate: bigint,
     subject: Address,
+    deadline: bigint,
     chainId: number,
     verifyingContract: Address,
     privateKey: Hex,
@@ -41,13 +44,17 @@ describe('StravaPortal', () => {
     const types = {
       Segment: [
         { name: 'segmentId', type: 'uint256' },
+        { name: 'completionDate', type: 'uint64' },
         { name: 'subject', type: 'address' },
+        { name: 'deadline', type: 'uint64' },
       ],
     };
 
     const message = {
       segmentId,
+      completionDate,
       subject,
+      deadline,
     };
 
     return await account.signTypedData({
@@ -75,7 +82,10 @@ describe('StravaPortal', () => {
   describe('EIP-712 Type Hash', () => {
     it('should produce valid type hash for Segment struct', () => {
       const typeHash = keccak256(
-        encodePacked(['string'], ['Segment(uint256 segmentId,address subject)']),
+        encodePacked(
+          ['string'],
+          ['Segment(uint256 segmentId,uint64 completionDate,address subject,uint64 deadline)'],
+        ),
       );
 
       expect(typeHash).toHaveLength(66); // 0x + 64 hex chars
@@ -91,7 +101,9 @@ describe('StravaPortal', () => {
 
       const sig1 = await signSegment(
         testSegmentId,
+        testCompletionDate,
         testSubject,
+        testDeadline,
         chainId,
         verifyingContract,
         signerPrivateKey,
@@ -99,7 +111,9 @@ describe('StravaPortal', () => {
 
       const sig2 = await signSegment(
         testSegmentId,
+        testCompletionDate,
         testSubject,
+        testDeadline,
         chainId,
         verifyingContract,
         signerPrivateKey,
@@ -116,14 +130,18 @@ describe('StravaPortal', () => {
 
       const sig1 = await signSegment(
         testSegmentId,
+        testCompletionDate,
         subject1,
+        testDeadline,
         chainId,
         verifyingContract,
         signerPrivateKey,
       );
       const sig2 = await signSegment(
         testSegmentId,
+        testCompletionDate,
         subject2,
+        testDeadline,
         chainId,
         verifyingContract,
         signerPrivateKey,
@@ -139,14 +157,18 @@ describe('StravaPortal', () => {
 
       const sig1 = await signSegment(
         BigInt(111),
+        testCompletionDate,
         testSubject,
+        testDeadline,
         chainId,
         verifyingContract,
         signerPrivateKey,
       );
       const sig2 = await signSegment(
         BigInt(222),
+        testCompletionDate,
         testSubject,
+        testDeadline,
         chainId,
         verifyingContract,
         signerPrivateKey,
@@ -162,14 +184,18 @@ describe('StravaPortal', () => {
 
       const sig1 = await signSegment(
         testSegmentId,
+        testCompletionDate,
         testSubject,
+        testDeadline,
         chainId,
         verifyingContract,
         signerPrivateKey,
       );
       const sig2 = await signSegment(
         testSegmentId,
+        testCompletionDate,
         testSubject,
+        testDeadline,
         chainId,
         verifyingContract,
         randomPrivateKey,
@@ -184,15 +210,73 @@ describe('StravaPortal', () => {
 
       const sig1 = await signSegment(
         testSegmentId,
+        testCompletionDate,
         testSubject,
+        testDeadline,
         59141,
         verifyingContract,
         signerPrivateKey,
       );
       const sig2 = await signSegment(
         testSegmentId,
+        testCompletionDate,
         testSubject,
+        testDeadline,
         59144,
+        verifyingContract,
+        signerPrivateKey,
+      );
+
+      expect(sig1).not.toBe(sig2);
+    });
+
+    it('should produce different signatures for different completion dates', async () => {
+      const testSubject = getAddress('0x1234567890123456789012345678901234567890');
+      const chainId = 59141;
+      const verifyingContract = getAddress('0xc04228f66b1aa75a2a8f6887730f55b54281e9d9');
+
+      const sig1 = await signSegment(
+        testSegmentId,
+        testCompletionDate,
+        testSubject,
+        testDeadline,
+        chainId,
+        verifyingContract,
+        signerPrivateKey,
+      );
+      const sig2 = await signSegment(
+        testSegmentId,
+        testCompletionDate + 1n,
+        testSubject,
+        testDeadline,
+        chainId,
+        verifyingContract,
+        signerPrivateKey,
+      );
+
+      expect(sig1).not.toBe(sig2);
+    });
+
+    it('should produce different signatures for different deadlines', async () => {
+      const testSubject = getAddress('0x1234567890123456789012345678901234567890');
+      const chainId = 59141;
+      const verifyingContract = getAddress('0xc04228f66b1aa75a2a8f6887730f55b54281e9d9');
+
+      const sig1 = await signSegment(
+        testSegmentId,
+        testCompletionDate,
+        testSubject,
+        testDeadline,
+        chainId,
+        verifyingContract,
+        signerPrivateKey,
+      );
+      const sig2 = await signSegment(
+        testSegmentId,
+        testCompletionDate,
+        testSubject,
+        testDeadline + 1n,
+        chainId,
         verifyingContract,
         signerPrivateKey,
       );
@@ -266,13 +350,17 @@ describe('StravaPortal', () => {
       const types = {
         Segment: [
           { name: 'segmentId', type: 'uint256' },
+          { name: 'completionDate', type: 'uint64' },
           { name: 'subject', type: 'address' },
+          { name: 'deadline', type: 'uint64' },
         ],
       } as const;
 
       const message = {
         segmentId: testSegmentId,
+        completionDate: testCompletionDate,
         subject: getAddress('0x1234567890123456789012345678901234567890'),
+        deadline: testDeadline,
       };
 
       const hash = hashTypedData({
@@ -292,13 +380,17 @@ describe('StravaPortal', () => {
         types: {
           Segment: [
             { name: 'segmentId', type: 'uint256' },
+            { name: 'completionDate', type: 'uint64' },
             { name: 'subject', type: 'address' },
+            { name: 'deadline', type: 'uint64' },
           ],
         } as const,
         primaryType: 'Segment' as const,
         message: {
           segmentId: testSegmentId,
+          completionDate: testCompletionDate,
           subject: getAddress('0x1234567890123456789012345678901234567890'),
+          deadline: testDeadline,
         },
       };
 

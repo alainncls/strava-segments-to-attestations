@@ -1,11 +1,14 @@
 import type { Context } from '@netlify/functions';
+import { randomBytes } from 'node:crypto';
 import type { StravaTokenResponse } from '../lib/types';
 import { STRAVA_TOKEN_URL } from '../lib/constants';
 import { getEnvConfig, getCorsHeaders } from '../lib/env';
 
+const OAUTH_STATE_COOKIE = 'strava_oauth_state';
 const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
 const RATE_LIMIT_MAX = 20; // requests per window
 const RATE_LIMIT_WINDOW = 60_000; // 1 minute
+const OAUTH_STATE_MAX_AGE_SECONDS = 10 * 60;
 
 function isRateLimited(ip: string): boolean {
   const now = Date.now();
@@ -54,47 +57,53 @@ async function exchangeCodeForToken(
   return response.json() as Promise<StravaTokenResponse>;
 }
 
-/**
- * Refresh an expired access token
- */
-async function refreshAccessToken(
-  refreshToken: string,
-  clientId: string,
-  clientSecret: string,
-): Promise<StravaTokenResponse> {
-  const params = new URLSearchParams({
-    client_id: clientId,
-    client_secret: clientSecret,
-    refresh_token: refreshToken,
-    grant_type: 'refresh_token',
-  });
-
-  const response = await fetch(STRAVA_TOKEN_URL, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-    body: params,
-  });
-
-  if (!response.ok) {
-    const error: FetchError = new Error(`Strava API error: ${response.status}`);
-    error.status = response.status;
-    throw error;
-  }
-
-  return response.json() as Promise<StravaTokenResponse>;
+interface AuthRequestBody {
+  action?: 'start';
+  code?: string;
+  state?: string;
 }
 
-interface AuthRequestBody {
-  code?: string;
-  refresh_token?: string;
+function parseCookies(cookieHeader: string | null): Map<string, string> {
+  const cookies = new Map<string, string>();
+  if (!cookieHeader) {
+    return cookies;
+  }
+
+  for (const cookie of cookieHeader.split(';')) {
+    const [name, ...valueParts] = cookie.trim().split('=');
+    if (!name || valueParts.length === 0) {
+      continue;
+    }
+    cookies.set(name, decodeURIComponent(valueParts.join('=')));
+  }
+
+  return cookies;
+}
+
+function buildStateCookie(state: string, req: Request): string {
+  const isSecure = new URL(req.url).protocol === 'https:';
+  const secureAttribute = isSecure ? '; Secure' : '';
+  return `${OAUTH_STATE_COOKIE}=${encodeURIComponent(
+    state,
+  )}; HttpOnly; Path=/; SameSite=Lax; Max-Age=${OAUTH_STATE_MAX_AGE_SECONDS}${secureAttribute}`;
+}
+
+function buildClearStateCookie(req: Request): string {
+  const isSecure = new URL(req.url).protocol === 'https:';
+  const secureAttribute = isSecure ? '; Secure' : '';
+  return `${OAUTH_STATE_COOKIE}=; HttpOnly; Path=/; SameSite=Lax; Max-Age=0${secureAttribute}`;
+}
+
+function generateOAuthState(): string {
+  return randomBytes(32).toString('hex');
 }
 
 /**
  * Netlify Function handler for Strava authentication
  *
  * Endpoints:
- * - POST /auth with { code: "xxx" } - Exchange OAuth code for tokens
- * - POST /auth with { refresh_token: "xxx" } - Refresh expired token
+ * - POST /auth with { action: "start" } - Issue OAuth state
+ * - POST /auth with { code: "xxx", state: "xxx" } - Exchange OAuth code for access token
  */
 export default async (req: Request, context: Context): Promise<Response> => {
   const origin = req.headers.get('origin') ?? undefined;
@@ -103,6 +112,13 @@ export default async (req: Request, context: Context): Promise<Response> => {
   // Handle CORS preflight
   if (req.method === 'OPTIONS') {
     return new Response(null, { status: 200, headers });
+  }
+
+  if (req.method !== 'POST') {
+    return new Response(JSON.stringify({ error: 'Method not allowed' }), {
+      status: 405,
+      headers,
+    });
   }
 
   // Rate limiting
@@ -118,64 +134,58 @@ export default async (req: Request, context: Context): Promise<Response> => {
     // Validate environment
     const config = getEnvConfig();
 
-    // Parse body for code or refresh_token
-    let code: string | undefined;
-    let refreshToken: string | undefined;
+    // Parse body for OAuth state or code exchange
+    let body: AuthRequestBody;
 
-    if (req.method === 'POST') {
-      try {
-        const body = (await req.json()) as AuthRequestBody;
-        code = body.code;
-        refreshToken = body.refresh_token;
-      } catch {
-        // Body parsing failed, check query params as fallback for code (OAuth callback)
-      }
-    }
-
-    // Fallback to query params for OAuth code (redirect from Strava)
-    if (!code && !refreshToken) {
-      const { searchParams } = context.url;
-      code = searchParams.get('code') ?? undefined;
-    }
-
-    if (!code && !refreshToken) {
-      return new Response(JSON.stringify({ error: 'Missing code or refresh_token' }), {
+    try {
+      body = (await req.json()) as AuthRequestBody;
+    } catch {
+      return new Response(JSON.stringify({ error: 'Invalid JSON body' }), {
         status: 400,
         headers,
       });
     }
 
-    let tokenResponse: StravaTokenResponse;
+    if (body.action === 'start') {
+      const state = generateOAuthState();
+      return new Response(JSON.stringify({ state }), {
+        status: 200,
+        headers: { ...headers, 'Set-Cookie': buildStateCookie(state, req) },
+      });
+    }
 
-    if (code) {
-      tokenResponse = await exchangeCodeForToken(
-        code,
-        config.STRAVA_CLIENT_ID,
-        config.STRAVA_CLIENT_SECRET,
-      );
-    } else if (refreshToken) {
-      tokenResponse = await refreshAccessToken(
-        refreshToken,
-        config.STRAVA_CLIENT_ID,
-        config.STRAVA_CLIENT_SECRET,
-      );
-    } else {
-      return new Response(JSON.stringify({ error: 'Invalid request' }), {
+    const { code, state } = body;
+
+    if (!code) {
+      return new Response(JSON.stringify({ error: 'Missing code' }), {
         status: 400,
         headers,
       });
     }
+
+    const expectedState = parseCookies(req.headers.get('cookie')).get(OAUTH_STATE_COOKIE);
+    if (!state || !expectedState || state !== expectedState) {
+      return new Response(JSON.stringify({ error: 'Invalid state' }), {
+        status: 400,
+        headers: { ...headers, 'Set-Cookie': buildClearStateCookie(req) },
+      });
+    }
+
+    const tokenResponse = await exchangeCodeForToken(
+      code,
+      config.STRAVA_CLIENT_ID,
+      config.STRAVA_CLIENT_SECRET,
+    );
 
     return new Response(
       JSON.stringify({
         access_token: tokenResponse.access_token,
-        refresh_token: tokenResponse.refresh_token,
         expires_at: tokenResponse.expires_at,
         athlete: tokenResponse.athlete,
       }),
       {
         status: 200,
-        headers,
+        headers: { ...headers, 'Set-Cookie': buildClearStateCookie(req) },
       },
     );
   } catch (error: unknown) {
