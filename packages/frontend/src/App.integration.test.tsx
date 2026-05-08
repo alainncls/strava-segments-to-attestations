@@ -50,10 +50,12 @@ describe('App routing integration', () => {
     expect(screen.getByRole('button', { name: /connect with strava/i })).toBeVisible();
   });
 
-  it('renders the about route', () => {
+  it('renders the about route', async () => {
     renderRoute('/about');
 
-    expect(screen.getByRole('heading', { name: /about segment attestations/i })).toBeVisible();
+    expect(
+      await screen.findByRole('heading', { name: /about segment attestations/i }),
+    ).toBeVisible();
     expect(screen.getByRole('link', { name: /get started/i })).toBeVisible();
   });
 

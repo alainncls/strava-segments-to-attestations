@@ -17,6 +17,7 @@ export const API_URL = import.meta.env.VITE_API_URL || '';
 export const WALLETCONNECT_PROJECT_ID = import.meta.env.VITE_WALLETCONNECT_PROJECT_ID || '';
 export const INFURA_API_KEY = import.meta.env.VITE_INFURA_API_KEY || '';
 export const INSIGHTS_ID = import.meta.env.VITE_INSIGHTS_ID || '';
+export const IS_WALLET_CONFIGURED = Boolean(WALLETCONNECT_PROJECT_ID && INFURA_API_KEY);
 
 // Storage keys
 export const STORAGE_KEYS = {

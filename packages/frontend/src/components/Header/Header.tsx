@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAppKit } from '@reown/appkit/react';
 import { useAccount } from 'wagmi';
+import { IS_WALLET_CONFIGURED } from '@/utils/constants.ts';
 import styles from './Header.module.css';
 import logoEthOrange from '../../assets/logo-eth-orange.svg';
 
@@ -11,13 +12,41 @@ interface HeaderProps {
   onStravaLogout?: () => void;
 }
 
+function formatAddress(addr: string): string {
+  return `${addr.slice(0, 6)}...${addr.slice(-4)}`;
+}
+
+function WalletButton(): React.JSX.Element {
+  const { open } = useAppKit();
+  const { address, isConnected } = useAccount();
+
+  return (
+    <button onClick={() => open()} className={styles.walletBtn}>
+      {isConnected && address ? (
+        <>
+          <span className={styles.walletDot} />
+          {formatAddress(address)}
+        </>
+      ) : (
+        'Connect Wallet'
+      )}
+    </button>
+  );
+}
+
+function WalletUnavailableButton(): React.JSX.Element {
+  return (
+    <button className={styles.walletBtn} disabled title="Wallet configuration is missing">
+      Connect Wallet
+    </button>
+  );
+}
+
 export default function Header({
   isStravaConnected,
   athleteName,
   onStravaLogout,
 }: HeaderProps): React.JSX.Element {
-  const { open } = useAppKit();
-  const { address, isConnected } = useAccount();
   const [isScrolled, setIsScrolled] = useState(false);
 
   useEffect(() => {
@@ -48,10 +77,6 @@ export default function Header({
     };
   }, []);
 
-  const formatAddress = (addr: string): string => {
-    return `${addr.slice(0, 6)}...${addr.slice(-4)}`;
-  };
-
   return (
     <header className={`${styles.header} ${isScrolled ? styles.scrolled : ''}`}>
       <div className={styles.container}>
@@ -79,16 +104,7 @@ export default function Header({
             </div>
           )}
 
-          <button onClick={() => open()} className={styles.walletBtn}>
-            {isConnected && address ? (
-              <>
-                <span className={styles.walletDot} />
-                {formatAddress(address)}
-              </>
-            ) : (
-              'Connect Wallet'
-            )}
-          </button>
+          {IS_WALLET_CONFIGURED ? <WalletButton /> : <WalletUnavailableButton />}
         </nav>
       </div>
     </header>

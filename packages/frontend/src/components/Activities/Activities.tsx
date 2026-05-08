@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { memo, useCallback } from 'react';
 import type { Activity } from '../../types';
 import { formatDistance, formatDate, getActivityIcon } from '@/utils/format.ts';
 import { Button } from '../Button/Button';
@@ -12,6 +12,62 @@ interface ActivitiesProps {
   isLoadingMore?: boolean;
   onLoadMore?: () => void;
 }
+
+interface ActivityCardProps {
+  activity: Activity;
+  index: number;
+  isLoading: boolean;
+  onActivityClick: (activityId: number) => void;
+}
+
+const ActivityCard = memo(function ActivityCard({
+  activity,
+  index,
+  isLoading,
+  onActivityClick,
+}: ActivityCardProps): React.JSX.Element {
+  const handleClick = useCallback((): void => {
+    onActivityClick(activity.id);
+  }, [activity.id, onActivityClick]);
+
+  const segmentCount = activity.segments?.length ?? 0;
+
+  return (
+    <button
+      className={`${styles.card} fade-in stagger-${Math.min(index + 1, 5)}`}
+      onClick={handleClick}
+      disabled={isLoading}
+    >
+      <div className={styles.cardHeader}>
+        <span className={styles.icon}>{getActivityIcon(activity.type)}</span>
+        <span className={styles.type}>{activity.type}</span>
+      </div>
+      <h3 className={styles.name}>{activity.name}</h3>
+      <div className={styles.meta}>
+        <span>{formatDate(activity.startDate)}</span>
+        <span className={styles.separator}>•</span>
+        <span>{formatDistance(activity.distance)}</span>
+      </div>
+      {activity.segmentsLoaded ? (
+        <div
+          className={`${styles.segmentBadge} ${segmentCount > 0 ? styles.hasSegments : styles.noSegments}`}
+        >
+          {segmentCount > 0 ? `${segmentCount} segment${segmentCount > 1 ? 's' : ''}` : '0 segment'}
+        </div>
+      ) : (
+        <div className={styles.loadSegments}>
+          <span className={styles.loadIcon}>📂</span>
+          <span>Load segments</span>
+        </div>
+      )}
+      {isLoading ? (
+        <div className={styles.loading}>
+          <div className={styles.spinner} />
+        </div>
+      ) : null}
+    </button>
+  );
+});
 
 export default function Activities({
   activities,
@@ -34,52 +90,23 @@ export default function Activities({
       <h2 className={styles.title}>Your Recent Activities</h2>
       <div className={styles.grid}>
         {activities.map((activity, index) => (
-          <button
+          <ActivityCard
             key={activity.id}
-            className={`${styles.card} fade-in stagger-${Math.min(index + 1, 5)}`}
-            onClick={() => onActivityClick(activity.id)}
-            disabled={loadingActivityId === activity.id}
-          >
-            <div className={styles.cardHeader}>
-              <span className={styles.icon}>{getActivityIcon(activity.type)}</span>
-              <span className={styles.type}>{activity.type}</span>
-            </div>
-            <h3 className={styles.name}>{activity.name}</h3>
-            <div className={styles.meta}>
-              <span>{formatDate(activity.startDate)}</span>
-              <span className={styles.separator}>•</span>
-              <span>{formatDistance(activity.distance)}</span>
-            </div>
-            {activity.segmentsLoaded ? (
-              <div
-                className={`${styles.segmentBadge} ${activity.segments && activity.segments.length > 0 ? styles.hasSegments : styles.noSegments}`}
-              >
-                {activity.segments && activity.segments.length > 0
-                  ? `${activity.segments.length} segment${activity.segments.length > 1 ? 's' : ''}`
-                  : '0 segment'}
-              </div>
-            ) : (
-              <div className={styles.loadSegments}>
-                <span className={styles.loadIcon}>📂</span>
-                <span>Load segments</span>
-              </div>
-            )}
-            {loadingActivityId === activity.id && (
-              <div className={styles.loading}>
-                <div className={styles.spinner} />
-              </div>
-            )}
-          </button>
+            activity={activity}
+            index={index}
+            isLoading={loadingActivityId === activity.id}
+            onActivityClick={onActivityClick}
+          />
         ))}
       </div>
 
-      {hasMore && onLoadMore && (
+      {hasMore && onLoadMore ? (
         <div className={styles.loadMore}>
           <Button variant="outline" onClick={onLoadMore} disabled={isLoadingMore}>
             {isLoadingMore ? 'Loading...' : 'Load more activities'}
           </Button>
         </div>
-      )}
+      ) : null}
     </div>
   );
 }
