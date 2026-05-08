@@ -27,26 +27,26 @@
   status = 200
 
 [[redirects]]
-  from = "/about"
-  to = "/index.html"
-  status = 200
-
-[[redirects]]
   from = "/about/"
   to = "/about"
   status = 301
   force = true
 
 [[redirects]]
-  from = "/oauth"
-  to = "/index.html"
-  status = 200
-
-[[redirects]]
   from = "/oauth/"
   to = "/oauth"
   status = 301
   force = true
+
+[[redirects]]
+  from = "/about"
+  to = "/index.html"
+  status = 200
+
+[[redirects]]
+  from = "/oauth"
+  to = "/index.html"
+  status = 200
 
 [[redirects]]
   from = "/*"
