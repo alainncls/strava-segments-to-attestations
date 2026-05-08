@@ -64,6 +64,7 @@ export interface Activity {
 
 export interface AuthState {
   accessToken: string | null;
+  /** @deprecated refresh tokens are not stored in the browser. */
   refreshToken: string | null;
   expiresAt: number | null;
   athlete: StravaAthlete | null;
@@ -72,6 +73,7 @@ export interface AuthState {
 export interface SignedSegment {
   segmentId: number;
   completionDate: number;
+  deadline: number;
   signature: Hex;
 }
 

@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.21;
 
-import { Ownable } from "@openzeppelin/contracts/access/Ownable.sol";
 import { AbstractPortalV2 } from "@verax-attestation-registry/verax-contracts/contracts/abstracts/AbstractPortalV2.sol";
 import { AttestationPayload } from "@verax-attestation-registry/verax-contracts/contracts/types/Structs.sol";
 import { ECDSA } from "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
@@ -12,10 +11,11 @@ import { EIP712 } from "@openzeppelin/contracts/utils/cryptography/EIP712.sol";
  * @author alain.linea.eth
  * @notice This contract creates attestations for completed Strava segments
  */
-contract StravaPortal is AbstractPortalV2, Ownable, EIP712 {
+contract StravaPortal is AbstractPortalV2, EIP712 {
     uint256 public fee = 0.0001 ether;
     address public signerAddress;
     bytes32 public schemaId;
+    mapping(bytes32 => bool) public usedAttestations;
     string private constant SIGNING_DOMAIN = "VerifyStrava";
     string private constant SIGNATURE_VERSION = "1";
 
@@ -24,6 +24,8 @@ contract StravaPortal is AbstractPortalV2, Ownable, EIP712 {
     error SenderIsNotSubject();
     error InsufficientFee();
     error InvalidSignature();
+    error SignatureExpired();
+    error SignatureAlreadyUsed();
     error NotImplemented();
 
     struct SegmentPayload {
@@ -57,7 +59,7 @@ contract StravaPortal is AbstractPortalV2, Ownable, EIP712 {
         AttestationPayload memory attestationPayload,
         bytes[] memory validationPayloads,
         uint256 value
-    ) internal view override {
+    ) internal override {
         if (attestationPayload.subject.length != 20) revert InvalidSubject();
         address subject = address(uint160(bytes20(attestationPayload.subject)));
         if (msg.sender != subject) revert SenderIsNotSubject();
@@ -66,7 +68,16 @@ contract StravaPortal is AbstractPortalV2, Ownable, EIP712 {
         if (attestationPayload.schemaId != schemaId) revert InvalidSchema();
 
         SegmentPayload memory payload = abi.decode(attestationPayload.attestationData, (SegmentPayload));
-        if (!verifySignature(validationPayloads[0], payload.segmentId, subject)) revert InvalidSignature();
+        if (validationPayloads.length == 0) revert InvalidSignature();
+        (bytes memory signature, uint64 deadline) = abi.decode(validationPayloads[0], (bytes, uint64));
+        if (block.timestamp > deadline) revert SignatureExpired();
+
+        bytes32 attestationDigest = hashAttestation(payload.segmentId, payload.completionDate, subject);
+        if (usedAttestations[attestationDigest]) revert SignatureAlreadyUsed();
+        if (!verifySignature(signature, payload.segmentId, payload.completionDate, subject, deadline)) {
+            revert InvalidSignature();
+        }
+        usedAttestations[attestationDigest] = true;
     }
 
     /**
@@ -123,7 +134,7 @@ contract StravaPortal is AbstractPortalV2, Ownable, EIP712 {
      * @notice Set the fee required to attest
      * @param attestationFee The fee required to attest
      */
-    function setFee(uint256 attestationFee) public onlyOwner {
+    function setFee(uint256 attestationFee) public onlyPortalOwner {
         emit FeeUpdated(fee, attestationFee);
         fee = attestationFee;
     }
@@ -132,7 +143,7 @@ contract StravaPortal is AbstractPortalV2, Ownable, EIP712 {
      * @notice Set the signer address for signature verification
      * @param _signerAddress The new signer address
      */
-    function setSignerAddress(address _signerAddress) public onlyOwner {
+    function setSignerAddress(address _signerAddress) public onlyPortalOwner {
         emit SignerAddressUpdated(signerAddress, _signerAddress);
         signerAddress = _signerAddress;
     }
@@ -141,7 +152,7 @@ contract StravaPortal is AbstractPortalV2, Ownable, EIP712 {
      * @notice Set the schema ID for attestations
      * @param _schemaId The new schema ID
      */
-    function setSchemaId(bytes32 _schemaId) public onlyOwner {
+    function setSchemaId(bytes32 _schemaId) public onlyPortalOwner {
         emit SchemaIdUpdated(schemaId, _schemaId);
         schemaId = _schemaId;
     }
@@ -150,22 +161,56 @@ contract StravaPortal is AbstractPortalV2, Ownable, EIP712 {
      * @notice Verify the signature of a segment attestation
      * @param signature The signature to verify
      * @param segmentId The Strava segment ID
+     * @param completionDate The timestamp of the segment effort
      * @param subject The address of the attester
      * @return True if the signature is valid
      */
-    function verifySignature(bytes memory signature, uint256 segmentId, address subject) internal view returns (bool) {
-        bytes32 digest = _hashTypedDataV4(
-            keccak256(abi.encode(keccak256("Segment(uint256 segmentId,address subject)"), segmentId, subject))
-        );
+    function verifySignature(
+        bytes memory signature,
+        uint256 segmentId,
+        uint64 completionDate,
+        address subject,
+        uint64 deadline
+    ) internal view returns (bool) {
+        bytes32 digest = hashSegment(segmentId, completionDate, subject, deadline);
         address signer = ECDSA.recover(digest, signature);
         return signer == signerAddress;
+    }
+
+    function hashSegment(
+        uint256 segmentId,
+        uint64 completionDate,
+        address subject,
+        uint64 deadline
+    ) internal view returns (bytes32) {
+        bytes32 digest = _hashTypedDataV4(
+            keccak256(
+                abi.encode(
+                    keccak256("Segment(uint256 segmentId,uint64 completionDate,address subject,uint64 deadline)"),
+                    segmentId,
+                    completionDate,
+                    subject,
+                    deadline
+                )
+            )
+        );
+        return digest;
+    }
+
+    function hashAttestation(
+        uint256 segmentId,
+        uint64 completionDate,
+        address subject
+    ) internal pure returns (bytes32) {
+        return keccak256(abi.encode(segmentId, completionDate, subject));
     }
 
     /**
      * @notice Withdraw collected fees
      */
-    function withdraw() public onlyOwner {
-        (bool success, ) = owner().call{ value: address(this).balance }("");
+    function withdraw() public onlyPortalOwner {
+        address portalOwner = portalRegistry.getPortalOwner(address(this));
+        (bool success, ) = payable(portalOwner).call{ value: address(this).balance }("");
         require(success, "Transfer failed");
     }
 }

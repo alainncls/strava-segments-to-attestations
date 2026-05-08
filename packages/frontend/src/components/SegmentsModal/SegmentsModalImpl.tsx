@@ -117,6 +117,10 @@ function SegmentsModalContent({
           parseAbiParameters('uint256 segmentId, uint64 completionDate'),
           [BigInt(signedSegment.segmentId), BigInt(signedSegment.completionDate)],
         );
+        const validationPayload = encodeAbiParameters(
+          parseAbiParameters('bytes signature, uint64 deadline'),
+          [signedSegment.signature, BigInt(signedSegment.deadline)],
+        );
         const subjectBytes: Hex = address.toLowerCase() as Hex;
 
         writeContract(
@@ -131,7 +135,7 @@ function SegmentsModalContent({
                 subject: subjectBytes,
                 attestationData,
               },
-              [signedSegment.signature],
+              [validationPayload],
             ],
             value: ATTESTATION_FEE,
           },

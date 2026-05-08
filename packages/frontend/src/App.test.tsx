@@ -7,6 +7,7 @@ const STORAGE_KEYS = {
   REFRESH_TOKEN: 'strava_refresh_token',
   EXPIRES_AT: 'strava_expires_at',
   ATHLETE: 'strava_athlete',
+  OAUTH_STATE: 'strava_oauth_state',
 } as const;
 
 describe('Frontend Core Logic', () => {
@@ -39,6 +40,7 @@ describe('Frontend Core Logic', () => {
       expect(STORAGE_KEYS.REFRESH_TOKEN).toBe('strava_refresh_token');
       expect(STORAGE_KEYS.EXPIRES_AT).toBe('strava_expires_at');
       expect(STORAGE_KEYS.ATHLETE).toBe('strava_athlete');
+      expect(STORAGE_KEYS.OAUTH_STATE).toBe('strava_oauth_state');
     });
   });
 

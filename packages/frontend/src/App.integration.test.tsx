@@ -2,6 +2,7 @@ import { render, screen } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import App from './App';
+import { STORAGE_KEYS } from './utils/constants';
 
 const openWalletMock = vi.fn();
 const writeContractMock = vi.fn();
@@ -63,6 +64,15 @@ describe('App routing integration', () => {
     renderRoute('/oauth');
 
     expect(await screen.findByRole('heading', { name: /authentication error/i })).toBeVisible();
-    expect(screen.getByText(/no authorization code received/i)).toBeVisible();
+    expect(screen.getByText(/invalid authorization state/i)).toBeVisible();
+  });
+
+  it('rejects an OAuth callback with mismatched state', async () => {
+    sessionStorage.setItem(STORAGE_KEYS.OAUTH_STATE, 'expected-state');
+
+    renderRoute('/oauth?code=test-code&state=wrong-state');
+
+    expect(await screen.findByRole('heading', { name: /authentication error/i })).toBeVisible();
+    expect(screen.getByText(/invalid authorization state/i)).toBeVisible();
   });
 });

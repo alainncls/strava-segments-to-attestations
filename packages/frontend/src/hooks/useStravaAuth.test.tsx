@@ -13,7 +13,6 @@ const athlete = {
 
 function seedAuth(expiresAt: number): void {
   sessionStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, 'access-token');
-  sessionStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, 'refresh-token');
   sessionStorage.setItem(STORAGE_KEYS.EXPIRES_AT, expiresAt.toString());
   sessionStorage.setItem(STORAGE_KEYS.ATHLETE, JSON.stringify(athlete));
 }
@@ -40,7 +39,6 @@ describe('useStravaAuth', () => {
 
   it('drops corrupted athlete storage without breaking render', async () => {
     sessionStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, 'access-token');
-    sessionStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, 'refresh-token');
     sessionStorage.setItem(
       STORAGE_KEYS.EXPIRES_AT,
       (Math.floor(Date.now() / 1000) + 3600).toString(),
@@ -56,21 +54,8 @@ describe('useStravaAuth', () => {
     expect(sessionStorage.getItem(STORAGE_KEYS.ATHLETE)).toBeNull();
   });
 
-  it('refreshes an expired token and persists the new session', async () => {
+  it('clears an expired session instead of refreshing in the browser', async () => {
     seedAuth(Math.floor(Date.now() / 1000) - 3600);
-
-    const fetchMock = vi.fn().mockResolvedValue({
-      json: () =>
-        Promise.resolve({
-          access_token: 'new-access-token',
-          refresh_token: 'new-refresh-token',
-          expires_at: Math.floor(Date.now() / 1000) + 7200,
-          athlete,
-        }),
-      ok: true,
-    });
-
-    vi.stubGlobal('fetch', fetchMock);
 
     const { result } = renderHook(() => useStravaAuth());
 
@@ -81,8 +66,8 @@ describe('useStravaAuth', () => {
       token = await result.current.refreshTokenIfNeeded();
     });
 
-    expect(token).toBe('new-access-token');
-    expect(sessionStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN)).toBe('new-access-token');
-    expect(fetchMock).toHaveBeenCalledOnce();
+    expect(token).toBeNull();
+    expect(sessionStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN)).toBeNull();
+    expect(sessionStorage.getItem(STORAGE_KEYS.REFRESH_TOKEN)).toBeNull();
   });
 });
