@@ -18,13 +18,62 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta
       name="description"
-      content="Create verifiable attestations for your Strava segments on Linea blockchain"
+      content="Create verifiable onchain attestations for completed Strava segments on Linea with Verax. Connect Strava, choose a segment, and prove your achievement."
     />
+    <meta name="robots" content="index,follow" />
     <meta name="theme-color" content="#FC5200" />
-    <title>Strava Segment Attestations</title>
+    <link rel="canonical" href="https://strava.alainnicolas.fr/" />
+    <meta property="og:title" content="Strava Segment Attestations | Onchain Segment Proofs" />
+    <meta
+      property="og:description"
+      content="Create verifiable onchain attestations for completed Strava segments on Linea with Verax."
+    />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://strava.alainnicolas.fr/" />
+    <meta property="og:image" content="https://strava.alainnicolas.fr/favicon-dark.png" />
+    <meta name="twitter:card" content="summary" />
+    <meta name="twitter:title" content="Strava Segment Attestations | Onchain Segment Proofs" />
+    <meta
+      name="twitter:description"
+      content="Create verifiable onchain attestations for completed Strava segments on Linea with Verax."
+    />
+    <meta name="twitter:image" content="https://strava.alainnicolas.fr/favicon-dark.png" />
+    <script id="page-json-ld" type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "WebApplication",
+        "name": "Strava Segment Attestations",
+        "url": "https://strava.alainnicolas.fr/",
+        "applicationCategory": "SportsApplication",
+        "operatingSystem": "Web",
+        "description": "Create verifiable onchain attestations for completed Strava segments on Linea with Verax.",
+        "creator": {
+          "@type": "Person",
+          "name": "alain.linea.eth",
+          "url": "https://alainnicolas.com"
+        },
+        "offers": {
+          "@type": "Offer",
+          "price": "0",
+          "priceCurrency": "USD"
+        }
+      }
+    </script>
+    <title>Strava Segment Attestations | Onchain Segment Proofs</title>
   </head>
   <body>
-    <div id="root"></div>
+    <div id="root">
+      <main>
+        <h1>Create verifiable attestations for your Strava segments</h1>
+        <p>
+          Connect your Strava account, select a completed segment, and create an onchain attestation
+          on Linea using the Verax protocol.
+        </p>
+        <p>
+          <a href="/about">Learn how Segment Attestations works</a>
+        </p>
+      </main>
+    </div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

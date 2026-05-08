@@ -1,10 +1,10 @@
-import React, { useEffect, useState } from 'react';
+import React, { Suspense, lazy, useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { useAppKit } from '@reown/appkit/react';
-import { useAccount } from 'wagmi';
 import { IS_WALLET_CONFIGURED } from '@/utils/constants.ts';
 import styles from './Header.module.css';
 import logoEthOrange from '../../assets/logo-eth-orange.svg';
+
+const WalletConnectButton = lazy(() => import('../Wallet/WalletConnectButton'));
 
 interface HeaderProps {
   isStravaConnected: boolean;
@@ -12,33 +12,49 @@ interface HeaderProps {
   onStravaLogout?: () => void;
 }
 
-function formatAddress(addr: string): string {
-  return `${addr.slice(0, 6)}...${addr.slice(-4)}`;
-}
-
-function WalletButton(): React.JSX.Element {
-  const { open } = useAppKit();
-  const { address, isConnected } = useAccount();
-
-  return (
-    <button onClick={() => open()} className={styles.walletBtn}>
-      {isConnected && address ? (
-        <>
-          <span className={styles.walletDot} />
-          {formatAddress(address)}
-        </>
-      ) : (
-        'Connect Wallet'
-      )}
-    </button>
-  );
-}
-
 function WalletUnavailableButton(): React.JSX.Element {
   return (
     <button className={styles.walletBtn} disabled title="Wallet configuration is missing">
       Connect Wallet
     </button>
+  );
+}
+
+function WalletButtonGate(): React.JSX.Element {
+  const [isWalletEnabled, setIsWalletEnabled] = useState(false);
+  const [shouldAutoOpen, setShouldAutoOpen] = useState(false);
+
+  const handleEnableWallet = useCallback((): void => {
+    setShouldAutoOpen(true);
+    setIsWalletEnabled(true);
+  }, []);
+
+  const handleAutoOpenHandled = useCallback((): void => {
+    setShouldAutoOpen(false);
+  }, []);
+
+  if (!IS_WALLET_CONFIGURED) {
+    return <WalletUnavailableButton />;
+  }
+
+  if (!isWalletEnabled) {
+    return (
+      <button onClick={handleEnableWallet} className={styles.walletBtn}>
+        Connect Wallet
+      </button>
+    );
+  }
+
+  return (
+    <Suspense
+      fallback={
+        <button className={styles.walletBtn} disabled>
+          Loading wallet...
+        </button>
+      }
+    >
+      <WalletConnectButton autoOpen={shouldAutoOpen} onAutoOpenHandled={handleAutoOpenHandled} />
+    </Suspense>
   );
 }
 
@@ -81,7 +97,13 @@ export default function Header({
     <header className={`${styles.header} ${isScrolled ? styles.scrolled : ''}`}>
       <div className={styles.container}>
         <Link to="/" className={styles.logo}>
-          <img src={logoEthOrange} alt="Segment Attestations logo" className={styles.logoIcon} />
+          <img
+            src={logoEthOrange}
+            alt="Segment Attestations logo"
+            width="32"
+            height="32"
+            className={styles.logoIcon}
+          />
           <span className={styles.logoText}>Segment Attestations</span>
         </Link>
 
@@ -104,7 +126,7 @@ export default function Header({
             </div>
           )}
 
-          {IS_WALLET_CONFIGURED ? <WalletButton /> : <WalletUnavailableButton />}
+          <WalletButtonGate />
         </nav>
       </div>
     </header>

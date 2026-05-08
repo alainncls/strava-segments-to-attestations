@@ -7,10 +7,38 @@ import Activities from '../../components/Activities/Activities';
 import SegmentsModal from '../../components/SegmentsModal/SegmentsModal';
 import { useStravaAuth } from '@/hooks/useStravaAuth.ts';
 import { useActivities } from '@/hooks/useActivities.ts';
+import { SITE_URL, usePageMetadata } from '@/hooks/usePageMetadata.ts';
 import type { Activity } from '../../types';
 import styles from './Home.module.css';
 
 export default function Home(): React.JSX.Element {
+  usePageMetadata({
+    title: 'Strava Segment Attestations | Onchain Segment Proofs',
+    description:
+      'Create verifiable onchain attestations for completed Strava segments on Linea with Verax. Connect Strava, choose a segment, and prove your achievement.',
+    path: '/',
+    schema: {
+      '@context': 'https://schema.org',
+      '@type': 'WebApplication',
+      name: 'Strava Segment Attestations',
+      url: `${SITE_URL}/`,
+      applicationCategory: 'SportsApplication',
+      operatingSystem: 'Web',
+      description:
+        'Create verifiable onchain attestations for completed Strava segments on Linea with Verax.',
+      creator: {
+        '@type': 'Person',
+        name: 'alain.linea.eth',
+        url: 'https://alainnicolas.com',
+      },
+      offers: {
+        '@type': 'Offer',
+        price: '0',
+        priceCurrency: 'USD',
+      },
+    },
+  });
+
   const {
     auth,
     isAuthenticated,

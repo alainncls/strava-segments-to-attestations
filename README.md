@@ -134,6 +134,7 @@ netlify dev
 | `VITE_WALLETCONNECT_PROJECT_ID` | WalletConnect Cloud project ID       |
 | `VITE_INFURA_API_KEY`           | Infura API key for RPC access        |
 | `VITE_INSIGHTS_ID`              | [getinsights.io](https://getinsights.io/) project ID (optional) |
+| `VITE_ENABLE_INSIGHTS`          | Set to `true` to load getinsights.io analytics |
 
 ### Functions (`packages/functions/.env`)
 

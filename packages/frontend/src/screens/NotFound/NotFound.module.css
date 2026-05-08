@@ -1,0 +1,46 @@
+.main {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4rem 1rem;
+}
+
+.content {
+  max-width: 520px;
+  text-align: center;
+}
+
+.title {
+  color: var(--text-primary);
+  font-size: 2rem;
+  line-height: 1.2;
+  margin-bottom: 1rem;
+}
+
+.description {
+  color: var(--text-secondary);
+  margin-bottom: 2rem;
+}
+
+.button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding: 0.875rem 1.5rem;
+  background: var(--strava-orange-accessible);
+  border-radius: 8px;
+  color: var(--text-primary);
+  font-weight: 700;
+  text-decoration: none;
+  transition:
+    background 0.2s ease,
+    transform 0.2s ease;
+}
+
+.button:hover {
+  background: var(--strava-orange-dark);
+  color: var(--text-primary);
+  transform: translateY(-1px);
+}

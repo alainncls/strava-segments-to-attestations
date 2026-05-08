@@ -1,7 +1,8 @@
 :root {
   /* Strava brand colors */
   --strava-orange: #fc5200;
-  --strava-orange-dark: #e04a00;
+  --strava-orange-accessible: #c2410c;
+  --strava-orange-dark: #9a3412;
   --strava-orange-light: #ff6b1a;
 
   /* Dark theme colors */
@@ -13,8 +14,8 @@
 
   /* Text colors */
   --text-primary: #ffffff;
-  --text-secondary: #a1a1aa;
-  --text-muted: #71717a;
+  --text-secondary: #d4d4d8;
+  --text-muted: #a1a1aa;
 
   /* Borders */
   --border-color: #27272a;

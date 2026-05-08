@@ -10,9 +10,58 @@
   node_bundler = "esbuild"
 
 [[redirects]]
-  from = "/*"
+  from = "https://strava-attestations.netlify.app/*"
+  to = "https://strava.alainnicolas.fr/:splat"
+  status = 301
+  force = true
+
+[[redirects]]
+  from = "/index.html"
+  to = "/"
+  status = 301
+  force = true
+
+[[redirects]]
+  from = "/"
   to = "/index.html"
   status = 200
+
+[[redirects]]
+  from = "/about"
+  to = "/index.html"
+  status = 200
+
+[[redirects]]
+  from = "/about/"
+  to = "/about"
+  status = 301
+  force = true
+
+[[redirects]]
+  from = "/oauth"
+  to = "/index.html"
+  status = 200
+
+[[redirects]]
+  from = "/oauth/"
+  to = "/oauth"
+  status = 301
+  force = true
+
+[[redirects]]
+  from = "/*"
+  to = "/404.html"
+  status = 404
+
+[[headers]]
+  for = "/assets/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+[[headers]]
+  for = "/oauth"
+  [headers.values]
+    X-Robots-Tag = "noindex, nofollow"
 
 [[headers]]
   for = "/*"

@@ -17,7 +17,9 @@ declare global {
  */
 export function useInsights(): void {
   useEffect(() => {
-    if (!INSIGHTS_ID || typeof window === 'undefined') return;
+    const isInsightsEnabled = import.meta.env.VITE_ENABLE_INSIGHTS === 'true';
+
+    if (!isInsightsEnabled || !INSIGHTS_ID || typeof window === 'undefined') return;
 
     if (window.insights) {
       return;

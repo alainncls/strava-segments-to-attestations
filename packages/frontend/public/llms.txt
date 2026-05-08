@@ -1,0 +1,15 @@
+# Strava Segment Attestations
+
+Strava Segment Attestations is a web application for creating verifiable onchain attestations for completed Strava segments on Linea using the Verax protocol.
+
+## Canonical Pages
+
+- [Home](https://strava.alainnicolas.fr/): Connect Strava, select a completed segment, and create an onchain attestation.
+- [About](https://strava.alainnicolas.fr/about): Product overview, workflow, attestation use cases, and technology stack.
+
+## Related Resources
+
+- [Source code](https://github.com/alainncls/strava-segments-to-attestations)
+- [Verax protocol](https://ver.ax)
+- [Linea](https://linea.build)
+- [Strava](https://www.strava.com)

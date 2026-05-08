@@ -59,7 +59,11 @@
   align-items: center;
   gap: 0.5rem;
   padding: 0.625rem 1rem;
-  background: linear-gradient(135deg, var(--strava-orange) 0%, var(--strava-orange-dark) 100%);
+  background: linear-gradient(
+    135deg,
+    var(--strava-orange-accessible) 0%,
+    var(--strava-orange-dark) 100%
+  );
   border: none;
   border-radius: 8px;
   color: white;
@@ -72,7 +76,7 @@
 }
 
 .attestBtn:hover:not(:disabled) {
-  background: linear-gradient(135deg, var(--strava-orange-light) 0%, var(--strava-orange) 100%);
+  background: linear-gradient(135deg, var(--strava-orange) 0%, var(--strava-orange-dark) 100%);
   transform: translateY(-1px);
 }
 

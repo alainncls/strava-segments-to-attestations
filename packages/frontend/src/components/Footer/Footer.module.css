@@ -37,6 +37,8 @@
 .link {
   color: var(--text-secondary);
   font-size: 0.875rem;
+  text-decoration: underline;
+  text-underline-offset: 0.18em;
   transition: color 0.2s ease;
 }
 

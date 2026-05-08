@@ -63,7 +63,7 @@
   top: 0;
   width: 1.75rem;
   height: 1.75rem;
-  background: var(--strava-orange);
+  background: var(--strava-orange-accessible);
   border-radius: 50%;
   color: white;
   font-weight: 700;
@@ -108,7 +108,11 @@
 .button {
   display: inline-block;
   padding: 0.875rem 2rem;
-  background: linear-gradient(135deg, var(--strava-orange) 0%, var(--strava-orange-dark) 100%);
+  background: linear-gradient(
+    135deg,
+    var(--strava-orange-accessible) 0%,
+    var(--strava-orange-dark) 100%
+  );
   border-radius: 8px;
   color: white;
   font-weight: 600;
@@ -117,7 +121,7 @@
 }
 
 .button:hover {
-  background: linear-gradient(135deg, var(--strava-orange-light) 0%, var(--strava-orange) 100%);
+  background: linear-gradient(135deg, var(--strava-orange) 0%, var(--strava-orange-dark) 100%);
   transform: translateY(-2px);
   color: white;
 }

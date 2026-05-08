@@ -43,7 +43,13 @@ export default function Footer({ isStravaConnected = true }: FooterProps): React
             rel="noopener noreferrer"
             className={styles.stravaLink}
           >
-            <img src={poweredByStrava} alt="Powered by Strava" className={styles.stravaLogo} />
+            <img
+              src={poweredByStrava}
+              alt="Powered by Strava"
+              width="300"
+              height="56"
+              className={styles.stravaLogo}
+            />
           </a>
         </div>
 
@@ -55,7 +61,13 @@ export default function Footer({ isStravaConnected = true }: FooterProps): React
             className={styles.iconLink}
             aria-label="GitHub repository"
           >
-            <img src={githubIcon} alt="" className={`${styles.icon} ${styles.darkIcon}`} />
+            <img
+              src={githubIcon}
+              alt=""
+              width="18"
+              height="18"
+              className={`${styles.icon} ${styles.darkIcon}`}
+            />
             <span className={styles.srOnly}>GitHub</span>
           </a>
           <a
@@ -65,7 +77,13 @@ export default function Footer({ isStravaConnected = true }: FooterProps): React
             className={styles.iconLink}
             aria-label="X profile"
           >
-            <img src={xIcon} alt="" className={`${styles.icon} ${styles.darkIcon}`} />
+            <img
+              src={xIcon}
+              alt=""
+              width="18"
+              height="18"
+              className={`${styles.icon} ${styles.darkIcon}`}
+            />
             <span className={styles.srOnly}>X</span>
           </a>
           <a
@@ -75,7 +93,7 @@ export default function Footer({ isStravaConnected = true }: FooterProps): React
             className={styles.iconLink}
             aria-label="Verax Explorer"
           >
-            <img src={veraxLogo} alt="" className={styles.icon} />
+            <img src={veraxLogo} alt="" width="18" height="18" className={styles.icon} />
             <span className={styles.srOnly}>Verax Explorer</span>
           </a>
         </div>

@@ -2,9 +2,30 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import Header from '../../components/Header/Header';
 import Footer from '../../components/Footer/Footer';
+import { SITE_URL, usePageMetadata } from '@/hooks/usePageMetadata.ts';
 import styles from './About.module.css';
 
 export default function About(): React.JSX.Element {
+  usePageMetadata({
+    title: 'About Segment Attestations | Strava Segment Attestations',
+    description:
+      'Learn how Segment Attestations verifies completed Strava segments with OAuth, Verax attestations, and Linea onchain proofs.',
+    path: '/about',
+    schema: {
+      '@context': 'https://schema.org',
+      '@type': 'AboutPage',
+      name: 'About Segment Attestations',
+      url: `${SITE_URL}/about`,
+      description:
+        'Learn how Segment Attestations verifies completed Strava segments with OAuth, Verax attestations, and Linea onchain proofs.',
+      isPartOf: {
+        '@type': 'WebSite',
+        name: 'Strava Segment Attestations',
+        url: `${SITE_URL}/`,
+      },
+    },
+  });
+
   return (
     <>
       <Header isStravaConnected={false} />

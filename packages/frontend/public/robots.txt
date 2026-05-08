@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://strava-attestations.netlify.app/sitemap.xml
+Sitemap: https://strava.alainnicolas.fr/sitemap.xml

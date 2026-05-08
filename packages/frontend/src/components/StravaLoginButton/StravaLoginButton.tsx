@@ -12,7 +12,13 @@ export default function StravaLoginButton(): React.JSX.Element {
 
   return (
     <button onClick={handleLogin} className={styles.button}>
-      <img src={connectWithStrava} alt="Connect with Strava" className={styles.image} />
+      <img
+        src={connectWithStrava}
+        alt="Connect with Strava"
+        width="193"
+        height="48"
+        className={styles.image}
+      />
     </button>
   );
 }

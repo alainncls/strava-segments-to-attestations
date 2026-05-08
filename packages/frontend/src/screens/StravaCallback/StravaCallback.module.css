@@ -29,7 +29,7 @@
 
 .button {
   padding: 0.75rem 1.5rem;
-  background: var(--strava-orange);
+  background: var(--strava-orange-accessible);
   border: none;
   border-radius: 8px;
   color: white;
@@ -39,5 +39,5 @@
 }
 
 .button:hover {
-  background: var(--strava-orange-light);
+  background: var(--strava-orange-dark);
 }

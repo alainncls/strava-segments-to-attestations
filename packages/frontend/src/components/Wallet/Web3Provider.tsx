@@ -6,10 +6,9 @@ import { WagmiProvider } from 'wagmi';
 import { http } from 'viem';
 import { linea, lineaSepolia } from '@reown/appkit/networks';
 import type { AppKitNetwork } from '@reown/appkit/networks';
-import { WALLETCONNECT_PROJECT_ID, INFURA_API_KEY, IS_WALLET_CONFIGURED } from './utils/constants';
+import { WALLETCONNECT_PROJECT_ID, INFURA_API_KEY, IS_WALLET_CONFIGURED } from '@/utils/constants';
 
 const queryClient = new QueryClient();
-
 const projectId = WALLETCONNECT_PROJECT_ID;
 
 const metadata = {
@@ -19,9 +18,6 @@ const metadata = {
   icons: ['https://strava.alainnicolas.fr/favicon-dark.png'],
 };
 
-// Default network based on environment:
-// - Development: Linea Sepolia (testnet)
-// - Production: Linea Mainnet
 const isDev = import.meta.env.DEV;
 const defaultNetwork = isDev ? lineaSepolia : linea;
 const networks: [AppKitNetwork, ...AppKitNetwork[]] = isDev
@@ -41,7 +37,13 @@ const wagmiAdapter = new WagmiAdapter({
   },
 });
 
-if (IS_WALLET_CONFIGURED) {
+let appKitInitialized = false;
+
+function initializeAppKit(): void {
+  if (!IS_WALLET_CONFIGURED || appKitInitialized) {
+    return;
+  }
+
   createAppKit({
     adapters: [wagmiAdapter],
     networks,
@@ -62,17 +64,23 @@ if (IS_WALLET_CONFIGURED) {
       email: false,
     },
   });
+
+  appKitInitialized = true;
 }
 
-export const wagmiConfig = wagmiAdapter.wagmiConfig;
-
-interface Web3ModalProviderProps {
+interface Web3ProviderProps {
   children: ReactNode;
 }
 
-export function Web3ModalProvider({ children }: Web3ModalProviderProps): React.JSX.Element {
+export function Web3Provider({ children }: Web3ProviderProps): React.JSX.Element {
+  initializeAppKit();
+
+  if (!IS_WALLET_CONFIGURED) {
+    return <>{children}</>;
+  }
+
   return (
-    <WagmiProvider config={wagmiConfig}>
+    <WagmiProvider config={wagmiAdapter.wagmiConfig}>
       <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
     </WagmiProvider>
   );

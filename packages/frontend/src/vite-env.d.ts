@@ -5,6 +5,9 @@ interface ImportMetaEnv {
   readonly VITE_STRAVA_REDIRECT_URL: string;
   readonly VITE_API_URL: string;
   readonly VITE_WALLETCONNECT_PROJECT_ID: string;
+  readonly VITE_INFURA_API_KEY: string;
+  readonly VITE_INSIGHTS_ID: string;
+  readonly VITE_ENABLE_INSIGHTS: string;
 }
 
 interface ImportMeta {

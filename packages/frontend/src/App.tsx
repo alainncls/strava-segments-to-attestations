@@ -6,6 +6,7 @@ import Loader from './components/Loader/Loader';
 const Home = lazy(() => import('./screens/Home/Home'));
 const StravaCallback = lazy(() => import('./screens/StravaCallback/StravaCallback'));
 const About = lazy(() => import('./screens/About/About'));
+const NotFound = lazy(() => import('./screens/NotFound/NotFound'));
 
 function App(): React.JSX.Element {
   useInsights();
@@ -16,6 +17,7 @@ function App(): React.JSX.Element {
         <Route path="/" element={<Home />} />
         <Route path="/oauth" element={<StravaCallback />} />
         <Route path="/about" element={<About />} />
+        <Route path="*" element={<NotFound />} />
       </Routes>
     </Suspense>
   );
