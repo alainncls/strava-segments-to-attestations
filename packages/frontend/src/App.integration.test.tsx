@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import App from './App';
@@ -65,6 +65,14 @@ describe('App routing integration', () => {
 
     expect(await screen.findByRole('heading', { name: /authentication error/i })).toBeVisible();
     expect(screen.getByText(/invalid authorization state/i)).toBeVisible();
+    await waitFor(() => {
+      expect(document.querySelector('link[rel="canonical"]')?.getAttribute('href')).toBe(
+        'https://strava.alainnicolas.fr/oauth',
+      );
+    });
+    expect(document.querySelector('meta[name="robots"]')?.getAttribute('content')).toBe(
+      'noindex,nofollow',
+    );
   });
 
   it('rejects an OAuth callback with mismatched state', async () => {

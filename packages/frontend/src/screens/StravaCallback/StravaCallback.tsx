@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
+import { usePageMetadata } from '@/hooks/usePageMetadata.ts';
 import { useStravaAuth } from '@/hooks/useStravaAuth.ts';
 import { API_URL, STORAGE_KEYS } from '@/utils/constants.ts';
 import Loader from '../../components/Loader/Loader';
@@ -7,6 +8,13 @@ import Footer from '../../components/Footer/Footer';
 import styles from './StravaCallback.module.css';
 
 export default function StravaCallback(): React.JSX.Element {
+  usePageMetadata({
+    title: 'Strava OAuth Callback | Strava Segment Attestations',
+    description: 'Private Strava OAuth callback for Segment Attestations.',
+    path: '/oauth',
+    robots: 'noindex,nofollow',
+  });
+
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { setAuthFromCallback } = useStravaAuth();
