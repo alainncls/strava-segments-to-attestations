@@ -27,13 +27,13 @@
     "test:coverage": "pnpm -r test:coverage"
   },
   "devDependencies": {
-    "@eslint/js": "^10.0.1",
-    "@types/node": "catalog:",
+    "@eslint/js": "10.0.1",
+    "@types/node": "24.13.3",
     "eslint": "catalog:",
     "eslint-config-prettier": "catalog:",
     "globals": "catalog:",
     "prettier": "catalog:",
-    "prettier-plugin-solidity": "^2.3.1",
+    "prettier-plugin-solidity": "2.4.1",
     "typescript": "catalog:",
     "typescript-eslint": "catalog:"
   },
