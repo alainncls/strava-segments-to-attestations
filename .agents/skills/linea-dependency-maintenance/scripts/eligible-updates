@@ -61,9 +61,7 @@ function loadHolds(path) {
   const ceilings = new Map();
   for (const entry of parsed.holds) {
     if (!Array.isArray(entry?.packages) || !parseVersion(entry?.maxVersion)) {
-      throw new Error(
-        `${path}: entry is missing a valid "packages" list or "maxVersion"`,
-      );
+      throw new Error(`${path}: entry is missing a valid "packages" list or "maxVersion"`);
     }
     for (const name of entry.packages) ceilings.set(name, entry.maxVersion);
   }
@@ -154,8 +152,7 @@ function normalizeOutdated(raw) {
   if (Array.isArray(parsed)) {
     for (const item of parsed) rows.push(item);
   } else {
-    for (const [name, details] of Object.entries(parsed))
-      rows.push({ name, ...details });
+    for (const [name, details] of Object.entries(parsed)) rows.push({ name, ...details });
   }
 
   return rows
@@ -177,9 +174,7 @@ async function fetchMetadata(name) {
   const encoded = encodeURIComponent(name).replace('%40', '@');
   const response = await fetch(`https://registry.npmjs.org/${encoded}`);
   if (!response.ok) {
-    throw new Error(
-      `Could not fetch npm metadata for ${name}: ${response.status}`,
-    );
+    throw new Error(`Could not fetch npm metadata for ${name}: ${response.status}`);
   }
   return response.json();
 }
@@ -198,11 +193,9 @@ async function main() {
   const args = parseArgs(process.argv);
   const holds = loadHolds(args.holds);
   const manager = args.manager === 'auto' ? detectManager() : args.manager;
-  if (!['npm', 'pnpm'].includes(manager))
-    throw new Error('--manager must be auto, npm, or pnpm');
+  if (!['npm', 'pnpm'].includes(manager)) throw new Error('--manager must be auto, npm, or pnpm');
 
-  const windowMs =
-    args.minutes != null ? args.minutes * MINUTE_MS : args.days * DAY_MS;
+  const windowMs = args.minutes != null ? args.minutes * MINUTE_MS : args.days * DAY_MS;
   if (!Number.isFinite(windowMs) || windowMs < 0) {
     throw new Error('Release-age window must be a positive number');
   }
@@ -228,8 +221,7 @@ async function main() {
       .filter((version) => times[version] && new Date(times[version]) <= cutoff)
       .filter((version) => {
         if (!hold) return true;
-        if (hold.majorOnly)
-          return parseVersion(version).major <= parseVersion(hold.max).major;
+        if (hold.majorOnly) return parseVersion(version).major <= parseVersion(hold.max).major;
         return compareVersions(version, hold.max) <= 0;
       });
 
@@ -249,12 +241,8 @@ async function main() {
       latest,
       latestPublished: latest ? (times[latest] ?? '') : '',
       eligibleSameMajor,
-      eligibleSameMajorPublished: eligibleSameMajor
-        ? times[eligibleSameMajor]
-        : '',
-      eligibleSameMajorType: eligibleSameMajor
-        ? classify(current, eligibleSameMajor)
-        : '',
+      eligibleSameMajorPublished: eligibleSameMajor ? times[eligibleSameMajor] : '',
+      eligibleSameMajorType: eligibleSameMajor ? classify(current, eligibleSameMajor) : '',
       eligibleAny,
       eligibleAnyPublished: eligibleAny ? times[eligibleAny] : '',
       eligibleAnyType: eligibleAny ? classify(current, eligibleAny) : '',
