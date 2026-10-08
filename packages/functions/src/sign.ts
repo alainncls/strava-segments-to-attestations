@@ -11,6 +11,15 @@ import {
   STRAVA_API_BASE,
 } from '../lib/constants';
 import { getCorsHeaders, getEnvConfig } from '../lib/env';
+import {
+  assertRecord,
+  HttpError,
+  isUpstreamTimeout,
+  readJsonBody,
+  readUpstreamJson,
+  UpstreamStatusError,
+  upstreamSignal,
+} from '../lib/http';
 
 const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
 const RATE_LIMIT_MAX = 10;
@@ -44,16 +53,11 @@ async function getActivitySegments(
 ): Promise<StravaSegmentEffort[]> {
   const response = await fetch(`${STRAVA_API_BASE}/activities/${activityId}`, {
     headers: { Authorization: `Bearer ${accessToken}` },
+    signal: upstreamSignal(),
   });
 
-  if (!response.ok) {
-    const error: FetchError = new Error(`Strava API error: ${response.status}`);
-    error.status = response.status;
-    throw error;
-  }
-
-  const data = (await response.json()) as StravaActivityResponse;
-  return data.segment_efforts || [];
+  const data = assertRecord(await readUpstreamJson(response)) as StravaActivityResponse;
+  return Array.isArray(data.segment_efforts) ? data.segment_efforts : [];
 }
 
 async function signSegment(
@@ -138,10 +142,16 @@ export default async (req: Request, context: Context): Promise<Response> => {
   try {
     const config = getEnvConfig();
 
-    const body = (await req.json()) as SignRequestBody;
+    const body = assertRecord(await readJsonBody(req)) as SignRequestBody;
     const { accessToken, activityId, segmentId, subject, chainId } = body;
 
-    if (!accessToken || !activityId || !segmentId || !subject || !chainId) {
+    if (
+      !accessToken ||
+      !activityId ||
+      segmentId === undefined ||
+      !subject ||
+      chainId === undefined
+    ) {
       return new Response(JSON.stringify({ error: 'Missing required parameters' }), {
         status: 400,
         headers,
@@ -149,21 +159,36 @@ export default async (req: Request, context: Context): Promise<Response> => {
     }
 
     // Validate activityId is a numeric string (defensive: avoid URL manipulation)
-    if (!/^\d+$/.test(activityId)) {
-      return new Response(JSON.stringify({ error: 'Invalid activityId format' }), {
+    if (
+      typeof activityId !== 'string' ||
+      !/^[1-9]\d*$/.test(activityId) ||
+      !Number.isSafeInteger(Number(activityId))
+    ) {
+      return new Response(JSON.stringify({ error: 'Invalid activityId' }), {
         status: 400,
         headers,
       });
     }
 
-    if (!/^0x[a-fA-F0-9]{40}$/.test(subject)) {
+    if (typeof segmentId !== 'number' || !Number.isSafeInteger(segmentId) || segmentId <= 0) {
+      return new Response(JSON.stringify({ error: 'Invalid segmentId' }), {
+        status: 400,
+        headers,
+      });
+    }
+
+    if (typeof subject !== 'string' || !/^0x[a-fA-F0-9]{40}$/.test(subject)) {
       return new Response(JSON.stringify({ error: 'Invalid subject address' }), {
         status: 400,
         headers,
       });
     }
 
-    if (chainId !== linea.id && chainId !== lineaSepolia.id) {
+    if (
+      typeof chainId !== 'number' ||
+      !Number.isSafeInteger(chainId) ||
+      (chainId !== linea.id && chainId !== lineaSepolia.id)
+    ) {
       return new Response(JSON.stringify({ error: 'Invalid chainId' }), {
         status: 400,
         headers,
@@ -183,6 +208,12 @@ export default async (req: Request, context: Context): Promise<Response> => {
     const isMainnet = chainId === linea.id;
     const chain = isMainnet ? linea : lineaSepolia;
     const completionDate = Math.floor(new Date(segmentEffort.start_date).getTime() / 1000);
+    if (!Number.isSafeInteger(completionDate) || completionDate <= 0) {
+      return new Response(JSON.stringify({ error: 'Invalid activity date' }), {
+        status: 502,
+        headers,
+      });
+    }
     const deadline = Math.floor(Date.now() / 1000) + SIGNATURE_TTL_SECONDS;
 
     const walletClient = createWalletClient({
@@ -219,9 +250,38 @@ export default async (req: Request, context: Context): Promise<Response> => {
       message: error instanceof Error ? error.message : 'Unknown error',
     });
 
-    if (status === 401) {
+    if (error instanceof HttpError) {
+      return new Response(JSON.stringify(error.payload), {
+        status: error.status,
+        headers,
+      });
+    }
+
+    if (isUpstreamTimeout(error)) {
+      return new Response(JSON.stringify({ error: 'Upstream request timed out' }), {
+        status: 504,
+        headers,
+      });
+    }
+
+    const upstreamStatus = error instanceof UpstreamStatusError ? error.status : status;
+    if (upstreamStatus === 401) {
       return new Response(JSON.stringify({ error: 'Invalid Strava token', tokenExpired: true }), {
         status: 401,
+        headers,
+      });
+    }
+
+    if (upstreamStatus === 429) {
+      return new Response(JSON.stringify({ error: 'Upstream rate limited' }), {
+        status: 429,
+        headers,
+      });
+    }
+
+    if (upstreamStatus) {
+      return new Response(JSON.stringify({ error: 'Upstream request failed' }), {
+        status: 502,
         headers,
       });
     }

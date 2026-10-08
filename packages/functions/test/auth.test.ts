@@ -123,4 +123,110 @@ describe('auth handler', () => {
     expect(response.status).toBe(405);
     expect(fetchMock).not.toHaveBeenCalled();
   });
+
+  it.each([
+    ['null', 'null'],
+    ['array', '[]'],
+    ['string', '"token"'],
+  ])('rejects a %s body before token exchange', async (_label, rawBody) => {
+    const fetchMock = vi.fn();
+    vi.stubGlobal('fetch', fetchMock);
+
+    const response = await authHandler(
+      new Request('https://functions.example.com/auth', {
+        method: 'POST',
+        headers: {
+          'content-type': 'application/json',
+          origin: 'https://app.example.com',
+        },
+        body: rawBody,
+      }),
+      createContext(`198.51.100.${rawBody.length}`),
+    );
+
+    await expect(response.json()).resolves.toEqual({ error: 'Invalid request body' });
+    expect(response.status).toBe(400);
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it('rejects an oversized auth payload before token exchange', async () => {
+    const fetchMock = vi.fn();
+    vi.stubGlobal('fetch', fetchMock);
+    const rawBody = JSON.stringify({ code: 'c'.repeat(9_000), state: 'state' });
+
+    const response = await authHandler(
+      new Request('https://functions.example.com/auth', {
+        method: 'POST',
+        headers: {
+          'content-type': 'application/json',
+          origin: 'https://app.example.com',
+          cookie: 'strava_oauth_state=state',
+        },
+        body: rawBody,
+      }),
+      createContext('198.51.100.20'),
+    );
+
+    await expect(response.json()).resolves.toEqual({ error: 'Payload too large' });
+    expect(response.status).toBe(400);
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it('maps token-exchange timeout and cancellation to 504', async () => {
+    const timeoutSpy = vi.spyOn(AbortSignal, 'timeout');
+    const fetchMock = vi
+      .fn()
+      .mockRejectedValueOnce(new DOMException('timeout', 'TimeoutError'))
+      .mockRejectedValueOnce(new DOMException('aborted', 'AbortError'));
+    vi.stubGlobal('fetch', fetchMock);
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+
+    const timeoutResponse = await authHandler(
+      createAuthRequest({ code: 'oauth-code', state: 'state' }, 'strava_oauth_state=state'),
+      createContext('198.51.100.21'),
+    );
+    const cancelResponse = await authHandler(
+      createAuthRequest({ code: 'oauth-code', state: 'state' }, 'strava_oauth_state=state'),
+      createContext('198.51.100.22'),
+    );
+
+    expect(timeoutResponse.status).toBe(504);
+    expect(cancelResponse.status).toBe(504);
+    await expect(timeoutResponse.json()).resolves.toEqual({ error: 'Upstream request timed out' });
+    expect(timeoutSpy).toHaveBeenCalledWith(8_000);
+    expect(JSON.stringify(errorSpy.mock.calls)).not.toContain('client-secret');
+    expect(JSON.stringify(errorSpy.mock.calls)).not.toContain('oauth-code');
+  });
+
+  it.each([
+    [401, 401, { error: 'Invalid or expired token' }],
+    [403, 502, { error: 'Upstream request failed' }],
+    [429, 429, { error: 'Upstream rate limited' }],
+  ])(
+    'maps token-exchange status %s without leaking secrets',
+    async (upstreamStatus, status, expected) => {
+      const fetchMock = vi.fn().mockResolvedValue(
+        new Response(
+          JSON.stringify({ error: 'nope', client_secret: 'client-secret', code: 'oauth-code' }),
+          {
+            status: upstreamStatus,
+          },
+        ),
+      );
+      vi.stubGlobal('fetch', fetchMock);
+      const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+
+      const response = await authHandler(
+        createAuthRequest({ code: 'oauth-code', state: 'state' }, 'strava_oauth_state=state'),
+        createContext(`198.51.100.${upstreamStatus}`),
+      );
+
+      const body = (await response.json()) as Record<string, unknown>;
+
+      expect(response.status).toBe(status);
+      expect(body).toEqual(expected);
+      expect(JSON.stringify(errorSpy.mock.calls)).not.toContain('client-secret');
+      expect(JSON.stringify(body)).not.toContain('oauth-code');
+    },
+  );
 });
