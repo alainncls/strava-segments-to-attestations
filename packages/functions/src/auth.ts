@@ -12,25 +12,17 @@ import {
   UpstreamStatusError,
   upstreamSignal,
 } from '../lib/http';
+import { createRateLimiter } from './rateLimiter';
 
 const OAUTH_STATE_COOKIE = 'strava_oauth_state';
-const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
 const RATE_LIMIT_MAX = 20; // requests per window
 const RATE_LIMIT_WINDOW = 60_000; // 1 minute
 const OAUTH_STATE_MAX_AGE_SECONDS = 10 * 60;
-
-function isRateLimited(ip: string): boolean {
-  const now = Date.now();
-  const entry = rateLimitMap.get(ip);
-
-  if (!entry || entry.resetAt < now) {
-    rateLimitMap.set(ip, { count: 1, resetAt: now + RATE_LIMIT_WINDOW });
-    return false;
-  }
-
-  entry.count++;
-  return entry.count > RATE_LIMIT_MAX;
-}
+const authRateLimiter = createRateLimiter({
+  limit: RATE_LIMIT_MAX,
+  windowMs: RATE_LIMIT_WINDOW,
+  maxEntries: 10_000,
+});
 
 interface FetchError extends Error {
   status?: number;
@@ -131,10 +123,11 @@ export default async (req: Request, context: Context): Promise<Response> => {
 
   // Rate limiting
   const clientIp = context.ip ?? 'unknown';
-  if (isRateLimited(clientIp)) {
+  const rateLimit = authRateLimiter.consume(clientIp);
+  if (!rateLimit.allowed) {
     return new Response(JSON.stringify({ error: 'Too many requests' }), {
       status: 429,
-      headers: { ...headers, 'Retry-After': '60' },
+      headers: { ...headers, 'Retry-After': String(rateLimit.retryAfterSeconds) },
     });
   }
 

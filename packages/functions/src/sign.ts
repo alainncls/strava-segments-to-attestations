@@ -20,24 +20,16 @@ import {
   UpstreamStatusError,
   upstreamSignal,
 } from '../lib/http';
+import { createRateLimiter } from './rateLimiter';
 
-const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
 const RATE_LIMIT_MAX = 10;
 const RATE_LIMIT_WINDOW = 60_000;
 const SIGNATURE_TTL_SECONDS = 10 * 60;
-
-function isRateLimited(ip: string): boolean {
-  const now = Date.now();
-  const entry = rateLimitMap.get(ip);
-
-  if (!entry || entry.resetAt < now) {
-    rateLimitMap.set(ip, { count: 1, resetAt: now + RATE_LIMIT_WINDOW });
-    return false;
-  }
-
-  entry.count++;
-  return entry.count > RATE_LIMIT_MAX;
-}
+const signRateLimiter = createRateLimiter({
+  limit: RATE_LIMIT_MAX,
+  windowMs: RATE_LIMIT_WINDOW,
+  maxEntries: 10_000,
+});
 
 interface FetchError extends Error {
   status?: number;
@@ -170,10 +162,11 @@ export default async (req: Request, context: Context): Promise<Response> => {
   }
 
   const clientIp = context.ip ?? 'unknown';
-  if (isRateLimited(clientIp)) {
+  const rateLimit = signRateLimiter.consume(clientIp);
+  if (!rateLimit.allowed) {
     return new Response(JSON.stringify({ error: 'Too many requests' }), {
       status: 429,
-      headers: { ...headers, 'Retry-After': '60' },
+      headers: { ...headers, 'Retry-After': String(rateLimit.retryAfterSeconds) },
     });
   }
 
