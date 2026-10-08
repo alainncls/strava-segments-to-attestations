@@ -3,6 +3,15 @@ import { randomBytes } from 'node:crypto';
 import type { StravaTokenResponse } from '../lib/types';
 import { STRAVA_TOKEN_URL } from '../lib/constants';
 import { getEnvConfig, getCorsHeaders } from '../lib/env';
+import {
+  assertRecord,
+  HttpError,
+  isUpstreamTimeout,
+  readJsonBody,
+  readUpstreamJson,
+  UpstreamStatusError,
+  upstreamSignal,
+} from '../lib/http';
 
 const OAUTH_STATE_COOKIE = 'strava_oauth_state';
 const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
@@ -46,15 +55,10 @@ async function exchangeCodeForToken(
     method: 'POST',
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
     body: params,
+    signal: upstreamSignal(),
   });
 
-  if (!response.ok) {
-    const error: FetchError = new Error(`Strava API error: ${response.status}`);
-    error.status = response.status;
-    throw error;
-  }
-
-  return response.json() as Promise<StravaTokenResponse>;
+  return (await readUpstreamJson(response)) as StravaTokenResponse;
 }
 
 interface AuthRequestBody {
@@ -138,12 +142,15 @@ export default async (req: Request, context: Context): Promise<Response> => {
     let body: AuthRequestBody;
 
     try {
-      body = (await req.json()) as AuthRequestBody;
-    } catch {
-      return new Response(JSON.stringify({ error: 'Invalid JSON body' }), {
-        status: 400,
-        headers,
-      });
+      body = assertRecord(await readJsonBody(req)) as AuthRequestBody;
+    } catch (error) {
+      if (error instanceof HttpError) {
+        return new Response(JSON.stringify(error.payload), {
+          status: error.status,
+          headers,
+        });
+      }
+      throw error;
     }
 
     if (body.action === 'start') {
@@ -196,9 +203,38 @@ export default async (req: Request, context: Context): Promise<Response> => {
       message: error instanceof Error ? error.message : 'Unknown error',
     });
 
-    if (status === 401) {
+    if (error instanceof HttpError) {
+      return new Response(JSON.stringify(error.payload), {
+        status: error.status,
+        headers,
+      });
+    }
+
+    if (isUpstreamTimeout(error)) {
+      return new Response(JSON.stringify({ error: 'Upstream request timed out' }), {
+        status: 504,
+        headers,
+      });
+    }
+
+    const upstreamStatus = error instanceof UpstreamStatusError ? error.status : status;
+    if (upstreamStatus === 401) {
       return new Response(JSON.stringify({ error: 'Invalid or expired token' }), {
         status: 401,
+        headers,
+      });
+    }
+
+    if (upstreamStatus === 429) {
+      return new Response(JSON.stringify({ error: 'Upstream rate limited' }), {
+        status: 429,
+        headers,
+      });
+    }
+
+    if (upstreamStatus) {
+      return new Response(JSON.stringify({ error: 'Upstream request failed' }), {
+        status: 502,
         headers,
       });
     }

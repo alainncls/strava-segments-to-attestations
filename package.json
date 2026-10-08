@@ -14,7 +14,7 @@
   "author": "alain.linea.eth",
   "type": "module",
   "scripts": {
-    "build": "pnpm -r build",
+    "build": "pnpm -r --workspace-concurrency=1 run build",
     "clean": "pnpm -r clean && rm -rf node_modules",
     "dev": "pnpm -r --parallel run dev",
     "format": "prettier --check .",
