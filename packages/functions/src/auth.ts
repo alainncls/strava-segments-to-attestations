@@ -78,7 +78,11 @@ function parseCookies(cookieHeader: string | null): Map<string, string> {
     if (!name || valueParts.length === 0) {
       continue;
     }
-    cookies.set(name, decodeURIComponent(valueParts.join('=')));
+    try {
+      cookies.set(name, decodeURIComponent(valueParts.join('=')));
+    } catch {
+      throw new HttpError(400, 'Invalid cookie');
+    }
   }
 
   return cookies;

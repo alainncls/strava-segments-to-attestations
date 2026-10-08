@@ -70,6 +70,8 @@ export function getCorsHeaders(origin?: string): Record<string, string> {
     'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
     'Access-Control-Allow-Headers': 'Content-Type, Authorization',
     'Access-Control-Allow-Credentials': 'true',
+    'Cache-Control': 'no-store',
     'Content-Type': 'application/json',
+    Vary: 'Origin',
   };
 }

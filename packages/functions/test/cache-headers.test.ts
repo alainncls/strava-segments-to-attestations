@@ -159,7 +159,7 @@ describe('production CORS and auth cache headers', () => {
   });
 
   it('returns a token once, clears the state cookie, and does not return the refresh token', async () => {
-    const fetchMock = vi.fn().mockResolvedValue(tokenResponse());
+    const fetchMock = vi.fn().mockImplementation(tokenResponse);
     vi.stubGlobal('fetch', fetchMock);
 
     const response = await authHandler(
@@ -204,7 +204,7 @@ describe('production CORS and auth cache headers', () => {
   });
 
   it('documents that resending an uncleared state cookie can exchange again', async () => {
-    const fetchMock = vi.fn().mockResolvedValue(tokenResponse());
+    const fetchMock = vi.fn().mockImplementation(tokenResponse);
     vi.stubGlobal('fetch', fetchMock);
 
     const first = await authHandler(
