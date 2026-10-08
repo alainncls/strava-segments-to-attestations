@@ -1,5 +1,5 @@
 import type { Context } from '@netlify/functions';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, type Mock, vi } from 'vitest';
 import { verifyTypedData, type Address, type Hex } from 'viem';
 import { privateKeyToAccount } from 'viem/accounts';
 import signHandler from '../src/sign';
@@ -96,6 +96,7 @@ function validBody(overrides: Record<string, unknown> = {}): Record<string, unkn
 function activityResponse(startDate: unknown = '2024-06-15T12:34:56Z', segmentId = 678): Response {
   return new Response(
     JSON.stringify({
+      athlete: { id: 123 },
       segment_efforts: [
         {
           id: 1,
@@ -106,6 +107,24 @@ function activityResponse(startDate: unknown = '2024-06-15T12:34:56Z', segmentId
       ],
     }),
     { status: 200, headers: { 'content-type': 'application/json' } },
+  );
+}
+
+function athleteResponse(id: unknown = 123): Response {
+  return new Response(JSON.stringify({ id }), {
+    status: 200,
+    headers: { 'content-type': 'application/json' },
+  });
+}
+
+type StravaFetchMock = Mock<(input: RequestInfo | URL) => Promise<Response>>;
+
+function createStravaFetch(
+  activity: Response,
+  athlete: Response = athleteResponse(),
+): StravaFetchMock {
+  return vi.fn((input: RequestInfo | URL) =>
+    Promise.resolve(String(input).endsWith('/athlete') ? athlete : activity),
   );
 }
 
@@ -134,7 +153,7 @@ describe('sign handler', () => {
   });
 
   it('signs a valid mainnet request with the VerifyStrava EIP-712 domain', async () => {
-    const fetchMock = vi.fn().mockResolvedValue(activityResponse());
+    const fetchMock = createStravaFetch(activityResponse());
     vi.stubGlobal('fetch', fetchMock);
     const timeoutSpy = vi.spyOn(AbortSignal, 'timeout');
 
@@ -159,8 +178,14 @@ describe('sign handler', () => {
         signal: expect.any(AbortSignal),
       }),
     );
-    const calledUrl = String(fetchMock.mock.calls[0]?.[0]);
-    expect(calledUrl).not.toContain(ACCESS_TOKEN);
+    expect(fetchMock).toHaveBeenCalledWith(
+      'https://www.strava.com/api/v3/athlete',
+      expect.objectContaining({
+        headers: { Authorization: `Bearer ${ACCESS_TOKEN}` },
+        signal: expect.any(AbortSignal),
+      }),
+    );
+    expect(fetchMock.mock.calls.every(([url]) => !String(url).includes(ACCESS_TOKEN))).toBe(true);
 
     await expect(
       verifyTypedData({
@@ -209,7 +234,7 @@ describe('sign handler', () => {
 
   it('signs a valid Sepolia request against the Sepolia portal', async () => {
     const subject = '0xabcdef1234567890abcdef1234567890abcdef12' as Address;
-    const fetchMock = vi.fn().mockResolvedValue(activityResponse());
+    const fetchMock = createStravaFetch(activityResponse());
     vi.stubGlobal('fetch', fetchMock);
 
     const response = await signHandler(
@@ -247,6 +272,50 @@ describe('sign handler', () => {
     expect(lineaSepolia.id).toBe(59141);
     expect(PORTAL_ID_SEPOLIA).toBe('0xc04228f66b1aa75a2a8f6887730f55b54281e9d9');
   });
+
+  it('rejects a public activity that belongs to a different Strava athlete', async () => {
+    const fetchMock = createStravaFetch(
+      new Response(
+        JSON.stringify({
+          athlete: { id: 456 },
+          segment_efforts: [
+            {
+              segment: { id: 678 },
+              start_date: '2024-06-15T12:34:56Z',
+            },
+          ],
+        }),
+        { status: 200, headers: { 'content-type': 'application/json' } },
+      ),
+    );
+    vi.stubGlobal('fetch', fetchMock);
+
+    const response = await signHandler(createSignRequest(validBody()), createContext());
+    const body = (await response.json()) as Record<string, unknown>;
+
+    expect(response.status).toBe(403);
+    expect(body).toEqual({ error: 'Activity does not belong to authenticated athlete' });
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expectNoSignature(body);
+  });
+
+  it.each(['missing', null, '123', 0, Number.MAX_SAFE_INTEGER + 1])(
+    'fails closed when the authenticated Strava profile ID is invalid: %s',
+    async (athleteId) => {
+      const profile =
+        athleteId === 'missing' ? new Response('{}', { status: 200 }) : athleteResponse(athleteId);
+      const fetchMock = createStravaFetch(activityResponse(), profile);
+      vi.stubGlobal('fetch', fetchMock);
+
+      const response = await signHandler(createSignRequest(validBody()), createContext());
+      const body = (await response.json()) as Record<string, unknown>;
+
+      expect(response.status).toBe(502);
+      expect(body).toEqual({ error: 'Invalid Strava profile response' });
+      expect(fetchMock).toHaveBeenCalledOnce();
+      expectNoSignature(body);
+    },
+  );
 
   it.each([
     ['null', 'null'],
@@ -363,7 +432,7 @@ describe('sign handler', () => {
   });
 
   it('rejects an invalid upstream date with 502 and does not sign', async () => {
-    const fetchMock = vi.fn().mockResolvedValue(activityResponse('not-a-date'));
+    const fetchMock = createStravaFetch(activityResponse('not-a-date'));
     vi.stubGlobal('fetch', fetchMock);
     const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
 
@@ -372,7 +441,7 @@ describe('sign handler', () => {
 
     expect(response.status).toBe(502);
     expect(body).toEqual({ error: 'Invalid activity date' });
-    expect(fetchMock).toHaveBeenCalledOnce();
+    expect(fetchMock).toHaveBeenCalledTimes(2);
     expectNoSignature(body);
     expect(JSON.stringify(errorSpy.mock.calls)).not.toContain(ACCESS_TOKEN);
   });
@@ -446,7 +515,7 @@ describe('sign handler', () => {
   });
 
   it('returns 404 and does not sign when the segment is absent', async () => {
-    const fetchMock = vi.fn().mockResolvedValue(activityResponse('2024-06-15T12:34:56Z', 999));
+    const fetchMock = createStravaFetch(activityResponse('2024-06-15T12:34:56Z', 999));
     vi.stubGlobal('fetch', fetchMock);
 
     const response = await signHandler(createSignRequest(validBody()), createContext());
