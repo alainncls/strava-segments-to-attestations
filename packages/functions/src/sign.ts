@@ -44,19 +44,57 @@ interface FetchError extends Error {
 }
 
 interface StravaActivityResponse {
+  athlete?: { id?: unknown };
   segment_efforts?: StravaSegmentEffort[];
+}
+
+interface StravaAthleteResponse {
+  id?: unknown;
+}
+
+async function getAuthenticatedAthleteId(accessToken: string): Promise<number> {
+  const response = await fetch(`${STRAVA_API_BASE}/athlete`, {
+    headers: { Authorization: `Bearer ${accessToken}` },
+    signal: upstreamSignal(),
+  });
+  const data: unknown = await readUpstreamJson(response);
+  if (typeof data !== 'object' || data === null || Array.isArray(data)) {
+    throw new HttpError(502, 'Invalid Strava profile response');
+  }
+
+  const athleteId = (data as StravaAthleteResponse).id;
+  if (!Number.isSafeInteger(athleteId) || typeof athleteId !== 'number' || athleteId <= 0) {
+    throw new HttpError(502, 'Invalid Strava profile response');
+  }
+  return athleteId;
 }
 
 async function getActivitySegments(
   accessToken: string,
   activityId: string,
+  authenticatedAthleteId: number,
 ): Promise<StravaSegmentEffort[]> {
   const response = await fetch(`${STRAVA_API_BASE}/activities/${activityId}`, {
     headers: { Authorization: `Bearer ${accessToken}` },
     signal: upstreamSignal(),
   });
 
-  const data = assertRecord(await readUpstreamJson(response)) as StravaActivityResponse;
+  const rawData: unknown = await readUpstreamJson(response);
+  if (typeof rawData !== 'object' || rawData === null || Array.isArray(rawData)) {
+    throw new HttpError(502, 'Invalid Strava activity response');
+  }
+  const data = rawData as StravaActivityResponse;
+  const activityAthleteId = data.athlete?.id;
+  if (
+    typeof activityAthleteId !== 'number' ||
+    !Number.isSafeInteger(activityAthleteId) ||
+    activityAthleteId <= 0
+  ) {
+    throw new HttpError(502, 'Invalid Strava activity response');
+  }
+  if (activityAthleteId !== authenticatedAthleteId) {
+    throw new HttpError(403, 'Activity does not belong to authenticated athlete');
+  }
   return Array.isArray(data.segment_efforts) ? data.segment_efforts : [];
 }
 
@@ -146,7 +184,8 @@ export default async (req: Request, context: Context): Promise<Response> => {
     const { accessToken, activityId, segmentId, subject, chainId } = body;
 
     if (
-      !accessToken ||
+      typeof accessToken !== 'string' ||
+      accessToken.length === 0 ||
       !activityId ||
       segmentId === undefined ||
       !subject ||
@@ -195,7 +234,8 @@ export default async (req: Request, context: Context): Promise<Response> => {
       });
     }
 
-    const segments = await getActivitySegments(accessToken, activityId);
+    const authenticatedAthleteId = await getAuthenticatedAthleteId(accessToken);
+    const segments = await getActivitySegments(accessToken, activityId, authenticatedAthleteId);
     const segmentEffort = segments.find((s) => s.segment.id === segmentId);
 
     if (!segmentEffort) {

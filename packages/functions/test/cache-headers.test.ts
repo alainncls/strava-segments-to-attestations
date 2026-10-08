@@ -320,20 +320,26 @@ describe('production CORS and auth cache headers', () => {
   });
 
   it('marks sign preflight, error, and success responses non-cacheable', async () => {
-    const fetchMock = vi.fn().mockResolvedValue(
-      new Response(
-        JSON.stringify({
-          segment_efforts: [
-            {
-              id: 1,
-              segment: { id: 678, name: 'Col', activity_type: 'Ride', distance: 1 },
-              elapsed_time: 10,
-              start_date: '2024-06-15T12:34:56Z',
-            },
-          ],
-        }),
-        { status: 200, headers: { 'content-type': 'application/json' } },
-      ),
+    const activity = new Response(
+      JSON.stringify({
+        athlete: { id: 123 },
+        segment_efforts: [
+          {
+            id: 1,
+            segment: { id: 678, name: 'Col', activity_type: 'Ride', distance: 1 },
+            elapsed_time: 10,
+            start_date: '2024-06-15T12:34:56Z',
+          },
+        ],
+      }),
+      { status: 200, headers: { 'content-type': 'application/json' } },
+    );
+    const profile = new Response(JSON.stringify({ id: 123 }), {
+      status: 200,
+      headers: { 'content-type': 'application/json' },
+    });
+    const fetchMock = vi.fn((input: RequestInfo | URL) =>
+      Promise.resolve(String(input).endsWith('/athlete') ? profile : activity),
     );
     vi.stubGlobal('fetch', fetchMock);
 
