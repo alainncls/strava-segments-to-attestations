@@ -8,10 +8,17 @@ import { AttestationPayload } from "@verax-attestation-registry/verax-contracts/
  * @notice Minimal mock for testing
  */
 contract MockAttestationRegistry {
+    bool public failAttest;
+
+    function setFailAttest(bool shouldFail) external {
+        failAttest = shouldFail;
+    }
+
     function attest(
         AttestationPayload memory /*attestationPayload*/,
         address /*attester*/
     ) external payable returns (bytes32) {
+        require(!failAttest, "Mock attest failure");
         return keccak256(abi.encodePacked(block.timestamp, msg.sender));
     }
 
@@ -112,5 +119,18 @@ contract MockRouter {
 
     function getAttestationRegistry() external view returns (address) {
         return address(attestationRegistry);
+    }
+}
+
+/** Test-only owner account whose payable receiver rejects withdrawals. */
+contract MockRejectingPortalOwner {
+    bool public lastCallSucceeded;
+
+    function executeWithdraw(address portal) external {
+        (lastCallSucceeded, ) = portal.call(abi.encodeWithSignature("withdraw()"));
+    }
+
+    receive() external payable {
+        revert("Mock owner rejects funds");
     }
 }
