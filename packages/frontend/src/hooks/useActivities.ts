@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { STRAVA_API_BASE } from '../utils/constants';
 import type { Activity, ActivityDetails, Segment } from '../types';
 
@@ -18,6 +18,7 @@ interface UseActivitiesReturn {
 export function useActivities(
   isAuthenticated: boolean,
   refreshTokenIfNeeded: () => Promise<string | null>,
+  accountId?: number,
 ): UseActivitiesReturn {
   const [activities, setActivities] = useState<Activity[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -25,6 +26,9 @@ export function useActivities(
   const [loadingActivityId, setLoadingActivityId] = useState<number | undefined>();
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
+  const requestEpoch = useRef(0);
+  const session = useRef({ isAuthenticated, accountId });
+  const loadingMore = useRef(false);
 
   // Fetch segments for a single activity
   const fetchSegmentsForActivity = useCallback(
@@ -34,8 +38,7 @@ export function useActivities(
       });
 
       if (!response.ok) {
-        console.error('Failed to fetch activity details');
-        return [];
+        throw new Error(`Failed to fetch activity details (${response.status})`);
       }
 
       const data: ActivityDetails = await response.json();
@@ -64,17 +67,19 @@ export function useActivities(
   // Pre-fetch segments for the first N activities
   const prefetchSegments = useCallback(
     async (activitiesToEnrich: Activity[], token: string): Promise<void> => {
+      const epoch = requestEpoch.current;
       const enriched = await Promise.all(
         activitiesToEnrich.slice(0, PREFETCH_COUNT).map(async (activity) => {
           try {
             const segments = await fetchSegmentsForActivity(activity.id, token);
             return { ...activity, segments, segmentsLoaded: true };
           } catch {
-            // Mark as loaded even on error to avoid retry loops
-            return { ...activity, segments: [], segmentsLoaded: true };
+            return { ...activity, segments: [], segmentsLoaded: false };
           }
         }),
       );
+
+      if (epoch !== requestEpoch.current) return;
 
       const enrichedById = new Map(enriched.map((activity) => [activity.id, activity]));
 
@@ -90,9 +95,10 @@ export function useActivities(
 
   // Fetch activities when authenticated
   const fetchActivities = useCallback(
-    async (pageNum: number, append: boolean = false): Promise<void> => {
+    async (pageNum: number, append: boolean = false): Promise<boolean> => {
+      const epoch = requestEpoch.current;
       const token = await refreshTokenIfNeeded();
-      if (!token) return;
+      if (!token || epoch !== requestEpoch.current || !isAuthenticated) return false;
 
       if (append) {
         setIsLoadingMore(true);
@@ -110,10 +116,11 @@ export function useActivities(
 
         if (!response.ok) {
           console.error('Failed to fetch activities');
-          return;
+          return false;
         }
 
         const data = await response.json();
+        if (epoch !== requestEpoch.current) return false;
 
         const newActivities: Activity[] = data.map(
           (a: {
@@ -135,7 +142,13 @@ export function useActivities(
         setHasMore(newActivities.length === ACTIVITIES_PER_PAGE);
 
         if (append) {
-          setActivities((prev) => [...prev, ...newActivities]);
+          setActivities((prev) => {
+            const merged = new Map(prev.map((activity) => [activity.id, activity]));
+            for (const activity of newActivities) {
+              if (!merged.has(activity.id)) merged.set(activity.id, activity);
+            }
+            return Array.from(merged.values());
+          });
         } else {
           setActivities(newActivities);
         }
@@ -144,27 +157,47 @@ export function useActivities(
         if (!append && newActivities.length > 0) {
           prefetchSegments(newActivities, token);
         }
+        return true;
       } catch (error) {
         console.error('Failed to fetch activities:', error);
+        return false;
       } finally {
-        setIsLoading(false);
-        setIsLoadingMore(false);
+        if (epoch === requestEpoch.current) {
+          setIsLoading(false);
+          setIsLoadingMore(false);
+        }
       }
     },
-    [refreshTokenIfNeeded, prefetchSegments],
+    [isAuthenticated, refreshTokenIfNeeded, prefetchSegments],
   );
 
   useEffect(() => {
-    if (isAuthenticated) {
-      fetchActivities(1, false);
+    const previous = session.current;
+    if (previous.isAuthenticated !== isAuthenticated || previous.accountId !== accountId) {
+      requestEpoch.current += 1;
+      loadingMore.current = false;
+      setActivities([]);
+      setPage(1);
+      setHasMore(true);
+      setIsLoading(false);
+      setIsLoadingMore(false);
+      setLoadingActivityId(undefined);
+      session.current = { isAuthenticated, accountId };
     }
-  }, [isAuthenticated, fetchActivities]);
+
+    if (isAuthenticated) void fetchActivities(1, false);
+  }, [isAuthenticated, accountId, fetchActivities]);
 
   const handleLoadMore = useCallback(async (): Promise<void> => {
+    if (loadingMore.current || !hasMore) return;
+    loadingMore.current = true;
     const nextPage = page + 1;
-    setPage(nextPage);
-    await fetchActivities(nextPage, true);
-  }, [page, fetchActivities]);
+    try {
+      if (await fetchActivities(nextPage, true)) setPage(nextPage);
+    } finally {
+      loadingMore.current = false;
+    }
+  }, [page, fetchActivities, hasMore]);
 
   const handleActivityClick = useCallback(
     async (activityId: number): Promise<Activity | undefined> => {
@@ -177,13 +210,15 @@ export function useActivities(
       }
 
       // Fetch segments for this activity
+      const epoch = requestEpoch.current;
       const token = await refreshTokenIfNeeded();
-      if (!token) return undefined;
+      if (!token || epoch !== requestEpoch.current || !isAuthenticated) return undefined;
 
       setLoadingActivityId(activityId);
 
       try {
         const segments = await fetchSegmentsForActivity(activityId, token);
+        if (epoch !== requestEpoch.current) return undefined;
 
         // Update activity with segments
         const updatedActivity = { ...activity, segments, segmentsLoaded: true };
@@ -193,10 +228,10 @@ export function useActivities(
         console.error('Failed to fetch segments:', error);
         return undefined;
       } finally {
-        setLoadingActivityId(undefined);
+        if (epoch === requestEpoch.current) setLoadingActivityId(undefined);
       }
     },
-    [activities, refreshTokenIfNeeded, fetchSegmentsForActivity],
+    [activities, isAuthenticated, refreshTokenIfNeeded, fetchSegmentsForActivity],
   );
 
   return {

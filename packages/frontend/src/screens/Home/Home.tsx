@@ -55,7 +55,7 @@ export default function Home(): React.JSX.Element {
     hasMore,
     handleLoadMore,
     handleActivityClick,
-  } = useActivities(isAuthenticated, refreshTokenIfNeeded);
+  } = useActivities(isAuthenticated, refreshTokenIfNeeded, auth.athlete?.id);
 
   const [selectedActivity, setSelectedActivity] = useState<Activity | undefined>();
   const [showModal, setShowModal] = useState(false);
