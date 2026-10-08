@@ -27,4 +27,12 @@ contract StravaPortalHarness is StravaPortal {
     ) external view returns (bool) {
         return verifySignature(signature, segmentId, completionDate, subject, deadline);
     }
+
+    function exposed_hashAttestation(
+        uint256 segmentId,
+        uint64 completionDate,
+        address subject
+    ) external pure returns (bytes32) {
+        return hashAttestation(segmentId, completionDate, subject);
+    }
 }

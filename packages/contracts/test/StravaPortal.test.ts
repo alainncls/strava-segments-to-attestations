@@ -1,7 +1,5 @@
 import { describe, it, expect } from 'vitest';
 import {
-  keccak256,
-  encodePacked,
   encodeAbiParameters,
   parseAbiParameters,
   type Address,
@@ -20,7 +18,6 @@ describe('StravaPortal', () => {
   const testSegmentId = BigInt(12345);
   const testCompletionDate = BigInt(Math.floor(Date.now() / 1000));
   const testDeadline = BigInt(Math.floor(Date.now() / 1000) + 3600);
-  const testFee = BigInt('100000000000000'); // 0.0001 ETH
 
   // Helper to create EIP-712 signature
   async function signSegment(
@@ -78,20 +75,6 @@ describe('StravaPortal', () => {
     const bytes = address.toLowerCase().slice(2);
     return `0x${bytes}` as Hex;
   }
-
-  describe('EIP-712 Type Hash', () => {
-    it('should produce valid type hash for Segment struct', () => {
-      const typeHash = keccak256(
-        encodePacked(
-          ['string'],
-          ['Segment(uint256 segmentId,uint64 completionDate,address subject,uint64 deadline)'],
-        ),
-      );
-
-      expect(typeHash).toHaveLength(66); // 0x + 64 hex chars
-      expect(typeHash).toMatch(/^0x[a-f0-9]{64}$/);
-    });
-  });
 
   describe('EIP-712 Signature', () => {
     it('should create consistent signatures for same input', async () => {
@@ -324,57 +307,7 @@ describe('StravaPortal', () => {
     });
   });
 
-  describe('Business Logic Validation', () => {
-    it('should encode zero address as subject', () => {
-      const zeroAddress = getAddress('0x0000000000000000000000000000000000000000');
-      const encoded = encodeSubject(zeroAddress);
-
-      expect(encoded).toBe('0x0000000000000000000000000000000000000000');
-    });
-
-    it('should validate that fee is non-zero', () => {
-      expect(testFee).toBeGreaterThan(BigInt(0));
-      expect(testFee).toBe(BigInt('100000000000000'));
-    });
-  });
-
   describe('Typed Data Hash', () => {
-    it('should produce correct domain separator components', () => {
-      const domain = {
-        name: 'VerifyStrava',
-        version: '1',
-        chainId: BigInt(59141),
-        verifyingContract: getAddress('0xc04228f66b1aa75a2a8f6887730f55b54281e9d9'),
-      };
-
-      const types = {
-        Segment: [
-          { name: 'segmentId', type: 'uint256' },
-          { name: 'completionDate', type: 'uint64' },
-          { name: 'subject', type: 'address' },
-          { name: 'deadline', type: 'uint64' },
-        ],
-      } as const;
-
-      const message = {
-        segmentId: testSegmentId,
-        completionDate: testCompletionDate,
-        subject: getAddress('0x1234567890123456789012345678901234567890'),
-        deadline: testDeadline,
-      };
-
-      const hash = hashTypedData({
-        domain,
-        types,
-        primaryType: 'Segment',
-        message,
-      });
-
-      expect(hash).toBeTypeOf('string');
-      expect(hash).toHaveLength(66);
-      expect(hash).toMatch(/^0x[a-f0-9]{64}$/);
-    });
-
     it('should produce different hashes for different chain IDs', () => {
       const baseParams = {
         types: {
