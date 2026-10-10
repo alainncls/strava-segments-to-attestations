@@ -10,6 +10,10 @@ interface ActivitiesProps {
   loadingActivityId?: number;
   hasMore?: boolean;
   isLoadingMore?: boolean;
+  activitiesError?: string;
+  isRetryBlocked?: boolean;
+  isAuthenticationError?: boolean;
+  segmentErrors?: Record<number, string>;
   onLoadMore?: () => void;
 }
 
@@ -75,12 +79,30 @@ export default function Activities({
   loadingActivityId,
   hasMore = false,
   isLoadingMore = false,
+  activitiesError,
+  isRetryBlocked = false,
+  isAuthenticationError = false,
+  segmentErrors = {},
   onLoadMore,
 }: ActivitiesProps): React.JSX.Element {
   if (activities.length === 0) {
     return (
       <div className={styles.empty}>
-        <p>No activities found. Go complete some segments!</p>
+        {activitiesError ? (
+          <p role="alert" className={styles.errorMessage}>
+            {activitiesError}
+          </p>
+        ) : null}
+        {!activitiesError ? <p>No activities found. Go complete some segments!</p> : null}
+        {hasMore && activitiesError && !isAuthenticationError && onLoadMore ? (
+          <Button variant="outline" onClick={onLoadMore} disabled={isLoadingMore || isRetryBlocked}>
+            {isRetryBlocked
+              ? 'Wait before retrying'
+              : isLoadingMore
+                ? 'Loading...'
+                : 'Retry activities'}
+          </Button>
+        ) : null}
       </div>
     );
   }
@@ -88,6 +110,11 @@ export default function Activities({
   return (
     <div className={styles.container}>
       <h2 className={styles.title}>Your Recent Activities</h2>
+      {activitiesError ? (
+        <p role="alert" className={styles.errorMessage}>
+          {activitiesError}
+        </p>
+      ) : null}
       <div className={styles.grid}>
         {activities.map((activity, index) => (
           <ActivityCard
@@ -100,10 +127,26 @@ export default function Activities({
         ))}
       </div>
 
+      {Object.entries(segmentErrors).map(([activityId, error]) => (
+        <p key={activityId} role="status" className={styles.errorMessage}>
+          Activity {activityId}: {error}
+        </p>
+      ))}
+
       {hasMore && onLoadMore ? (
         <div className={styles.loadMore}>
-          <Button variant="outline" onClick={onLoadMore} disabled={isLoadingMore}>
-            {isLoadingMore ? 'Loading...' : 'Load more activities'}
+          <Button
+            variant="outline"
+            onClick={onLoadMore}
+            disabled={isLoadingMore || isRetryBlocked || isAuthenticationError}
+          >
+            {isRetryBlocked
+              ? 'Wait before retrying'
+              : isLoadingMore
+                ? 'Loading...'
+                : activitiesError
+                  ? 'Retry activities'
+                  : 'Load more activities'}
           </Button>
         </div>
       ) : null}

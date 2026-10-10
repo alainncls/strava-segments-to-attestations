@@ -164,6 +164,13 @@
   color: var(--text-muted);
 }
 
+.errorMessage {
+  color: var(--text-primary);
+  margin: 0.75rem auto;
+  max-width: 42rem;
+  text-align: center;
+}
+
 .loadMore {
   display: flex;
   justify-content: center;

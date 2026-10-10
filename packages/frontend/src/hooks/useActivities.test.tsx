@@ -1,6 +1,6 @@
 import { act, renderHook, waitFor } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { useActivities } from './useActivities';
+import { parseRetryAfter, useActivities } from './useActivities';
 
 const token = vi.fn(async () => 'access-token');
 
@@ -23,6 +23,87 @@ function response(body: unknown, status = 200): Response {
 
 describe('useActivities pagination and session boundaries', () => {
   afterEach(() => vi.unstubAllGlobals());
+
+  it('parses Retry-After seconds and HTTP dates with a bounded fallback', () => {
+    const now = Date.parse('2026-10-10T00:00:00Z');
+    expect(parseRetryAfter('12', now)).toBe(12_000);
+    expect(parseRetryAfter('Sat, 10 Oct 2026 00:00:08 GMT', now)).toBe(8_000);
+    expect(parseRetryAfter('0', now)).toBe(1000);
+    expect(parseRetryAfter('999999', now)).toBe(15 * 60_000);
+    expect(parseRetryAfter(null, now)).toBe(30_000);
+  });
+
+  it('retries the initial page after rate limiting and blocks requests until Retry-After expires', async () => {
+    const requestedPages: string[] = [];
+    const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
+      const url = new URL(String(input));
+      if (url.pathname.endsWith('/athlete/activities')) {
+        const page = url.searchParams.get('page') ?? '';
+        requestedPages.push(page);
+        if (requestedPages.length === 1) {
+          return new Response(JSON.stringify({ message: 'rate limited' }), {
+            status: 429,
+            headers: { 'Retry-After': '1' },
+          });
+        }
+        return response(activities(1, 30));
+      }
+      return response({ segment_efforts: [] });
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    const { result } = renderHook(() => useActivities(true, token, 123));
+    await waitFor(() => expect(result.current.isRetryBlocked).toBe(true));
+    expect(result.current.activitiesError).toContain('page 1');
+
+    await act(async () => result.current.handleLoadMore());
+    expect(requestedPages).toEqual(['1']);
+
+    await act(async () => new Promise((resolve) => setTimeout(resolve, 1100)));
+    await waitFor(() => expect(result.current.isRetryBlocked).toBe(false));
+    await act(async () => result.current.handleLoadMore());
+
+    expect(requestedPages).toEqual(['1', '1']);
+    expect(result.current.activities).toHaveLength(30);
+    expect(result.current.activitiesError).toBeUndefined();
+  });
+
+  it('shows authentication expiry and never retries 401 or 403 automatically', async () => {
+    let pageTwoAttempts = 0;
+    const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
+      const url = new URL(String(input));
+      if (url.pathname.endsWith('/athlete/activities')) {
+        if (url.searchParams.get('page') === '1') return response(activities(1, 30));
+        pageTwoAttempts += 1;
+        return response({ message: 'expired' }, 401);
+      }
+      return response({ segment_efforts: [] });
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    const { result } = renderHook(() => useActivities(true, token, 123));
+    await waitFor(() => expect(result.current.activities).toHaveLength(30));
+    await act(async () => result.current.handleLoadMore());
+
+    expect(result.current.isAuthenticationError).toBe(true);
+    expect(result.current.activitiesError).toContain('Reconnect Strava');
+    await act(async () => result.current.handleLoadMore());
+    expect(pageTwoAttempts).toBe(1);
+  });
+
+  it('surfaces token refresh failure as an authentication error', async () => {
+    const fetchMock = vi.fn();
+    vi.stubGlobal('fetch', fetchMock);
+    const refreshFailure = vi.fn(async () => {
+      throw new Error('refresh token revoked');
+    });
+
+    const { result } = renderHook(() => useActivities(true, refreshFailure, 123));
+    await waitFor(() => expect(result.current.isAuthenticationError).toBe(true));
+
+    expect(result.current.activitiesError).toContain('Could not refresh Strava authentication');
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
 
   it('retries the same page after failure and deduplicates overlapping activity IDs', async () => {
     let pageTwoAttempts = 0;
@@ -200,5 +281,77 @@ describe('useActivities pagination and session boundaries', () => {
     });
     expect(result.current.activities).toEqual([]);
     expect(result.current.isLoadingMore).toBe(false);
+  });
+
+  it('aborts segment prefetch when the hook unmounts', async () => {
+    let detailSignal: AbortSignal | undefined;
+    const fetchMock = vi.fn((input: RequestInfo | URL, init?: RequestInit) => {
+      const url = new URL(String(input));
+      if (url.pathname.endsWith('/athlete/activities')) {
+        return Promise.resolve(response(activities(77, 1)));
+      }
+      detailSignal = init?.signal as AbortSignal | undefined;
+      return new Promise<Response>(() => {});
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    const { unmount } = renderHook(() => useActivities(true, token, 123));
+    await waitFor(() => expect(detailSignal).toBeDefined());
+    expect(detailSignal?.aborted).toBe(false);
+    unmount();
+    expect(detailSignal?.aborted).toBe(true);
+  });
+
+  it('does not let an old account finally unlock a newer page request', async () => {
+    const pendingPages: Array<(value: Response) => void> = [];
+    let pageOneRequests = 0;
+    const fetchMock = vi.fn((input: RequestInfo | URL) => {
+      const url = new URL(String(input));
+      if (url.pathname.endsWith('/athlete/activities')) {
+        if (url.searchParams.get('page') === '1') {
+          pageOneRequests += 1;
+          const accountId = pageOneRequests === 1 ? 123 : 456;
+          return Promise.resolve(response(activities(accountId * 100, 30)));
+        }
+        return new Promise<Response>((resolve) => pendingPages.push(resolve));
+      }
+      return Promise.resolve(response({ segment_efforts: [] }));
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    const { result, rerender } = renderHook(
+      ({ accountId }: { accountId: number }) => useActivities(true, token, accountId),
+      { initialProps: { accountId: 123 } },
+    );
+    await waitFor(() => expect(result.current.activities[0]?.id).toBe(12_300));
+
+    let oldLoad: Promise<void> | undefined;
+    act(() => {
+      oldLoad = result.current.handleLoadMore();
+    });
+    await waitFor(() => expect(pendingPages).toHaveLength(1));
+
+    rerender({ accountId: 456 });
+    await waitFor(() => expect(result.current.activities[0]?.id).toBe(45_600));
+
+    let newLoad: Promise<void> | undefined;
+    act(() => {
+      newLoad = result.current.handleLoadMore();
+    });
+    await waitFor(() => expect(pendingPages).toHaveLength(2));
+
+    await act(async () => {
+      pendingPages[0]?.(response(activities(12_330, 1)));
+      await oldLoad;
+    });
+    await act(async () => result.current.handleLoadMore());
+    expect(pendingPages).toHaveLength(2);
+
+    await act(async () => {
+      pendingPages[1]?.(response(activities(45_630, 1)));
+      await newLoad;
+    });
+    expect(result.current.activities[0]?.id).toBe(45_600);
+    expect(result.current.activities.some((activity) => activity.id === 12_330)).toBe(false);
   });
 });
