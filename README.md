@@ -39,7 +39,7 @@ This application allows athletes to create cryptographically verifiable proofs o
 ```bash
 git clone https://github.com/alainncls/strava-segments-to-attestations.git
 cd strava-segments-to-attestations
-pnpm install
+corepack pnpm@11.0.3 install
 ```
 
 ### 2. Configure environment variables
@@ -60,7 +60,7 @@ cp packages/contracts/.env.example packages/contracts/.env
 ### 3. Run the development server
 
 ```bash
-pnpm dev
+corepack pnpm@11.0.3 dev
 ```
 
 ## Packages
@@ -118,9 +118,16 @@ cd packages/functions
 # Build
 pnpm build
 
-# Local development (with Netlify CLI)
-netlify dev
+# Build shared package and run local functions adapter
+corepack pnpm@11.0.3 --filter @strava-attestations/shared build
+corepack pnpm@11.0.3 --filter @strava-attestations/functions dev
 ```
+
+The root `corepack pnpm@11.0.3 dev` runs Vite on `http://localhost:5174` and a loopback-only
+Node adapter on port `8888`. The adapter invokes the same `Request`/`Response`
+handlers used by Netlify Functions; it does not implement OAuth or signing
+logic and is not part of production deployment. Create `packages/functions/.env`
+from `.env.example` before starting the functions package directly.
 
 ## Environment Variables
 
@@ -161,10 +168,10 @@ From the root directory:
 
 ```bash
 # Install all dependencies
-pnpm install
+corepack pnpm@11.0.3 install
 
 # Run frontend development server
-pnpm dev
+corepack pnpm@11.0.3 dev
 
 # Build all packages
 pnpm build

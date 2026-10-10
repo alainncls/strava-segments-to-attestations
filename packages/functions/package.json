@@ -6,7 +6,8 @@
   "scripts": {
     "build": "tsc",
     "clean": "rm -rf dist",
-    "dev": "dotenv -e .env -- netlify functions:serve --functions src --port 8888",
+    "dev": "node --env-file-if-exists=.env --import tsx ../../scripts/dev-functions.ts",
+    "pretest": "corepack pnpm --filter @strava-attestations/shared build",
     "test": "vitest run",
     "test:watch": "vitest"
   },
@@ -18,8 +19,7 @@
     "@netlify/functions": "5.3.0",
     "@opentelemetry/api": "catalog:",
     "@types/node": "24.19.0",
-    "dotenv-cli": "catalog:",
-    "netlify-cli": "catalog:",
+    "tsx": "catalog:",
     "typescript": "catalog:",
     "vitest": "catalog:"
   }
