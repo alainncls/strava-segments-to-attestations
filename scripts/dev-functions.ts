@@ -1,10 +1,11 @@
 import { createLocalFunctionServer } from '../packages/functions/lib/localDevServer.ts';
-import authHandler from '../packages/functions/src/auth.ts';
+import { createAuthHandler } from '../packages/functions/src/auth.ts';
+import { createMemoryOAuthStateStore } from '../packages/functions/src/lib/oauth-state.ts';
 import signHandler from '../packages/functions/src/sign.ts';
 
 const port = Number(process.env.PORT ?? 8888);
 const server = createLocalFunctionServer({
-  auth: authHandler,
+  auth: createAuthHandler({ stateStore: createMemoryOAuthStateStore() }),
   sign: signHandler,
 });
 

@@ -27,7 +27,10 @@ The adapter streams Node request/response bodies through Web `Request` and
 `Response`, propagates client cancellation, forwards cookies/CORS/cache
 headers, and supplies `127.0.0.1` as explicit function context IP. It trusts no
 forwarded-IP header and is never deployed. Production function routing remains
-owned by `netlify.toml`/Netlify.
+owned by `netlify.toml`/Netlify. The adapter explicitly injects an in-memory
+OAuth state store for local development; the deployed handler uses Netlify
+Blobs and fails closed when persistent storage is unavailable. The local store
+is not evidence for preview or production storage behavior.
 
 ## Security dependency result
 

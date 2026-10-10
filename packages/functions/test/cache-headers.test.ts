@@ -1,7 +1,7 @@
 import type { Context } from '@netlify/functions';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { getCorsHeaders } from '../lib/env';
-import authHandler from '../src/auth';
+import { createAuthHandler } from '../src/auth';
 import signHandler from '../src/sign';
 
 vi.mock('@strava-attestations/shared', async () => import('../../shared/src/index.ts'));
@@ -10,6 +10,8 @@ const AUTH_URL = 'https://functions.example.com/auth';
 const SIGN_URL = 'https://functions.example.com/sign';
 const ALLOWED_ORIGIN = 'https://app.example.com';
 const SUBJECT = '0x2222222222222222222222222222222222222222';
+const TEST_STATE = 'a'.repeat(64);
+let authHandler: ReturnType<typeof createAuthHandler>;
 
 function createContext(ip: string): Context {
   return { ip } as Context;
@@ -60,6 +62,32 @@ describe('production CORS and auth cache headers', () => {
     vi.stubEnv('STRAVA_CLIENT_SECRET', 'client-secret');
     vi.stubEnv('FRONTEND_URL', ALLOWED_ORIGIN);
     vi.stubEnv('SIGNER_PRIVATE_KEY', `0x${'11'.repeat(32)}`);
+    const consumed = new Set<string>();
+    authHandler = createAuthHandler({
+      stateStore: {
+        async create() {
+          return true;
+        },
+        async read(key) {
+          const issuedAt = Date.now();
+          return {
+            record: {
+              version: 1,
+              origin: ALLOWED_ORIGIN,
+              issuedAt,
+              expiresAt: issuedAt + 600_000,
+              status: consumed.has(key) ? 'consumed' : 'pending',
+            },
+            etag: '1',
+          };
+        },
+        async compareAndSet(key) {
+          if (consumed.has(key)) return false;
+          consumed.add(key);
+          return true;
+        },
+      },
+    });
   });
 
   afterEach(() => {
@@ -91,7 +119,7 @@ describe('production CORS and auth cache headers', () => {
     }
   });
 
-  it('allows an exact origin, does not reflect a disallowed origin, and still answers without it', async () => {
+  it('accepts only exact configured browser origins for OAuth state changes', async () => {
     const allowed = await authHandler(
       createAuthRequest({ action: 'start' }, { origin: ALLOWED_ORIGIN }),
       createContext('203.0.114.1'),
@@ -106,8 +134,8 @@ describe('production CORS and auth cache headers', () => {
     );
 
     expect(allowed.status).toBe(200);
-    expect(disallowed.status).toBe(200);
-    expect(missing.status).toBe(200);
+    expect(disallowed.status).toBe(403);
+    expect(missing.status).toBe(403);
     expectOrigin(allowed, ALLOWED_ORIGIN);
     expectOrigin(disallowed, ALLOWED_ORIGIN);
     expect(disallowed.headers.get('access-control-allow-origin')).not.toBe('https://evil.example');
@@ -117,6 +145,7 @@ describe('production CORS and auth cache headers', () => {
     expectNonCacheable(missing);
     expect(allowed.headers.get('set-cookie')).toContain('HttpOnly');
     expect(allowed.headers.get('set-cookie')).toContain('SameSite=Lax');
+    expect(allowed.headers.get('set-cookie')).toContain('Secure');
   });
 
   it('marks OPTIONS and method errors non-cacheable', async () => {
@@ -144,7 +173,7 @@ describe('production CORS and auth cache headers', () => {
     const response = await authHandler(
       createAuthRequest(
         { code: 'oauth-code', state: 'wrong' },
-        { cookie: 'strava_oauth_state=state' },
+        { cookie: `strava_oauth_state=${TEST_STATE}` },
       ),
       createContext('203.0.114.6'),
     );
@@ -164,8 +193,8 @@ describe('production CORS and auth cache headers', () => {
 
     const response = await authHandler(
       createAuthRequest(
-        { code: 'oauth-code', state: 'state' },
-        { cookie: 'strava_oauth_state=state' },
+        { code: 'oauth-code', state: TEST_STATE },
+        { cookie: `strava_oauth_state=${TEST_STATE}` },
       ),
       createContext('203.0.114.7'),
     );
@@ -186,11 +215,14 @@ describe('production CORS and auth cache headers', () => {
     vi.stubGlobal('fetch', fetchMock);
 
     const first = await authHandler(
-      createAuthRequest({ code: 'code-1', state: 'state' }, { cookie: 'strava_oauth_state=state' }),
+      createAuthRequest(
+        { code: 'code-1', state: TEST_STATE },
+        { cookie: `strava_oauth_state=${TEST_STATE}` },
+      ),
       createContext('203.0.114.8'),
     );
     const second = await authHandler(
-      createAuthRequest({ code: 'code-2', state: 'state' }),
+      createAuthRequest({ code: 'code-2', state: TEST_STATE }),
       createContext('203.0.114.9'),
     );
 
@@ -203,23 +235,29 @@ describe('production CORS and auth cache headers', () => {
     expectNonCacheable(second);
   });
 
-  it('documents that resending an uncleared state cookie can exchange again', async () => {
+  it('rejects a replay even when the browser resends an uncleared state cookie', async () => {
     const fetchMock = vi.fn().mockImplementation(tokenResponse);
     vi.stubGlobal('fetch', fetchMock);
 
     const first = await authHandler(
-      createAuthRequest({ code: 'code-1', state: 'state' }, { cookie: 'strava_oauth_state=state' }),
+      createAuthRequest(
+        { code: 'code-1', state: TEST_STATE },
+        { cookie: `strava_oauth_state=${TEST_STATE}` },
+      ),
       createContext('203.0.114.10'),
     );
     const second = await authHandler(
-      createAuthRequest({ code: 'code-2', state: 'state' }, { cookie: 'strava_oauth_state=state' }),
+      createAuthRequest(
+        { code: 'code-2', state: TEST_STATE },
+        { cookie: `strava_oauth_state=${TEST_STATE}` },
+      ),
       createContext('203.0.114.11'),
     );
 
     expect(first.headers.get('set-cookie')).toContain('Max-Age=0');
     expect(first.headers.get('set-cookie')).toContain('HttpOnly');
-    expect(second.status).toBe(200);
-    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(second.status).toBe(400);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
     expectNonCacheable(first);
     expectNonCacheable(second);
   });
@@ -230,8 +268,8 @@ describe('production CORS and auth cache headers', () => {
 
     const response = await authHandler(
       createAuthRequest(
-        { code: 'oauth-code', state: 'abc def' },
-        { cookie: 'strava_oauth_state=abc%20def' },
+        { code: 'oauth-code', state: TEST_STATE },
+        { cookie: `strava_oauth_state=%61${'a'.repeat(63)}` },
       ),
       createContext('203.0.114.12'),
     );
@@ -247,7 +285,7 @@ describe('production CORS and auth cache headers', () => {
 
     const response = await authHandler(
       createAuthRequest(
-        { code: 'oauth-code', state: 'state' },
+        { code: 'oauth-code', state: TEST_STATE },
         { cookie: 'other=%; strava_oauth_state=%E0%A4%A' },
       ),
       createContext('203.0.114.13'),
@@ -264,20 +302,19 @@ describe('production CORS and auth cache headers', () => {
   it('maps the auth upstream timeout to 504 and keeps the response non-cacheable', async () => {
     const fetchMock = vi.fn().mockRejectedValue(new DOMException('timeout', 'TimeoutError'));
     vi.stubGlobal('fetch', fetchMock);
-    const timeoutSpy = vi.spyOn(AbortSignal, 'timeout');
     const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
 
     const response = await authHandler(
       createAuthRequest(
-        { code: 'oauth-code', state: 'state' },
-        { cookie: 'strava_oauth_state=state' },
+        { code: 'oauth-code', state: TEST_STATE },
+        { cookie: `strava_oauth_state=${TEST_STATE}` },
       ),
       createContext('203.0.114.14'),
     );
 
     expect(response.status).toBe(504);
     await expect(response.json()).resolves.toEqual({ error: 'Upstream request timed out' });
-    expect(timeoutSpy).toHaveBeenCalledWith(8_000);
+    expect(fetchMock.mock.calls[0]?.[1]?.signal).toBeInstanceOf(AbortSignal);
     expect(JSON.stringify(errorSpy.mock.calls)).not.toContain('client-secret');
     expect(JSON.stringify(errorSpy.mock.calls)).not.toContain('oauth-code');
     expectNonCacheable(response);
@@ -289,8 +326,8 @@ describe('production CORS and auth cache headers', () => {
 
     const upstream = await authHandler(
       createAuthRequest(
-        { code: 'oauth-code', state: 'state' },
-        { cookie: 'strava_oauth_state=state' },
+        { code: 'oauth-code', state: TEST_STATE },
+        { cookie: `strava_oauth_state=${TEST_STATE}` },
       ),
       createContext('203.0.114.15'),
     );
