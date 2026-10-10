@@ -51,6 +51,10 @@ export default function Home(): React.JSX.Element {
     activities,
     isLoading,
     isLoadingMore,
+    activitiesError,
+    isRetryBlocked,
+    isAuthenticationError,
+    segmentErrors,
     loadingActivityId,
     hasMore,
     handleLoadMore,
@@ -127,6 +131,10 @@ export default function Home(): React.JSX.Element {
               loadingActivityId={loadingActivityId}
               hasMore={hasMore}
               isLoadingMore={isLoadingMore}
+              activitiesError={activitiesError}
+              isRetryBlocked={isRetryBlocked}
+              isAuthenticationError={isAuthenticationError}
+              segmentErrors={segmentErrors}
               onLoadMore={handleLoadMore}
             />
           )}
