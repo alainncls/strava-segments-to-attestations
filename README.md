@@ -145,6 +145,8 @@ netlify dev
 | `FRONTEND_URL`         | Frontend URL for CORS                     |
 | `SIGNER_PRIVATE_KEY`   | Private key for signing attestations      |
 
+The auth function reserves OAuth state in Netlify Blobs and atomically consumes it before calling Strava. Netlify supplies the Blobs credentials and `CONTEXT`; no Blobs token is configured in the application. State is namespaced per Netlify context and expired records are pruned daily. Local tests inject a deterministic store; a linked preview still needs to verify runtime availability and quotas before this change is accepted for production.
+
 ### Contracts (`packages/contracts/.env`)
 
 | Variable           | Description                              |

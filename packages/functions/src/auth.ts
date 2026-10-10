@@ -1,36 +1,53 @@
 import type { Context } from '@netlify/functions';
-import { randomBytes } from 'node:crypto';
+import { createHash, randomBytes, timingSafeEqual } from 'node:crypto';
 import type { StravaTokenResponse } from '../lib/types';
 import { STRAVA_TOKEN_URL } from '../lib/constants';
 import { getEnvConfig, getCorsHeaders } from '../lib/env';
-import {
-  assertRecord,
-  HttpError,
-  isUpstreamTimeout,
-  readJsonBody,
-  readUpstreamJson,
-  UpstreamStatusError,
-  upstreamSignal,
-} from '../lib/http';
-import { createRateLimiter } from './rateLimiter';
+import { createNetlifyOAuthStateStore } from './lib/oauth-state';
+import type { OAuthStateRecord, OAuthStateStore } from './lib/oauth-state';
 
 const OAUTH_STATE_COOKIE = 'strava_oauth_state';
-const RATE_LIMIT_MAX = 20; // requests per window
-const RATE_LIMIT_WINDOW = 60_000; // 1 minute
+const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
+const RATE_LIMIT_MAX = 20;
+const RATE_LIMIT_WINDOW = 60_000;
 const OAUTH_STATE_MAX_AGE_SECONDS = 10 * 60;
-const authRateLimiter = createRateLimiter({
-  limit: RATE_LIMIT_MAX,
-  windowMs: RATE_LIMIT_WINDOW,
-  maxEntries: 10_000,
-});
 
 interface FetchError extends Error {
   status?: number;
 }
 
-/**
- * Exchange OAuth code for access token
- */
+interface AuthRequestBody {
+  action?: 'start';
+  code?: string;
+  state?: string;
+}
+
+interface AuthDependencies {
+  stateStore?: OAuthStateStore;
+  now?: () => number;
+  exchange?: (code: string, clientId: string, clientSecret: string) => Promise<StravaTokenResponse>;
+}
+
+class AuthError extends Error {
+  constructor(
+    readonly status: number,
+    message: string,
+  ) {
+    super(message);
+  }
+}
+
+function isRateLimited(ip: string): boolean {
+  const now = Date.now();
+  const entry = rateLimitMap.get(ip);
+  if (!entry || entry.resetAt < now) {
+    rateLimitMap.set(ip, { count: 1, resetAt: now + RATE_LIMIT_WINDOW });
+    return false;
+  }
+  entry.count++;
+  return entry.count > RATE_LIMIT_MAX;
+}
+
 async function exchangeCodeForToken(
   code: string,
   clientId: string,
@@ -42,203 +59,206 @@ async function exchangeCodeForToken(
     code,
     grant_type: 'authorization_code',
   });
-
   const response = await fetch(STRAVA_TOKEN_URL, {
     method: 'POST',
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
     body: params,
-    signal: upstreamSignal(),
+    signal: AbortSignal.timeout(8_000),
   });
-
-  return (await readUpstreamJson(response)) as StravaTokenResponse;
-}
-
-interface AuthRequestBody {
-  action?: 'start';
-  code?: string;
-  state?: string;
+  if (!response.ok) {
+    const error: FetchError = new Error(`Strava API error: ${response.status}`);
+    error.status = response.status;
+    throw error;
+  }
+  return response.json() as Promise<StravaTokenResponse>;
 }
 
 function parseCookies(cookieHeader: string | null): Map<string, string> {
   const cookies = new Map<string, string>();
-  if (!cookieHeader) {
-    return cookies;
-  }
-
+  if (!cookieHeader) return cookies;
   for (const cookie of cookieHeader.split(';')) {
     const [name, ...valueParts] = cookie.trim().split('=');
-    if (!name || valueParts.length === 0) {
-      continue;
-    }
+    if (!name || valueParts.length === 0) continue;
     try {
       cookies.set(name, decodeURIComponent(valueParts.join('=')));
     } catch {
-      throw new HttpError(400, 'Invalid cookie');
+      throw new AuthError(400, 'Invalid cookie');
     }
   }
-
   return cookies;
 }
 
 function buildStateCookie(state: string, req: Request): string {
-  const isSecure = new URL(req.url).protocol === 'https:';
-  const secureAttribute = isSecure ? '; Secure' : '';
-  return `${OAUTH_STATE_COOKIE}=${encodeURIComponent(
-    state,
-  )}; HttpOnly; Path=/; SameSite=Lax; Max-Age=${OAUTH_STATE_MAX_AGE_SECONDS}${secureAttribute}`;
+  const secureAttribute = new URL(req.url).protocol === 'https:' ? '; Secure' : '';
+  return `${OAUTH_STATE_COOKIE}=${encodeURIComponent(state)}; HttpOnly; Path=/; SameSite=Lax; Max-Age=${OAUTH_STATE_MAX_AGE_SECONDS}${secureAttribute}`;
 }
 
 function buildClearStateCookie(req: Request): string {
-  const isSecure = new URL(req.url).protocol === 'https:';
-  const secureAttribute = isSecure ? '; Secure' : '';
+  const secureAttribute = new URL(req.url).protocol === 'https:' ? '; Secure' : '';
   return `${OAUTH_STATE_COOKIE}=; HttpOnly; Path=/; SameSite=Lax; Max-Age=0${secureAttribute}`;
 }
 
-function generateOAuthState(): string {
-  return randomBytes(32).toString('hex');
-}
+const generateOAuthState = (): string => randomBytes(32).toString('hex');
+const hashState = (state: string): string => createHash('sha256').update(state).digest('hex');
 
-/**
- * Netlify Function handler for Strava authentication
- *
- * Endpoints:
- * - POST /auth with { action: "start" } - Issue OAuth state
- * - POST /auth with { code: "xxx", state: "xxx" } - Exchange OAuth code for access token
- */
-export default async (req: Request, context: Context): Promise<Response> => {
-  const origin = req.headers.get('origin') ?? undefined;
-  const headers = getCorsHeaders(origin);
+const isAllowedOrigin = (origin: string | null, frontendUrl: string): origin is string =>
+  origin !== null &&
+  [frontendUrl, 'http://localhost:5174', 'http://localhost:8888'].includes(origin);
 
-  // Handle CORS preflight
-  if (req.method === 'OPTIONS') {
-    return new Response(null, { status: 200, headers });
-  }
-
-  if (req.method !== 'POST') {
-    return new Response(JSON.stringify({ error: 'Method not allowed' }), {
-      status: 405,
-      headers,
-    });
-  }
-
-  // Rate limiting
-  const clientIp = context.ip ?? 'unknown';
-  const rateLimit = authRateLimiter.consume(clientIp);
-  if (!rateLimit.allowed) {
-    return new Response(JSON.stringify({ error: 'Too many requests' }), {
-      status: 429,
-      headers: { ...headers, 'Retry-After': String(rateLimit.retryAfterSeconds) },
-    });
-  }
-
-  try {
-    // Validate environment
-    const config = getEnvConfig();
-
-    // Parse body for OAuth state or code exchange
-    let body: AuthRequestBody;
-
-    try {
-      body = assertRecord(await readJsonBody(req)) as AuthRequestBody;
-    } catch (error) {
-      if (error instanceof HttpError) {
-        return new Response(JSON.stringify(error.payload), {
-          status: error.status,
-          headers,
-        });
-      }
-      throw error;
-    }
-
-    if (body.action === 'start') {
-      const state = generateOAuthState();
-      return new Response(JSON.stringify({ state }), {
-        status: 200,
-        headers: { ...headers, 'Set-Cookie': buildStateCookie(state, req) },
-      });
-    }
-
-    const { code, state } = body;
-
-    if (!code) {
-      return new Response(JSON.stringify({ error: 'Missing code' }), {
-        status: 400,
-        headers,
-      });
-    }
-
-    const expectedState = parseCookies(req.headers.get('cookie')).get(OAUTH_STATE_COOKIE);
-    if (!state || !expectedState || state !== expectedState) {
-      return new Response(JSON.stringify({ error: 'Invalid state' }), {
-        status: 400,
-        headers: { ...headers, 'Set-Cookie': buildClearStateCookie(req) },
-      });
-    }
-
-    const tokenResponse = await exchangeCodeForToken(
-      code,
-      config.STRAVA_CLIENT_ID,
-      config.STRAVA_CLIENT_SECRET,
-    );
-
-    return new Response(
-      JSON.stringify({
-        access_token: tokenResponse.access_token,
-        expires_at: tokenResponse.expires_at,
-        athlete: tokenResponse.athlete,
-      }),
-      {
-        status: 200,
-        headers: { ...headers, 'Set-Cookie': buildClearStateCookie(req) },
-      },
-    );
-  } catch (error: unknown) {
-    // Log only safe error info to avoid token leaks
-    const status = (error as FetchError).status;
-    console.error('Auth error:', {
-      status,
-      message: error instanceof Error ? error.message : 'Unknown error',
-    });
-
-    if (error instanceof HttpError) {
-      return new Response(JSON.stringify(error.payload), {
-        status: error.status,
-        headers,
-      });
-    }
-
-    if (isUpstreamTimeout(error)) {
-      return new Response(JSON.stringify({ error: 'Upstream request timed out' }), {
-        status: 504,
-        headers,
-      });
-    }
-
-    const upstreamStatus = error instanceof UpstreamStatusError ? error.status : status;
-    if (upstreamStatus === 401) {
-      return new Response(JSON.stringify({ error: 'Invalid or expired token' }), {
-        status: 401,
-        headers,
-      });
-    }
-
-    if (upstreamStatus === 429) {
-      return new Response(JSON.stringify({ error: 'Upstream rate limited' }), {
-        status: 429,
-        headers,
-      });
-    }
-
-    if (upstreamStatus) {
-      return new Response(JSON.stringify({ error: 'Upstream request failed' }), {
-        status: 502,
-        headers,
-      });
-    }
-
-    return new Response(JSON.stringify({ error: 'Authentication failed' }), {
-      status: 500,
-      headers,
-    });
-  }
+const isMatchingState = (state: string, expected: string): boolean => {
+  const actualBytes = Buffer.from(state);
+  const expectedBytes = Buffer.from(expected);
+  return actualBytes.length === expectedBytes.length && timingSafeEqual(actualBytes, expectedBytes);
 };
+
+const json = (
+  body: unknown,
+  status: number,
+  headers: Record<string, string>,
+  clearCookie?: string,
+): Response =>
+  new Response(JSON.stringify(body), {
+    status,
+    headers: clearCookie ? { ...headers, 'Set-Cookie': clearCookie } : headers,
+  });
+
+export const createAuthHandler =
+  (dependencies: AuthDependencies = {}) =>
+  async (req: Request, context: Context): Promise<Response> => {
+    const origin = req.headers.get('origin');
+    const headers = getCorsHeaders(origin ?? undefined);
+    const clearCookie = buildClearStateCookie(req);
+
+    if (req.method === 'OPTIONS') return new Response(null, { status: 200, headers });
+    if (req.method !== 'POST') return json({ error: 'Method not allowed' }, 405, headers);
+
+    const clientIp = context.ip ?? 'unknown';
+    if (isRateLimited(clientIp)) {
+      return json({ error: 'Too many requests' }, 429, { ...headers, 'Retry-After': '60' });
+    }
+
+    let stateCookieToClear: string | undefined;
+    try {
+      const config = getEnvConfig();
+      if (!isAllowedOrigin(origin, config.FRONTEND_URL)) {
+        throw new AuthError(403, 'Invalid origin');
+      }
+
+      let body: AuthRequestBody;
+      try {
+        body = (await req.json()) as AuthRequestBody;
+        if (!body || typeof body !== 'object' || Array.isArray(body)) {
+          throw new Error('Expected an object');
+        }
+      } catch {
+        throw new AuthError(400, 'Invalid JSON body');
+      }
+
+      if (body.action === 'start') {
+        const state = generateOAuthState();
+        const now = dependencies.now?.() ?? Date.now();
+        const record: OAuthStateRecord = {
+          version: 1,
+          issuedAt: now,
+          expiresAt: now + OAUTH_STATE_MAX_AGE_SECONDS * 1000,
+          status: 'pending',
+        };
+        try {
+          const store = dependencies.stateStore ?? createNetlifyOAuthStateStore();
+          if (!(await store.create(hashState(state), record))) {
+            throw new AuthError(503, 'Could not reserve OAuth state');
+          }
+        } catch {
+          throw new AuthError(503, 'OAuth state storage unavailable');
+        }
+        return json({ state }, 200, { ...headers, 'Set-Cookie': buildStateCookie(state, req) });
+      }
+
+      const { code, state } = body;
+      stateCookieToClear = clearCookie;
+      if (!code || typeof code !== 'string') throw new AuthError(400, 'Missing code');
+      if (!state || typeof state !== 'string' || !/^[a-f0-9]{64}$/.test(state)) {
+        throw new AuthError(400, 'Invalid state');
+      }
+
+      const expectedState = parseCookies(req.headers.get('cookie')).get(OAUTH_STATE_COOKIE);
+      if (!expectedState || !isMatchingState(state, expectedState)) {
+        throw new AuthError(400, 'Invalid state');
+      }
+
+      let store: OAuthStateStore;
+      let entry;
+      try {
+        store = dependencies.stateStore ?? createNetlifyOAuthStateStore();
+        entry = await store.read(hashState(state));
+      } catch {
+        throw new AuthError(503, 'OAuth state storage unavailable');
+      }
+      const now = dependencies.now?.() ?? Date.now();
+      if (!entry) throw new AuthError(400, 'Invalid or expired state');
+      if (entry.record.status !== 'pending') throw new AuthError(400, 'OAuth state already used');
+      if (
+        entry.record.version !== 1 ||
+        !Number.isFinite(entry.record.issuedAt) ||
+        !Number.isFinite(entry.record.expiresAt) ||
+        entry.record.issuedAt > now ||
+        entry.record.expiresAt <= now ||
+        entry.record.expiresAt - entry.record.issuedAt > OAUTH_STATE_MAX_AGE_SECONDS * 1000
+      ) {
+        throw new AuthError(400, 'Invalid or expired state');
+      }
+
+      try {
+        if (
+          !(await store.compareAndSet(hashState(state), entry.etag, {
+            ...entry.record,
+            status: 'consumed',
+          }))
+        ) {
+          throw new AuthError(400, 'OAuth state already used');
+        }
+      } catch (error) {
+        if (error instanceof AuthError) throw error;
+        throw new AuthError(503, 'OAuth state storage unavailable');
+      }
+
+      try {
+        const tokenResponse = await (dependencies.exchange ?? exchangeCodeForToken)(
+          code,
+          config.STRAVA_CLIENT_ID,
+          config.STRAVA_CLIENT_SECRET,
+        );
+        return json(
+          {
+            access_token: tokenResponse.access_token,
+            expires_at: tokenResponse.expires_at,
+            athlete: tokenResponse.athlete,
+          },
+          200,
+          headers,
+          clearCookie,
+        );
+      } catch (error: unknown) {
+        const status = (error as FetchError).status;
+        if (status === 401) throw new AuthError(401, 'Invalid or expired token');
+        if (error instanceof DOMException && error.name === 'TimeoutError') {
+          throw new AuthError(504, 'Upstream request timed out');
+        }
+        console.error('Auth error:', {
+          status,
+          message: error instanceof Error ? error.message : 'Unknown error',
+        });
+        throw new AuthError(500, 'Authentication failed');
+      }
+    } catch (error: unknown) {
+      if (error instanceof AuthError) {
+        return json({ error: error.message }, error.status, headers, stateCookieToClear);
+      }
+      console.error('Auth error:', {
+        message: error instanceof Error ? error.message : 'Unknown error',
+      });
+      return json({ error: 'Authentication failed' }, 500, headers, stateCookieToClear);
+    }
+  };
+
+export default createAuthHandler();

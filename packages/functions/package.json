@@ -11,6 +11,7 @@
     "test:watch": "vitest"
   },
   "dependencies": {
+    "@netlify/blobs": "10.7.13",
     "@strava-attestations/shared": "workspace:*",
     "viem": "catalog:"
   },
