@@ -82,7 +82,7 @@ class AuthTimeoutError extends Error {
 }
 
 function withDeadline<T>(
-  work: Promise<T>,
+  work: Promise<T> | (() => Promise<T>),
   deadlineAt: number,
   now: () => number,
   stage: string,
@@ -101,9 +101,25 @@ function withDeadline<T>(
     }, remaining);
     timer.unref?.();
   });
-  return Promise.race([work, timeout]).finally(() => {
-    if (timer) clearTimeout(timer);
-  });
+  // Start each operation only after checking the remaining budget. In
+  // particular, never invoke the provider transport with an already-expired
+  // request signal just to have Promise.race reject immediately afterwards.
+  const operation = typeof work === 'function' ? work() : work;
+  return Promise.race([operation, timeout])
+    .then((result) => {
+      // A provider/store promise can settle in the same event-loop turn as the
+      // timer. The promise reaction may win the race even though the monotonic
+      // deadline has already elapsed, so validate the result before advancing
+      // to the next stage (notably OAuth token exchange).
+      if (now() >= deadlineAt) {
+        onTimeout?.();
+        throw new AuthTimeoutError(stage);
+      }
+      return result;
+    })
+    .finally(() => {
+      if (timer) clearTimeout(timer);
+    });
 }
 
 function parseCookies(cookieHeader: string | null): Map<string, string> {
@@ -209,7 +225,7 @@ export const createAuthHandler =
         const requestBodyController = new AbortController();
         body = assertRecord(
           await withDeadline(
-            readJsonBody(req, requestBodyController.signal),
+            () => readJsonBody(req, requestBodyController.signal),
             deadlineAt,
             monotonicNow,
             'request body',
@@ -239,7 +255,7 @@ export const createAuthHandler =
         try {
           const store = dependencies.stateStore ?? createNetlifyOAuthStateStore();
           const created = await withDeadline(
-            store.create(hashState(state), record),
+            () => store.create(hashState(state), record),
             deadlineAt,
             monotonicNow,
             'state creation',
@@ -289,7 +305,7 @@ export const createAuthHandler =
       let entry;
       try {
         entry = await withDeadline(
-          store.read(hashState(state)),
+          () => store.read(hashState(state)),
           deadlineAt,
           monotonicNow,
           'state read',
@@ -321,10 +337,11 @@ export const createAuthHandler =
       let consumed: boolean;
       try {
         consumed = await withDeadline(
-          store.compareAndSet(hashState(state), entry.etag, {
-            ...entry.record,
-            status: 'consumed',
-          }),
+          () =>
+            store.compareAndSet(hashState(state), entry.etag, {
+              ...entry.record,
+              status: 'consumed',
+            }),
           deadlineAt,
           monotonicNow,
           'state consumption',
@@ -347,12 +364,13 @@ export const createAuthHandler =
       let tokenResponse: StravaTokenResponse;
       try {
         tokenResponse = await withDeadline(
-          (dependencies.exchange ?? exchangeCodeForToken)(
-            code,
-            config.STRAVA_CLIENT_ID,
-            config.STRAVA_CLIENT_SECRET,
-            controller.signal,
-          ),
+          () =>
+            (dependencies.exchange ?? exchangeCodeForToken)(
+              code,
+              config.STRAVA_CLIENT_ID,
+              config.STRAVA_CLIENT_SECRET,
+              controller.signal,
+            ),
           deadlineAt,
           monotonicNow,
           'token exchange',

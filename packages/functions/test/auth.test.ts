@@ -177,6 +177,53 @@ describe('auth handler', () => {
     expect(exchange).not.toHaveBeenCalled();
   });
 
+  it('does not start exchange when state consumption wins the race after the deadline', async () => {
+    const state = await seedState();
+    let monotonicTime = 0;
+    const exchange = vi.fn();
+    authHandler = createAuthHandler({
+      budgetMs: 1_000,
+      monotonicNow: () => monotonicTime,
+      stateStore: {
+        async create() {
+          return true;
+        },
+        async read() {
+          const now = Date.now();
+          return {
+            record: {
+              version: 1,
+              origin: 'https://app.example.com',
+              issuedAt: now,
+              expiresAt: now + 600_000,
+              status: 'pending',
+            },
+            etag: 'etag',
+          };
+        },
+        compareAndSet: () =>
+          Promise.resolve(true).then((consumed) => {
+            // The storage operation settles before the timeout callback gets
+            // a turn, but its result arrives beyond the request's deadline.
+            monotonicTime = 1_000;
+            return consumed;
+          }),
+      },
+      exchange,
+    });
+
+    const response = await authHandler(
+      createAuthRequest({ code: 'oauth-code', state }, `strava_oauth_state=${state}`),
+      createContext('203.0.113.21'),
+    );
+
+    expect(response.status).toBe(504);
+    expect(exchange).not.toHaveBeenCalled();
+    expect(JSON.parse(await response.text())).toEqual({
+      error: 'Authentication request timed out',
+    });
+  });
+
   it('aborts the provider transport at the total deadline and discards a late result', async () => {
     const state = await seedState();
     let releaseExchange:
