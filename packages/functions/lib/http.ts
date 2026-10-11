@@ -57,6 +57,7 @@ async function readLimitedBytes(
   stream: ReadableStream<Uint8Array> | null,
   maxBytes: number,
   tooLarge: HttpError,
+  signal?: AbortSignal,
 ): Promise<Uint8Array> {
   if (!stream) {
     return new Uint8Array();
@@ -65,10 +66,16 @@ async function readLimitedBytes(
   const reader = stream.getReader();
   const chunks: Uint8Array[] = [];
   let total = 0;
+  const cancelOnAbort = (): void => {
+    void reader.cancel(signal?.reason).catch(() => undefined);
+  };
+  signal?.addEventListener('abort', cancelOnAbort, { once: true });
 
   try {
     while (true) {
+      if (signal?.aborted) throw signal.reason;
       const { done, value } = await reader.read();
+      if (signal?.aborted) throw signal.reason;
       if (done) {
         break;
       }
@@ -83,6 +90,7 @@ async function readLimitedBytes(
       chunks.push(value);
     }
   } finally {
+    signal?.removeEventListener('abort', cancelOnAbort);
     try {
       reader.releaseLock();
     } catch {
@@ -103,7 +111,7 @@ async function cancelBody(stream: ReadableStream<Uint8Array> | null): Promise<vo
   await stream?.cancel().catch(() => undefined);
 }
 
-export async function readJsonBody(req: Request): Promise<unknown> {
+export async function readJsonBody(req: Request, signal?: AbortSignal): Promise<unknown> {
   const declared = parseDeclaredLength(req.headers.get('content-length'));
   if (declared === 'invalid') {
     throw new HttpError(400, 'Invalid content length');
@@ -117,6 +125,7 @@ export async function readJsonBody(req: Request): Promise<unknown> {
     req.body,
     MAX_REQUEST_BODY_BYTES,
     new HttpError(400, 'Payload too large'),
+    signal,
   );
   return parseJsonBytes(bytes, 400, 'Invalid JSON body');
 }

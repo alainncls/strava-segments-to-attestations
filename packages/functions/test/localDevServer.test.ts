@@ -1,6 +1,7 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import type { Server } from 'node:http';
-import authHandler from '../src/auth';
+import { createAuthHandler } from '../src/auth';
+import { createMemoryOAuthStateStore } from '../src/lib/oauth-state';
 import signHandler from '../src/sign';
 import { createLocalFunctionServer } from '../lib/localDevServer';
 
@@ -23,7 +24,7 @@ describe('local adapter invokes the real Netlify function handlers', () => {
     process.env.SIGNER_PRIVATE_KEY = `0x${'1'.repeat(64)}`;
 
     server = createLocalFunctionServer({
-      auth: authHandler,
+      auth: createAuthHandler({ stateStore: createMemoryOAuthStateStore() }),
       sign: signHandler,
     });
     await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve));
@@ -72,7 +73,7 @@ describe('local adapter invokes the real Netlify function handlers', () => {
 
     const invalidBodyResponse = await fetch(`${baseUrl}/auth`, {
       method: 'POST',
-      headers: { 'content-type': 'application/json' },
+      headers: { 'content-type': 'application/json', origin: 'http://localhost:5174' },
       body: '{',
     });
     expect(invalidBodyResponse.status).toBe(400);

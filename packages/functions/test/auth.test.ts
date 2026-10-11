@@ -1,10 +1,15 @@
 import type { Context } from '@netlify/functions';
+import { createHash, randomBytes } from 'node:crypto';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import authHandler from '../src/auth';
+import { createAuthHandler } from '../src/auth';
+import { createMemoryOAuthStateStore } from '../src/lib/oauth-state';
+import type { OAuthStateStore } from '../src/lib/oauth-state';
 
 vi.mock('../lib/constants', () => ({
   STRAVA_TOKEN_URL: 'https://www.strava.com/oauth/token',
 }));
+
+const randomState = (): string => randomBytes(32).toString('hex');
 
 function createContext(ip = '203.0.113.10'): Context {
   return { ip } as Context;
@@ -23,11 +28,28 @@ function createAuthRequest(body: unknown, cookie?: string): Request {
 }
 
 describe('auth handler', () => {
+  let stateStore: OAuthStateStore;
+  let authHandler: ReturnType<typeof createAuthHandler>;
+  const seedState = async (): Promise<string> => {
+    const state = randomState();
+    const now = Date.now();
+    await stateStore.create(createHash('sha256').update(state).digest('hex'), {
+      version: 1,
+      origin: 'https://app.example.com',
+      issuedAt: now,
+      expiresAt: now + 10 * 60_000,
+      status: 'pending',
+    });
+    return state;
+  };
+
   beforeEach(() => {
     vi.stubEnv('STRAVA_CLIENT_ID', 'client-id');
     vi.stubEnv('STRAVA_CLIENT_SECRET', 'client-secret');
     vi.stubEnv('FRONTEND_URL', 'https://app.example.com');
     vi.stubEnv('SIGNER_PRIVATE_KEY', `0x${'1'.repeat(64)}`);
+    stateStore = createMemoryOAuthStateStore();
+    authHandler = createAuthHandler({ stateStore });
   });
 
   afterEach(() => {
@@ -65,6 +87,187 @@ describe('auth handler', () => {
     expect(cookie).toContain('SameSite=Lax');
   });
 
+  it('times out a hung state write without issuing a usable callback cookie', async () => {
+    let releaseWrite: ((value: boolean) => void) | undefined;
+    authHandler = createAuthHandler({
+      budgetMs: 20,
+      stateStore: {
+        create: () =>
+          new Promise((resolve) => {
+            releaseWrite = resolve;
+          }),
+        async read() {
+          return null;
+        },
+        async compareAndSet() {
+          return false;
+        },
+      },
+    });
+    const response = await authHandler(
+      createAuthRequest({ action: 'start' }),
+      createContext('203.0.113.16'),
+    );
+
+    expect(response.status).toBe(504);
+    expect(response.headers.get('set-cookie')).toBeNull();
+    releaseWrite?.(true);
+    expect(JSON.parse(await response.text())).toEqual({
+      error: 'Authentication request timed out',
+    });
+  });
+
+  it('cancels a request body stream that never finishes before the deadline', async () => {
+    let cancelled = false;
+    authHandler = createAuthHandler({ budgetMs: 20, stateStore });
+    const request = new Request('https://functions.example.com/auth', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', origin: 'https://app.example.com' },
+      body: new ReadableStream<Uint8Array>({
+        cancel() {
+          cancelled = true;
+        },
+      }),
+      duplex: 'half',
+    } as RequestInit);
+    const response = await authHandler(request, createContext('203.0.113.19'));
+
+    expect(response.status).toBe(504);
+    expect(cancelled).toBe(true);
+  });
+
+  it('does not exchange a token after a timed-out state consumption resolves late', async () => {
+    const state = await seedState();
+    let releaseConsume: ((value: boolean) => void) | undefined;
+    const exchange = vi.fn();
+    authHandler = createAuthHandler({
+      budgetMs: 20,
+      stateStore: {
+        async create() {
+          return true;
+        },
+        async read() {
+          const now = Date.now();
+          return {
+            record: {
+              version: 1,
+              origin: 'https://app.example.com',
+              issuedAt: now,
+              expiresAt: now + 600_000,
+              status: 'pending',
+            },
+            etag: 'etag',
+          };
+        },
+        compareAndSet: () =>
+          new Promise((resolve) => {
+            releaseConsume = resolve;
+          }),
+      },
+      exchange,
+    });
+    const response = await authHandler(
+      createAuthRequest({ code: 'oauth-code', state }, `strava_oauth_state=${state}`),
+      createContext('203.0.113.17'),
+    );
+
+    expect(response.status).toBe(504);
+    releaseConsume?.(true);
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(exchange).not.toHaveBeenCalled();
+  });
+
+  it('does not start exchange when state consumption wins the race after the deadline', async () => {
+    const state = await seedState();
+    let monotonicTime = 0;
+    const exchange = vi.fn();
+    authHandler = createAuthHandler({
+      budgetMs: 1_000,
+      monotonicNow: () => monotonicTime,
+      stateStore: {
+        async create() {
+          return true;
+        },
+        async read() {
+          const now = Date.now();
+          return {
+            record: {
+              version: 1,
+              origin: 'https://app.example.com',
+              issuedAt: now,
+              expiresAt: now + 600_000,
+              status: 'pending',
+            },
+            etag: 'etag',
+          };
+        },
+        compareAndSet: () =>
+          Promise.resolve(true).then((consumed) => {
+            // The storage operation settles before the timeout callback gets
+            // a turn, but its result arrives beyond the request's deadline.
+            monotonicTime = 1_000;
+            return consumed;
+          }),
+      },
+      exchange,
+    });
+
+    const response = await authHandler(
+      createAuthRequest({ code: 'oauth-code', state }, `strava_oauth_state=${state}`),
+      createContext('203.0.113.21'),
+    );
+
+    expect(response.status).toBe(504);
+    expect(exchange).not.toHaveBeenCalled();
+    expect(JSON.parse(await response.text())).toEqual({
+      error: 'Authentication request timed out',
+    });
+  });
+
+  it('aborts the provider transport at the total deadline and discards a late result', async () => {
+    const state = await seedState();
+    let releaseExchange:
+      | ((value: { access_token: string; expires_at: number; athlete: { id: number } }) => void)
+      | undefined;
+    let exchangeSignal: AbortSignal | undefined;
+    const exchange = vi.fn((_code, _id, _secret, signal: AbortSignal) => {
+      exchangeSignal = signal;
+      return new Promise((resolve) => {
+        releaseExchange = resolve;
+      });
+    });
+    authHandler = createAuthHandler({ budgetMs: 20, stateStore, exchange });
+    const response = await authHandler(
+      createAuthRequest({ code: 'oauth-code', state }, `strava_oauth_state=${state}`),
+      createContext('203.0.113.20'),
+    );
+
+    expect(response.status).toBe(504);
+    expect(exchangeSignal?.aborted).toBe(true);
+    releaseExchange?.({ access_token: 'late-token', expires_at: 1, athlete: { id: 1 } });
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(JSON.parse(await response.text())).toEqual({
+      error: 'Authentication request timed out',
+    });
+  });
+
+  it('allows exactly one concurrent exchange for a state token', async () => {
+    const state = await seedState();
+    const exchange = vi
+      .fn()
+      .mockResolvedValue({ access_token: 'access-token', expires_at: 1, athlete: { id: 1 } });
+    authHandler = createAuthHandler({ stateStore, exchange });
+    const request = (): Promise<Response> =>
+      authHandler(
+        createAuthRequest({ code: 'oauth-code', state }, `strava_oauth_state=${state}`),
+        createContext('203.0.113.18'),
+      );
+
+    const responses = await Promise.all([request(), request()]);
+    expect(responses.map((response) => response.status).sort()).toEqual([200, 400]);
+    expect(exchange).toHaveBeenCalledOnce();
+  });
+
   it('rejects code exchange when OAuth state does not match the cookie', async () => {
     const fetchMock = vi.fn();
     vi.stubGlobal('fetch', fetchMock);
@@ -80,7 +283,31 @@ describe('auth handler', () => {
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
+  it('rejects a valid state when the callback origin differs from the initiating origin', async () => {
+    const state = randomState();
+    const now = Date.now();
+    await stateStore.create(createHash('sha256').update(state).digest('hex'), {
+      version: 1,
+      origin: 'https://other.example.com',
+      issuedAt: now,
+      expiresAt: now + 10 * 60_000,
+      status: 'pending',
+    });
+    const fetchMock = vi.fn();
+    vi.stubGlobal('fetch', fetchMock);
+
+    const response = await authHandler(
+      createAuthRequest({ code: 'oauth-code', state }, `strava_oauth_state=${state}`),
+      createContext('203.0.113.21'),
+    );
+
+    await expect(response.json()).resolves.toEqual({ error: 'Invalid or expired state' });
+    expect(response.status).toBe(400);
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
   it('does not expose Strava refresh tokens to the browser', async () => {
+    const state = await seedState();
     const fetchMock = vi.fn().mockResolvedValue(
       new Response(
         JSON.stringify({
@@ -95,7 +322,7 @@ describe('auth handler', () => {
     vi.stubGlobal('fetch', fetchMock);
 
     const response = await authHandler(
-      createAuthRequest({ code: 'oauth-code', state: 'state' }, 'strava_oauth_state=state'),
+      createAuthRequest({ code: 'oauth-code', state }, `strava_oauth_state=${state}`),
       createContext('203.0.113.12'),
     );
     const body = (await response.json()) as Record<string, unknown>;
@@ -173,7 +400,8 @@ describe('auth handler', () => {
   });
 
   it('maps token-exchange timeout and cancellation to 504', async () => {
-    const timeoutSpy = vi.spyOn(AbortSignal, 'timeout');
+    const state = await seedState();
+    const nextState = await seedState();
     const fetchMock = vi
       .fn()
       .mockRejectedValueOnce(new DOMException('timeout', 'TimeoutError'))
@@ -182,18 +410,20 @@ describe('auth handler', () => {
     const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
 
     const timeoutResponse = await authHandler(
-      createAuthRequest({ code: 'oauth-code', state: 'state' }, 'strava_oauth_state=state'),
+      createAuthRequest({ code: 'oauth-code', state }, `strava_oauth_state=${state}`),
       createContext('198.51.100.21'),
     );
     const cancelResponse = await authHandler(
-      createAuthRequest({ code: 'oauth-code', state: 'state' }, 'strava_oauth_state=state'),
+      createAuthRequest(
+        { code: 'oauth-code', state: nextState },
+        `strava_oauth_state=${nextState}`,
+      ),
       createContext('198.51.100.22'),
     );
 
     expect(timeoutResponse.status).toBe(504);
     expect(cancelResponse.status).toBe(504);
     await expect(timeoutResponse.json()).resolves.toEqual({ error: 'Upstream request timed out' });
-    expect(timeoutSpy).toHaveBeenCalledWith(8_000);
     expect(JSON.stringify(errorSpy.mock.calls)).not.toContain('client-secret');
     expect(JSON.stringify(errorSpy.mock.calls)).not.toContain('oauth-code');
   });
@@ -205,6 +435,7 @@ describe('auth handler', () => {
   ])(
     'maps token-exchange status %s without leaking secrets',
     async (upstreamStatus, status, expected) => {
+      const state = await seedState();
       const fetchMock = vi.fn().mockResolvedValue(
         new Response(
           JSON.stringify({ error: 'nope', client_secret: 'client-secret', code: 'oauth-code' }),
@@ -217,7 +448,7 @@ describe('auth handler', () => {
       const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
 
       const response = await authHandler(
-        createAuthRequest({ code: 'oauth-code', state: 'state' }, 'strava_oauth_state=state'),
+        createAuthRequest({ code: 'oauth-code', state }, `strava_oauth_state=${state}`),
         createContext(`198.51.100.${upstreamStatus}`),
       );
 
