@@ -11,6 +11,6 @@
     "declaration": false,
     "declarationMap": false
   },
-  "include": ["./src/**/*", "./lib/**/*"],
+  "include": ["./src/**/*", "./lib/**/*", "./verify-netlify-preview.ts"],
   "exclude": ["node_modules", "dist"]
 }

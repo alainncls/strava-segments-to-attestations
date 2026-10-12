@@ -24,7 +24,8 @@
     "lint:fix": "eslint . --fix",
     "test": "pnpm -r test",
     "test:e2e": "pnpm --filter @strava-attestations/frontend test:e2e",
-    "test:coverage": "pnpm -r test:coverage"
+    "test:coverage": "pnpm -r test:coverage",
+    "verify:oauth-preview": "pnpm --filter @strava-attestations/functions exec tsx verify-netlify-preview.ts"
   },
   "devDependencies": {
     "@eslint/js": "10.0.1",
