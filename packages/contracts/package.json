@@ -34,7 +34,7 @@
     "globals": "catalog:",
     "hardhat": "catalog:",
     "prettier": "catalog:",
-    "solhint": "6.2.4",
+    "solhint": "6.2.5",
     "typescript": "catalog:",
     "typescript-eslint": "catalog:",
     "viem": "catalog:",
