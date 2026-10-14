@@ -45,7 +45,7 @@ catalog:
 
   # Solidity
   hardhat: 3.19.0
-  prettier: 3.9.9
+  prettier: 3.9.10
 
   # React
   react: 19.3.0
