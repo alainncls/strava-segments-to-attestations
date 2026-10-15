@@ -19,7 +19,7 @@ catalog:
   '@reown/appkit-adapter-wagmi': 1.8.24
 
   # Wagmi & Viem
-  '@tanstack/react-query': 5.104.1
+  '@tanstack/react-query': 5.104.2
 
   # Testing
   '@testing-library/jest-dom': 6.9.1
