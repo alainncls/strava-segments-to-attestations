@@ -70,7 +70,7 @@ export const oauthStateNamespace = (context: string): string => {
   return `strava-oauth-v1-${namespace}`;
 };
 
-export const createNetlifyOAuthStateStore = (context = process.env.CONTEXT): OAuthStateStore => {
+export const createNetlifyOAuthStateStore = (context: string | undefined): OAuthStateStore => {
   if (!context) throw new Error('Netlify context is required for OAuth state storage');
   return createOAuthStateStore(getStore(oauthStateNamespace(context), { consistency: 'strong' }));
 };
