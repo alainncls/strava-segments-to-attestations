@@ -54,8 +54,8 @@ catalog:
 
   # TypeScript
   typescript: 6.0.3
-  typescript-eslint: 8.71.1
-  viem: 2.57.4
+  typescript-eslint: 8.71.2
+  viem: 2.57.5
   vite: 8.3.4
   vitest: 4.1.11
   wagmi: 3.7.7
