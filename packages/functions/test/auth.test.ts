@@ -5,6 +5,10 @@ import { createAuthHandler } from '../src/auth';
 import { createMemoryOAuthStateStore } from '../src/lib/oauth-state';
 import type { OAuthStateStore } from '../src/lib/oauth-state';
 
+const { getStoreMock } = vi.hoisted(() => ({ getStoreMock: vi.fn() }));
+
+vi.mock('@netlify/blobs', () => ({ getStore: getStoreMock }));
+
 vi.mock('../lib/constants', () => ({
   STRAVA_TOKEN_URL: 'https://www.strava.com/oauth/token',
 }));
@@ -460,4 +464,30 @@ describe('auth handler', () => {
       expect(JSON.stringify(body)).not.toContain('oauth-code');
     },
   );
+});
+
+describe('auth handler with Netlify Blobs state store', () => {
+  afterEach(() => {
+    vi.unstubAllEnvs();
+    vi.clearAllMocks();
+  });
+
+  it('uses the runtime deploy context, not the build-only CONTEXT variable', async () => {
+    vi.stubEnv('STRAVA_CLIENT_ID', 'client-id');
+    vi.stubEnv('STRAVA_CLIENT_SECRET', 'client-secret');
+    vi.stubEnv('FRONTEND_URL', 'https://app.example.com');
+    vi.stubEnv('SIGNER_PRIVATE_KEY', `0x${'1'.repeat(64)}`);
+    vi.stubEnv('CONTEXT', undefined);
+    getStoreMock.mockReturnValue({ setJSON: vi.fn(async () => ({ modified: true })) });
+
+    const response = await createAuthHandler()(createAuthRequest({ action: 'start' }), {
+      ip: '203.0.113.50',
+      deploy: { context: 'production' },
+    } as Context);
+
+    expect(response.status).toBe(200);
+    expect(getStoreMock).toHaveBeenCalledWith('strava-oauth-v1-production', {
+      consistency: 'strong',
+    });
+  });
 });

@@ -75,6 +75,10 @@ interface AuthDependencies {
   budgetMs?: number;
 }
 
+function logStateStorageError(error: unknown): void {
+  console.error('OAuth state storage error:', error instanceof Error ? error.message : error);
+}
+
 class AuthTimeoutError extends Error {
   constructor(readonly stage: string) {
     super(`OAuth ${stage} exceeded its request deadline`);
@@ -253,7 +257,8 @@ export const createAuthHandler =
           status: 'pending',
         };
         try {
-          const store = dependencies.stateStore ?? createNetlifyOAuthStateStore();
+          const store =
+            dependencies.stateStore ?? createNetlifyOAuthStateStore(context.deploy?.context);
           const created = await withDeadline(
             () => store.create(hashState(state), record),
             deadlineAt,
@@ -268,6 +273,7 @@ export const createAuthHandler =
           }
         } catch (error) {
           if (error instanceof AuthTimeoutError) throw error;
+          logStateStorageError(error);
           return new Response(JSON.stringify({ error: 'OAuth state storage unavailable' }), {
             status: 503,
             headers,
@@ -301,7 +307,8 @@ export const createAuthHandler =
         });
       }
 
-      const store = dependencies.stateStore ?? createNetlifyOAuthStateStore();
+      const store =
+        dependencies.stateStore ?? createNetlifyOAuthStateStore(context.deploy?.context);
       let entry;
       try {
         entry = await withDeadline(
@@ -312,6 +319,7 @@ export const createAuthHandler =
         );
       } catch (error) {
         if (error instanceof AuthTimeoutError) throw error;
+        logStateStorageError(error);
         return new Response(JSON.stringify({ error: 'OAuth state storage unavailable' }), {
           status: 503,
           headers,
@@ -348,6 +356,7 @@ export const createAuthHandler =
         );
       } catch (error) {
         if (error instanceof AuthTimeoutError) throw error;
+        logStateStorageError(error);
         return new Response(JSON.stringify({ error: 'OAuth state storage unavailable' }), {
           status: 503,
           headers,
