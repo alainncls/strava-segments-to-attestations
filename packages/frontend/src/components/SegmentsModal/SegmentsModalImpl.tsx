@@ -1,6 +1,13 @@
 import React, { useCallback, useMemo, useState } from 'react';
 import { useAccount, useWriteContract, useWaitForTransactionReceipt } from 'wagmi';
-import { encodeAbiParameters, parseAbiParameters, type Hex, type Address, isAddress } from 'viem';
+import {
+  encodeAbiParameters,
+  formatEther,
+  parseAbiParameters,
+  type Hex,
+  type Address,
+  isAddress,
+} from 'viem';
 import type { Activity, Segment, SignedSegment } from '../../types';
 import {
   API_URL,
@@ -62,17 +69,17 @@ function SegmentsModalContent({
   const handleAttest = useCallback(
     async (segment: Segment): Promise<void> => {
       if (!activity) {
-        setError('No activity selected');
+        setError('No activity selected.');
         return;
       }
 
       if (!address) {
-        setError('Please connect your wallet first');
+        setError('Connect a wallet first.');
         return;
       }
 
       if (!isAddress(address)) {
-        setError('Invalid wallet address');
+        setError('Invalid wallet address.');
         return;
       }
 
@@ -101,8 +108,8 @@ function SegmentsModalContent({
           };
           setError(
             errorData.tokenExpired
-              ? 'Your Strava session has expired. Please reconnect.'
-              : errorData.error || 'Failed to sign segment',
+              ? 'Strava session expired. Reconnect Strava.'
+              : errorData.error || 'Could not sign this segment.',
           );
           setLoadingSegmentId(null);
           return;
@@ -168,12 +175,12 @@ function SegmentsModalContent({
     [accessToken, activity, address, chainId, portalAddress, resetWrite, writeContract],
   );
 
-  const modalTitle = activity?.name ? `Segments in ${activity.name}` : 'Segments';
+  const modalTitle = activity?.name || 'Segments';
 
   const modalFooter = useMemo(
     () => (
       <>
-        <span className={styles.footerInfo}>Fee: 0.0001 ETH per attestation</span>
+        <span className={styles.fee}>Fee {formatEther(ATTESTATION_FEE)} ETH</span>
         <Button variant="secondary" onClick={onHide}>
           Close
         </Button>
@@ -188,49 +195,52 @@ function SegmentsModalContent({
   return (
     <Modal show={displayModal} onHide={onHide} title={modalTitle} size="lg" footer={modalFooter}>
       {!activity?.segments?.length ? (
-        <div className={styles.empty}>
-          <p>No segments found in this activity.</p>
-        </div>
+        <p className={styles.empty}>No segments in this activity.</p>
       ) : (
-        <div className={styles.segmentList}>
-          {activity.segments.map((segment) => {
-            const isThisSegmentActive =
-              loadingSegmentId === segment.id || attestingSegmentId === segment.id;
+        <>
+          {!address ? <p className={styles.notice}>Connect a wallet to attest.</p> : null}
+          <ul className={styles.segmentList}>
+            {activity.segments.map((segment) => {
+              const isThisSegmentActive =
+                loadingSegmentId === segment.id || attestingSegmentId === segment.id;
 
-            return (
-              <SegmentItem
-                key={segment.id}
-                segment={segment}
-                onAttest={handleAttest}
-                isLoading={loadingSegmentId === segment.id}
-                isAttesting={attestingSegmentId === segment.id}
-                isDisabled={!isThisSegmentActive && isAnySegmentBusy}
-                isWalletConnected={!!address}
-              />
-            );
-          })}
-        </div>
+              return (
+                <SegmentItem
+                  key={segment.id}
+                  segment={segment}
+                  onAttest={handleAttest}
+                  isLoading={loadingSegmentId === segment.id}
+                  isAttesting={attestingSegmentId === segment.id}
+                  isDisabled={!isThisSegmentActive && isAnySegmentBusy}
+                  isWalletConnected={!!address}
+                />
+              );
+            })}
+          </ul>
+        </>
       )}
 
       {error ? (
-        <div className={styles.error}>
-          <span>ERROR</span> {error}
-        </div>
+        <p role="alert" className={styles.error}>
+          {error}
+        </p>
       ) : null}
 
       {successTxHash ? (
-        <div className={styles.success}>
-          <span>OK</span> Attestation{' '}
-          {isConfirming ? 'pending...' : isConfirmed ? 'confirmed!' : 'submitted!'}{' '}
+        <p role="status" className={styles.success}>
+          {isConfirming
+            ? 'Attestation pending'
+            : isConfirmed
+              ? 'Attestation confirmed'
+              : 'Attestation submitted'}
           <a
             href={getExplorerUrl(successTxHash, isMainnet)}
             target="_blank"
             rel="noopener noreferrer"
-            className={styles.txLink}
           >
             {formatTxHash(successTxHash)}
           </a>
-        </div>
+        </p>
       ) : null}
     </Modal>
   );

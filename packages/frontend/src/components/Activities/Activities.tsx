@@ -1,6 +1,6 @@
 import React, { memo, useCallback } from 'react';
 import type { Activity } from '../../types';
-import { formatDistance, formatDate, getActivityIcon } from '@/utils/format.ts';
+import { formatActivityType, formatDate, formatDistance } from '@/utils/format.ts';
 import { Button } from '../Button/Button';
 import styles from './Activities.module.css';
 
@@ -17,61 +17,66 @@ interface ActivitiesProps {
   onLoadMore?: () => void;
 }
 
-interface ActivityCardProps {
+interface ActivityRowProps {
   activity: Activity;
-  index: number;
   isLoading: boolean;
   onActivityClick: (activityId: number) => void;
 }
 
-const ActivityCard = memo(function ActivityCard({
+function segmentLabel(activity: Activity): string {
+  if (!activity.segmentsLoaded) {
+    return 'View segments';
+  }
+
+  const count = activity.segments?.length ?? 0;
+  if (count === 0) {
+    return 'No segments';
+  }
+
+  return `${count} segment${count > 1 ? 's' : ''}`;
+}
+
+const ActivityRow = memo(function ActivityRow({
   activity,
-  index,
   isLoading,
   onActivityClick,
-}: ActivityCardProps): React.JSX.Element {
+}: ActivityRowProps): React.JSX.Element {
   const handleClick = useCallback((): void => {
     onActivityClick(activity.id);
   }, [activity.id, onActivityClick]);
 
-  const segmentCount = activity.segments?.length ?? 0;
+  const isMuted = !activity.segmentsLoaded || !activity.segments?.length;
 
   return (
-    <button
-      className={`${styles.card} fade-in stagger-${Math.min(index + 1, 5)}`}
-      onClick={handleClick}
-      disabled={isLoading}
-    >
-      <div className={styles.cardHeader}>
-        <span className={styles.icon}>{getActivityIcon(activity.type)}</span>
-        <span className={styles.type}>{activity.type}</span>
-      </div>
-      <h3 className={styles.name}>{activity.name}</h3>
-      <div className={styles.meta}>
-        <span>{formatDate(activity.startDate)}</span>
-        <span className={styles.separator}>•</span>
-        <span>{formatDistance(activity.distance)}</span>
-      </div>
-      {activity.segmentsLoaded ? (
-        <div
-          className={`${styles.segmentBadge} ${segmentCount > 0 ? styles.hasSegments : styles.noSegments}`}
-        >
-          {segmentCount > 0 ? `${segmentCount} segment${segmentCount > 1 ? 's' : ''}` : '0 segment'}
-        </div>
-      ) : (
-        <div className={styles.loadSegments}>
-          <span className={styles.loadIcon}>📂</span>
-          <span>Load segments</span>
-        </div>
-      )}
-      {isLoading ? (
-        <div className={styles.loading}>
-          <div className={styles.spinner} />
-        </div>
-      ) : null}
-    </button>
+    <li>
+      <button
+        className={styles.row}
+        onClick={handleClick}
+        disabled={isLoading}
+        aria-busy={isLoading}
+      >
+        <span className={styles.name}>{activity.name}</span>
+        <span className={styles.meta}>
+          <span>{formatActivityType(activity.type)}</span>
+          <span>{formatDate(activity.startDate)}</span>
+          <span className={styles.distance}>{formatDistance(activity.distance)}</span>
+        </span>
+        <span className={`${styles.segments} ${isMuted ? styles.muted : ''}`}>
+          {isLoading ? <span className={styles.spinner} aria-hidden="true" /> : null}
+          {segmentLabel(activity)}
+        </span>
+      </button>
+    </li>
   );
 });
+
+function retryLabel(isRetryBlocked: boolean, isLoadingMore: boolean, fallback: string): string {
+  if (isRetryBlocked) {
+    return 'Retry soon';
+  }
+
+  return isLoadingMore ? 'Loading…' : fallback;
+}
 
 export default function Activities({
   activities,
@@ -89,18 +94,15 @@ export default function Activities({
     return (
       <div className={styles.empty}>
         {activitiesError ? (
-          <p role="alert" className={styles.errorMessage}>
+          <p role="alert" className={styles.error}>
             {activitiesError}
           </p>
-        ) : null}
-        {!activitiesError ? <p>No activities found. Go complete some segments!</p> : null}
+        ) : (
+          <p>No activities yet.</p>
+        )}
         {hasMore && activitiesError && !isAuthenticationError && onLoadMore ? (
-          <Button variant="outline" onClick={onLoadMore} disabled={isLoadingMore || isRetryBlocked}>
-            {isRetryBlocked
-              ? 'Wait before retrying'
-              : isLoadingMore
-                ? 'Loading...'
-                : 'Retry activities'}
+          <Button onClick={onLoadMore} disabled={isLoadingMore || isRetryBlocked}>
+            {retryLabel(isRetryBlocked, isLoadingMore, 'Retry')}
           </Button>
         ) : null}
       </div>
@@ -108,48 +110,41 @@ export default function Activities({
   }
 
   return (
-    <div className={styles.container}>
-      <h2 className={styles.title}>Your Recent Activities</h2>
+    <section>
+      <h1 className={styles.title}>Activities</h1>
       {activitiesError ? (
-        <p role="alert" className={styles.errorMessage}>
+        <p role="alert" className={styles.error}>
           {activitiesError}
         </p>
       ) : null}
-      <div className={styles.grid}>
-        {activities.map((activity, index) => (
-          <ActivityCard
+
+      <ul className={styles.list}>
+        {activities.map((activity) => (
+          <ActivityRow
             key={activity.id}
             activity={activity}
-            index={index}
             isLoading={loadingActivityId === activity.id}
             onActivityClick={onActivityClick}
           />
         ))}
-      </div>
+      </ul>
 
       {Object.entries(segmentErrors).map(([activityId, error]) => (
-        <p key={activityId} role="status" className={styles.errorMessage}>
+        <p key={activityId} role="status" className={styles.error}>
           Activity {activityId}: {error}
         </p>
       ))}
 
       {hasMore && onLoadMore ? (
-        <div className={styles.loadMore}>
+        <div className={styles.more}>
           <Button
-            variant="outline"
             onClick={onLoadMore}
             disabled={isLoadingMore || isRetryBlocked || isAuthenticationError}
           >
-            {isRetryBlocked
-              ? 'Wait before retrying'
-              : isLoadingMore
-                ? 'Loading...'
-                : activitiesError
-                  ? 'Retry activities'
-                  : 'Load more activities'}
+            {retryLabel(isRetryBlocked, isLoadingMore, activitiesError ? 'Retry' : 'Load more')}
           </Button>
         </div>
       ) : null}
-    </div>
+    </section>
   );
 }

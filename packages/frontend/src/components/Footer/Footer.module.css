@@ -1,167 +1,57 @@
 .footer {
   margin-top: auto;
-  background: var(--bg-secondary);
-  border-top: 1px solid var(--border-color);
-  padding: 1.5rem 0 calc(1.5rem + env(safe-area-inset-bottom, 0));
+  border-top: 1px solid var(--line);
+  padding: 1rem 0 calc(1rem + env(safe-area-inset-bottom, 0));
 }
 
 .container {
-  max-width: 1200px;
+  max-width: var(--page-width);
   margin: 0 auto;
   padding: 0 1rem;
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
-  flex-wrap: wrap;
-  gap: 1rem;
+  gap: 0.75rem 1.5rem;
 }
 
-.left,
-.right {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-}
-
-.center {
-  display: flex;
-  align-items: center;
-}
-
-.copyright {
-  color: var(--text-muted);
+.credit {
+  color: var(--text-3);
   font-size: 0.875rem;
-  margin: 0;
 }
 
-.link {
-  color: var(--text-secondary);
-  font-size: 0.875rem;
-  text-decoration: underline;
-  text-underline-offset: 0.18em;
-  transition: color 0.2s ease;
+.credit a {
+  color: var(--text-2);
 }
 
-.link:hover {
-  color: var(--strava-orange);
+.strava {
+  display: block;
+  height: 28px;
+  width: auto;
 }
 
-.separator {
-  color: var(--text-muted);
-  margin: 0 4px;
-}
-
-.aboutLink {
-  color: var(--text-secondary);
-  font-size: 0.875rem;
-  transition: color 0.2s ease;
-}
-
-.aboutLink:hover {
-  color: var(--strava-orange);
-}
-
-.stravaLink {
+.links {
   display: flex;
-  align-items: center;
-}
-
-.stravaLogo {
-  height: 32px;
-  opacity: 0.8;
-  transition: opacity 0.2s ease;
-}
-
-.stravaLogo:hover {
-  opacity: 1;
+  gap: 0.25rem;
+  list-style: none;
 }
 
 .iconLink {
-  display: inline-flex;
+  display: flex;
   align-items: center;
   justify-content: center;
   width: 36px;
   height: 36px;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  transition:
-    border-color 0.2s ease,
-    transform 0.2s ease,
-    background 0.2s ease;
+  border-radius: var(--radius-sm);
+  opacity: 0.7;
+  transition: opacity 0.15s ease;
 }
 
 .iconLink:hover {
-  border-color: var(--strava-orange);
-  background: rgba(255, 255, 255, 0.08);
-  transform: translateY(-1px);
+  opacity: 1;
+  background: var(--surface-hover);
 }
 
-.icon {
-  width: 18px;
-  height: 18px;
-  opacity: 0.9;
-}
-
-.darkIcon {
-  filter: brightness(0) saturate(100%) invert(100%);
-}
-
-.srOnly {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  padding: 0;
-  margin: -1px;
-  overflow: hidden;
-  clip: rect(0, 0, 0, 0);
-  white-space: nowrap;
-  border: 0;
-}
-
-@media (max-width: 768px) {
-  .container {
-    flex-direction: column;
-    text-align: center;
-  }
-
-  .left,
-  .center,
-  .right {
-    width: 100%;
-    justify-content: center;
-  }
-}
-
-@media (max-width: 480px) {
-  .footer {
-    padding: 1rem 0 calc(1rem + env(safe-area-inset-bottom, 0));
-  }
-
-  .container {
-    gap: 0.75rem;
-  }
-
-  .copyright,
-  .link {
-    font-size: 0.8125rem;
-  }
-
-  .aboutLink {
-    font-size: 0.8125rem;
-  }
-
-  .stravaLogo {
-    height: 28px;
-  }
-
-  .iconLink {
-    width: 32px;
-    height: 32px;
-  }
-
-  .icon {
-    width: 16px;
-    height: 16px;
-  }
+.invert {
+  filter: brightness(0) invert(1);
 }

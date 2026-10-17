@@ -1,10 +1,12 @@
 import React, { useEffect, useState } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { usePageMetadata } from '@/hooks/usePageMetadata.ts';
 import { useStravaAuth } from '@/hooks/useStravaAuth.ts';
 import { API_URL, STORAGE_KEYS } from '@/utils/constants.ts';
 import Loader from '../../components/Loader/Loader';
+import Header from '../../components/Header/Header';
 import Footer from '../../components/Footer/Footer';
+import { buttonClassName } from '../../components/Button/Button';
 import styles from './StravaCallback.module.css';
 
 export default function StravaCallback(): React.JSX.Element {
@@ -29,12 +31,12 @@ export default function StravaCallback(): React.JSX.Element {
     sessionStorage.removeItem(STORAGE_KEYS.OAUTH_STATE);
 
     if (errorParam) {
-      setError('Authorization was denied. Please try again.');
+      setError('Strava access was denied.');
       return;
     }
 
     if (!state || !expectedState || state !== expectedState) {
-      setError('Invalid authorization state. Please try again.');
+      setError('Invalid authorization state.');
       return;
     }
 
@@ -53,7 +55,7 @@ export default function StravaCallback(): React.JSX.Element {
         });
 
         if (!response.ok) {
-          setError('Failed to exchange authorization code');
+          setError('Could not finish sign-in.');
           return;
         }
 
@@ -62,7 +64,7 @@ export default function StravaCallback(): React.JSX.Element {
         navigate('/');
       } catch (err) {
         console.error('OAuth error:', err);
-        setError('Failed to complete authentication. Please try again.');
+        setError('Could not finish sign-in.');
       }
     };
 
@@ -71,23 +73,19 @@ export default function StravaCallback(): React.JSX.Element {
 
   if (error) {
     return (
-      <div className={styles.container}>
-        <div className={styles.error}>
-          <span className={styles.errorIcon}>❌</span>
-          <h2>Authentication Error</h2>
-          <p>{error}</p>
-          <button onClick={() => navigate('/')} className={styles.button}>
-            Back to Home
-          </button>
-        </div>
-      </div>
+      <>
+        <Header isStravaConnected={false} />
+        <main className={styles.main}>
+          <h1 className={styles.title}>Sign-in failed</h1>
+          <p className={styles.description}>{error}</p>
+          <Link to="/" className={buttonClassName('primary')}>
+            Back to home
+          </Link>
+        </main>
+        <Footer />
+      </>
     );
   }
 
-  return (
-    <div className={styles.container}>
-      <Loader loading message="Completing authentication..." />
-      <Footer isStravaConnected={false} />
-    </div>
-  );
+  return <Loader loading message="Signing in…" />;
 }

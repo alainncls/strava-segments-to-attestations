@@ -3,17 +3,14 @@
   align-items: center;
   justify-content: space-between;
   gap: 1rem;
+  padding: 0.875rem 0;
+  border-bottom: 1px solid var(--line);
   content-visibility: auto;
-  contain-intrinsic-size: 0 78px;
-  padding: 1rem;
-  background: var(--bg-card);
-  border: 1px solid var(--border-color);
-  border-radius: 10px;
-  transition: all 0.2s ease;
+  contain-intrinsic-size: 0 68px;
 }
 
-.item:hover {
-  border-color: var(--border-color-light);
+.item:last-child {
+  border-bottom: none;
 }
 
 .info {
@@ -21,103 +18,37 @@
   min-width: 0;
 }
 
-.header {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  margin-bottom: 0.25rem;
-}
-
-.icon {
-  font-size: 1rem;
-}
-
 .name {
   font-size: 0.9375rem;
   font-weight: 600;
-  color: var(--text-primary);
-  margin: 0;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  overflow-wrap: anywhere;
 }
 
 .meta {
   display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  font-size: 0.8125rem;
-  color: var(--text-muted);
+  flex-wrap: wrap;
+  gap: 0 0.75rem;
+  color: var(--text-3);
+  font-size: 0.875rem;
+  font-variant-numeric: tabular-nums;
 }
 
-.separator {
-  color: var(--border-color-light);
-}
-
-.attestBtn {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.625rem 1rem;
-  background: linear-gradient(
-    135deg,
-    var(--strava-orange-accessible) 0%,
-    var(--strava-orange-dark) 100%
-  );
-  border: none;
-  border-radius: 8px;
-  color: white;
-  font-weight: 600;
-  font-size: 0.8125rem;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  white-space: nowrap;
-  min-height: 44px;
-}
-
-.attestBtn:hover:not(:disabled) {
-  background: linear-gradient(135deg, var(--strava-orange) 0%, var(--strava-orange-dark) 100%);
-  transform: translateY(-1px);
-}
-
-.attestBtn:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-  transform: none;
+.attest {
+  flex-shrink: 0;
+  min-width: 7rem;
 }
 
 .spinner {
   width: 14px;
   height: 14px;
-  border: 2px solid rgba(255, 255, 255, 0.3);
-  border-top-color: white;
+  border: 2px solid rgba(10, 10, 11, 0.3);
+  border-top-color: var(--on-accent);
   border-radius: 50%;
-  animation: spin 1s linear infinite;
+  animation: spin 0.8s linear infinite;
 }
 
 @keyframes spin {
-  from {
-    transform: rotate(0deg);
-  }
   to {
     transform: rotate(360deg);
-  }
-}
-
-@media (max-width: 500px) {
-  .item {
-    flex-direction: column;
-    align-items: stretch;
-  }
-
-  .attestBtn {
-    justify-content: center;
-    width: 100%;
-  }
-}
-
-@media (max-width: 640px) {
-  .attestBtn {
-    width: 100%;
   }
 }

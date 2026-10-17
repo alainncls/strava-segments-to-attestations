@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { formatDistance, getActivityIcon } from './format';
+import { formatDistance, formatActivityType } from './format';
 
 describe('format utilities', () => {
   it('formats distances in kilometers', () => {
@@ -8,9 +8,9 @@ describe('format utilities', () => {
     expect(formatDistance(5500)).toBe('5.50 km');
   });
 
-  it('uses activity-specific icons with a fallback', () => {
-    expect(getActivityIcon('Run')).toBe('🏃');
-    expect(getActivityIcon('Ride')).toBe('🚴');
-    expect(getActivityIcon('VirtualRide')).toBe('🏅');
+  it('formats Strava activity types as readable labels', () => {
+    expect(formatActivityType('Run')).toBe('Run');
+    expect(formatActivityType('VirtualRide')).toBe('Virtual ride');
+    expect(formatActivityType('AlpineSki')).toBe('Alpine ski');
   });
 });

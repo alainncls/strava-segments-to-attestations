@@ -45,7 +45,7 @@ describe('App routing integration', () => {
     renderRoute('/');
 
     expect(
-      await screen.findByRole('heading', { name: /create verifiable attestations/i }),
+      await screen.findByRole('heading', { name: /prove your strava segments onchain/i }),
     ).toBeVisible();
     expect(screen.getByRole('button', { name: /connect wallet/i })).toBeVisible();
     expect(screen.getByRole('button', { name: /connect with strava/i })).toBeVisible();
@@ -63,7 +63,7 @@ describe('App routing integration', () => {
   it('renders the OAuth error route when no code is present', async () => {
     renderRoute('/oauth');
 
-    expect(await screen.findByRole('heading', { name: /authentication error/i })).toBeVisible();
+    expect(await screen.findByRole('heading', { name: /sign-in failed/i })).toBeVisible();
     expect(screen.getByText(/invalid authorization state/i)).toBeVisible();
     await waitFor(() => {
       expect(document.querySelector('link[rel="canonical"]')?.getAttribute('href')).toBe(
@@ -80,7 +80,7 @@ describe('App routing integration', () => {
 
     renderRoute('/oauth?code=test-code&state=wrong-state');
 
-    expect(await screen.findByRole('heading', { name: /authentication error/i })).toBeVisible();
+    expect(await screen.findByRole('heading', { name: /sign-in failed/i })).toBeVisible();
     expect(screen.getByText(/invalid authorization state/i)).toBeVisible();
   });
 });
