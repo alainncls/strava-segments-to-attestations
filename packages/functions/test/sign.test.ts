@@ -270,7 +270,7 @@ describe('sign handler', () => {
       }),
     ).resolves.toBe(true);
     expect(lineaSepolia.id).toBe(59141);
-    expect(PORTAL_ID_SEPOLIA).toBe('0xc04228f66b1aa75a2a8f6887730f55b54281e9d9');
+    expect(PORTAL_ID_SEPOLIA).toBe('0xcfa8846d99d27f07ccd31e09c4f166a708fabd80');
   });
 
   it('rejects a public activity that belongs to a different Strava athlete', async () => {

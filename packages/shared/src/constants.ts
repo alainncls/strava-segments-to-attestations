@@ -2,7 +2,7 @@ import type { Address, Hex } from 'viem';
 import { linea, lineaSepolia } from 'viem/chains';
 
 // Portal addresses
-export const PORTAL_ID_SEPOLIA: Address = '0xc04228f66b1aa75a2a8f6887730f55b54281e9d9';
+export const PORTAL_ID_SEPOLIA: Address = '0xcfa8846d99d27f07ccd31e09c4f166a708fabd80';
 export const PORTAL_ID_MAINNET: Address = '0xe1301b12c2dbe0be67187432fb2519801439f552';
 
 // Schema ID - (uint256 segmentId, uint64 completionDate)
