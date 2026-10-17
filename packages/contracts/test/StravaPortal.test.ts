@@ -80,7 +80,7 @@ describe('StravaPortal', () => {
     it('should create consistent signatures for same input', async () => {
       const testSubject = getAddress('0x1234567890123456789012345678901234567890');
       const chainId = 59141; // Linea Sepolia
-      const verifyingContract = getAddress('0xc04228f66b1aa75a2a8f6887730f55b54281e9d9');
+      const verifyingContract = getAddress('0xcfa8846d99d27f07ccd31e09c4f166a708fabd80');
 
       const sig1 = await signSegment(
         testSegmentId,
@@ -109,7 +109,7 @@ describe('StravaPortal', () => {
       const subject1 = getAddress('0x1234567890123456789012345678901234567890');
       const subject2 = getAddress('0x0987654321098765432109876543210987654321');
       const chainId = 59141;
-      const verifyingContract = getAddress('0xc04228f66b1aa75a2a8f6887730f55b54281e9d9');
+      const verifyingContract = getAddress('0xcfa8846d99d27f07ccd31e09c4f166a708fabd80');
 
       const sig1 = await signSegment(
         testSegmentId,
@@ -136,7 +136,7 @@ describe('StravaPortal', () => {
     it('should produce different signatures for different segment IDs', async () => {
       const testSubject = getAddress('0x1234567890123456789012345678901234567890');
       const chainId = 59141;
-      const verifyingContract = getAddress('0xc04228f66b1aa75a2a8f6887730f55b54281e9d9');
+      const verifyingContract = getAddress('0xcfa8846d99d27f07ccd31e09c4f166a708fabd80');
 
       const sig1 = await signSegment(
         BigInt(111),
@@ -163,7 +163,7 @@ describe('StravaPortal', () => {
     it('should produce different signatures from different signers', async () => {
       const testSubject = getAddress('0x1234567890123456789012345678901234567890');
       const chainId = 59141;
-      const verifyingContract = getAddress('0xc04228f66b1aa75a2a8f6887730f55b54281e9d9');
+      const verifyingContract = getAddress('0xcfa8846d99d27f07ccd31e09c4f166a708fabd80');
 
       const sig1 = await signSegment(
         testSegmentId,
@@ -189,7 +189,7 @@ describe('StravaPortal', () => {
 
     it('should produce different signatures for different chain IDs', async () => {
       const testSubject = getAddress('0x1234567890123456789012345678901234567890');
-      const verifyingContract = getAddress('0xc04228f66b1aa75a2a8f6887730f55b54281e9d9');
+      const verifyingContract = getAddress('0xcfa8846d99d27f07ccd31e09c4f166a708fabd80');
 
       const sig1 = await signSegment(
         testSegmentId,
@@ -216,7 +216,7 @@ describe('StravaPortal', () => {
     it('should produce different signatures for different completion dates', async () => {
       const testSubject = getAddress('0x1234567890123456789012345678901234567890');
       const chainId = 59141;
-      const verifyingContract = getAddress('0xc04228f66b1aa75a2a8f6887730f55b54281e9d9');
+      const verifyingContract = getAddress('0xcfa8846d99d27f07ccd31e09c4f166a708fabd80');
 
       const sig1 = await signSegment(
         testSegmentId,
@@ -243,7 +243,7 @@ describe('StravaPortal', () => {
     it('should produce different signatures for different deadlines', async () => {
       const testSubject = getAddress('0x1234567890123456789012345678901234567890');
       const chainId = 59141;
-      const verifyingContract = getAddress('0xc04228f66b1aa75a2a8f6887730f55b54281e9d9');
+      const verifyingContract = getAddress('0xcfa8846d99d27f07ccd31e09c4f166a708fabd80');
 
       const sig1 = await signSegment(
         testSegmentId,
@@ -333,7 +333,7 @@ describe('StravaPortal', () => {
           name: 'VerifyStrava',
           version: '1',
           chainId: BigInt(59141),
-          verifyingContract: getAddress('0xc04228f66b1aa75a2a8f6887730f55b54281e9d9'),
+          verifyingContract: getAddress('0xcfa8846d99d27f07ccd31e09c4f166a708fabd80'),
         },
       });
 
@@ -343,7 +343,7 @@ describe('StravaPortal', () => {
           name: 'VerifyStrava',
           version: '1',
           chainId: BigInt(59144),
-          verifyingContract: getAddress('0xc04228f66b1aa75a2a8f6887730f55b54281e9d9'),
+          verifyingContract: getAddress('0xcfa8846d99d27f07ccd31e09c4f166a708fabd80'),
         },
       });
 

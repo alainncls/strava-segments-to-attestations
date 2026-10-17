@@ -251,7 +251,7 @@ The project is configured for Netlify deployment:
 
 | Contract | Address |
 | -------- | ------- |
-| Portal | [`0xc04228f66b1aa75a2a8f6887730f55b54281e9d9`](https://sepolia.lineascan.build/address/0xc04228f66b1aa75a2a8f6887730f55b54281e9d9) |
+| Portal | [`0xcfa8846d99d27f07ccd31e09c4f166a708fabd80`](https://sepolia.lineascan.build/address/0xcfa8846d99d27f07ccd31e09c4f166a708fabd80) |
 | Schema ID | `0xc1708360b3df59e91dfd33f901c659c0350461e6a30392d1e3218d4847e6b20d` |
 
 ## Attestation Schema
