@@ -3,7 +3,7 @@ import { linea, lineaSepolia } from 'viem/chains';
 
 // Portal addresses
 export const PORTAL_ID_SEPOLIA: Address = '0xcfa8846d99d27f07ccd31e09c4f166a708fabd80';
-export const PORTAL_ID_MAINNET: Address = '0xe1301b12c2dbe0be67187432fb2519801439f552';
+export const PORTAL_ID_MAINNET: Address = '0xb917d893321eab9662c56f22a2f6a37344d740d9';
 
 // Schema ID - (uint256 segmentId, uint64 completionDate)
 export const SCHEMA_ID: Hex = '0xc1708360b3df59e91dfd33f901c659c0350461e6a30392d1e3218d4847e6b20d';

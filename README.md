@@ -244,7 +244,7 @@ The project is configured for Netlify deployment:
 
 | Contract | Address |
 | -------- | ------- |
-| Portal | [`0xe1301b12c2dbe0be67187432fb2519801439f552`](https://lineascan.build/address/0xe1301b12c2dbe0be67187432fb2519801439f552) |
+| Portal | [`0xb917d893321eab9662c56f22a2f6a37344d740d9`](https://lineascan.build/address/0xb917d893321eab9662c56f22a2f6a37344d740d9) |
 | Schema ID | `0xc1708360b3df59e91dfd33f901c659c0350461e6a30392d1e3218d4847e6b20d` |
 
 ### Linea Sepolia (Testnet)

@@ -229,7 +229,7 @@ describe('sign handler', () => {
       }),
     ).resolves.toBe(false);
     expect(linea.id).toBe(59144);
-    expect(PORTAL_ID_MAINNET).toBe('0xe1301b12c2dbe0be67187432fb2519801439f552');
+    expect(PORTAL_ID_MAINNET).toBe('0xb917d893321eab9662c56f22a2f6a37344d740d9');
   });
 
   it('signs a valid Sepolia request against the Sepolia portal', async () => {
