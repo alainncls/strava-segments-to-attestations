@@ -54,7 +54,7 @@ test('renders the production home page without a blank root', async ({ page }) =
   await expect(page.locator('#root')).not.toBeEmpty();
   await expect(page.getByRole('link', { name: /segment attestations/i })).toBeVisible();
   await expect(
-    page.getByRole('heading', { name: /create verifiable attestations/i }),
+    page.getByRole('heading', { name: /prove your strava segments onchain/i }),
   ).toBeVisible();
   await expect(page.getByRole('button', { name: /connect wallet/i })).toBeVisible();
   await expect(page.getByRole('button', { name: /connect with strava/i })).toBeVisible();
@@ -80,9 +80,9 @@ test('renders the OAuth error state instead of crashing', async ({ page }) => {
   await page.goto('/oauth');
 
   await expect(page.locator('#root')).not.toBeEmpty();
-  await expect(page.getByRole('heading', { name: /authentication error/i })).toBeVisible();
+  await expect(page.getByRole('heading', { name: /sign-in failed/i })).toBeVisible();
   await expect(page.getByText(/invalid authorization state/i)).toBeVisible();
-  await expect(page.getByRole('button', { name: /back to home/i })).toBeVisible();
+  await expect(page.getByRole('link', { name: /back to home/i })).toBeVisible();
 
   runtime.assertClean();
 });
@@ -155,15 +155,15 @@ test('activity pagination retries the same page, honors 429 cooldown, and remain
 
   await page.goto('/');
   await expect(page.getByRole('alert')).toContainText('page 1');
-  await page.getByRole('button', { name: 'Retry activities' }).click();
-  await expect(page.getByRole('button', { name: /Ride Activity 1 Thu/ }).first()).toBeVisible();
+  await page.getByRole('button', { name: 'Retry' }).click();
+  await expect(page.getByRole('button', { name: /^Activity 1 Ride/ }).first()).toBeVisible();
 
-  await page.getByRole('button', { name: 'Load more activities' }).click();
-  const waitButton = page.getByRole('button', { name: 'Wait before retrying' });
+  await page.getByRole('button', { name: 'Load more' }).click();
+  const waitButton = page.getByRole('button', { name: 'Retry soon' });
   await expect(waitButton).toBeDisabled();
   await expect(page.getByRole('alert')).toContainText('HTTP 429');
 
-  const retryButton = page.getByRole('button', { name: 'Retry activities' });
+  const retryButton = page.getByRole('button', { name: 'Retry' });
   await expect(retryButton).toBeEnabled({ timeout: 5000 });
   await retryButton.click();
   await expect(page.getByRole('button', { name: /Activity 31/ })).toBeVisible();

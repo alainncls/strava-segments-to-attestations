@@ -1,102 +1,64 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
 import styles from './Footer.module.css';
 import poweredByStrava from '../../assets/powered-by-strava.svg';
 import githubIcon from '../../assets/github-icon.svg';
 import xIcon from '../../assets/x-icon.svg';
 import veraxLogo from '../../assets/verax-logo.svg';
 
-interface FooterProps {
-  isStravaConnected?: boolean;
-}
+const links = [
+  {
+    href: 'https://github.com/alainncls/strava-segments-to-attestations',
+    label: 'GitHub',
+    icon: githubIcon,
+    invert: true,
+  },
+  { href: 'https://x.com/Alain_Ncls', label: 'X', icon: xIcon, invert: true },
+  { href: 'https://explorer.ver.ax', label: 'Verax Explorer', icon: veraxLogo, invert: false },
+];
 
-export default function Footer({ isStravaConnected = true }: FooterProps): React.JSX.Element {
+export default function Footer(): React.JSX.Element {
   return (
     <footer className={styles.footer}>
       <div className={styles.container}>
-        <div className={styles.left}>
-          <p className={styles.copyright}>
-            {isStravaConnected && (
-              <>
-                <Link to="/about" className={styles.aboutLink}>
-                  About
-                </Link>
-                <span className={styles.separator}>•</span>
-              </>
-            )}
-            Built with ❤️ by{' '}
-            <a
-              href="https://alainnicolas.com"
-              target="_blank"
-              rel="noopener noreferrer"
-              className={styles.link}
-            >
-              alain.linea.eth
-            </a>
-          </p>
-        </div>
+        <p className={styles.credit}>
+          By{' '}
+          <a href="https://alainnicolas.com" target="_blank" rel="noopener noreferrer">
+            alain.linea.eth
+          </a>
+        </p>
 
-        <div className={styles.center}>
-          <a
-            href="https://www.strava.com"
-            target="_blank"
-            rel="noopener noreferrer"
-            className={styles.stravaLink}
-          >
-            <img
-              src={poweredByStrava}
-              alt="Powered by Strava"
-              width="300"
-              height="56"
-              className={styles.stravaLogo}
-            />
-          </a>
-        </div>
+        <a href="https://www.strava.com" target="_blank" rel="noopener noreferrer">
+          <img
+            src={poweredByStrava}
+            alt="Powered by Strava"
+            width="300"
+            height="56"
+            className={styles.strava}
+          />
+        </a>
 
-        <div className={styles.right}>
-          <a
-            href="https://github.com/alainncls/strava-segments-to-attestations"
-            target="_blank"
-            rel="noopener noreferrer"
-            className={styles.iconLink}
-            aria-label="GitHub repository"
-          >
-            <img
-              src={githubIcon}
-              alt=""
-              width="18"
-              height="18"
-              className={`${styles.icon} ${styles.darkIcon}`}
-            />
-            <span className={styles.srOnly}>GitHub</span>
-          </a>
-          <a
-            href="https://x.com/Alain_Ncls"
-            target="_blank"
-            rel="noopener noreferrer"
-            className={styles.iconLink}
-            aria-label="X profile"
-          >
-            <img
-              src={xIcon}
-              alt=""
-              width="18"
-              height="18"
-              className={`${styles.icon} ${styles.darkIcon}`}
-            />
-            <span className={styles.srOnly}>X</span>
-          </a>
-          <a
-            href="https://explorer.ver.ax"
-            target="_blank"
-            rel="noopener noreferrer"
-            className={styles.iconLink}
-            aria-label="Verax Explorer"
-          >
-            <img src={veraxLogo} alt="" width="18" height="18" className={styles.icon} />
-            <span className={styles.srOnly}>Verax Explorer</span>
-          </a>
-        </div>
+        <ul className={styles.links}>
+          {links.map(({ href, label, icon, invert }) => (
+            <li key={href}>
+              <a
+                href={href}
+                target="_blank"
+                rel="noopener noreferrer"
+                className={styles.iconLink}
+                aria-label={label}
+                title={label}
+              >
+                <img
+                  src={icon}
+                  alt=""
+                  width="18"
+                  height="18"
+                  className={invert ? styles.invert : undefined}
+                />
+              </a>
+            </li>
+          ))}
+        </ul>
       </div>
     </footer>
   );

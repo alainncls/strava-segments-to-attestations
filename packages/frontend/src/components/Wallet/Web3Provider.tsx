@@ -52,10 +52,10 @@ function initializeAppKit(): void {
     metadata,
     themeMode: 'dark',
     themeVariables: {
-      '--w3m-accent': '#ff6b1a',
+      '--w3m-accent': '#fc5200',
       '--w3m-color-mix': '#111216',
       '--w3m-color-mix-strength': 0,
-      '--w3m-border-radius-master': '14px',
+      '--w3m-border-radius-master': '6px',
     },
     features: {
       analytics: false,

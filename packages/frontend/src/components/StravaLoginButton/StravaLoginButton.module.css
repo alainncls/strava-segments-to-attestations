@@ -1,33 +1,26 @@
 .button {
+  display: block;
   background: none;
   border: none;
+  border-radius: var(--radius-sm);
   padding: 0;
   cursor: pointer;
-  transition:
-    transform 0.2s ease,
-    opacity 0.2s ease;
   width: 100%;
-  max-width: 320px;
+  max-width: 240px;
+  transition: opacity 0.15s ease;
 }
 
-.button:hover {
-  transform: translateY(-2px);
-  opacity: 0.9;
+.button:hover:not(:disabled) {
+  opacity: 0.88;
 }
 
-.button:active {
-  transform: translateY(0);
+.button:disabled {
+  cursor: progress;
+  opacity: 0.6;
 }
 
 .image {
   width: 100%;
   height: auto;
   display: block;
-}
-
-@media (min-resolution: 2dppx) {
-  .image {
-    width: 100%;
-    height: auto;
-  }
 }

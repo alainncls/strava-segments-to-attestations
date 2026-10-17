@@ -22,15 +22,13 @@ export default function SegmentsModal({
     return <></>;
   }
 
-  const modalTitle = activity?.name ? `Segments in ${activity.name}` : 'Segments';
+  const modalTitle = activity?.name || 'Segments';
 
   return (
     <Suspense
       fallback={
         <Modal show={displayModal} onHide={onHide} title={modalTitle} size="lg">
-          <div className={styles.empty}>
-            <p>Loading segments...</p>
-          </div>
+          <p className={styles.empty}>Loading segments…</p>
         </Modal>
       }
     >

@@ -16,8 +16,8 @@ describe('Activities request recovery states', () => {
     );
 
     expect(screen.getByRole('alert')).toHaveTextContent('page 1');
-    expect(screen.queryByText(/No activities found/i)).not.toBeInTheDocument();
-    fireEvent.click(screen.getByRole('button', { name: 'Retry activities' }));
+    expect(screen.queryByText(/No activities yet/i)).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Retry' }));
     expect(retry).toHaveBeenCalledOnce();
   });
 
@@ -34,7 +34,7 @@ describe('Activities request recovery states', () => {
       />,
     );
 
-    expect(screen.getByRole('button', { name: 'Wait before retrying' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Retry soon' })).toBeDisabled();
     rerender(
       <Activities
         activities={[]}
@@ -47,6 +47,6 @@ describe('Activities request recovery states', () => {
     );
 
     expect(screen.getByRole('alert')).toHaveTextContent('Reconnect Strava');
-    expect(screen.queryByRole('button', { name: 'Retry activities' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Retry' })).not.toBeInTheDocument();
   });
 });

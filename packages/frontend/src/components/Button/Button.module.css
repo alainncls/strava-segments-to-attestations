@@ -3,16 +3,23 @@
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
-  font-family: inherit;
-  font-size: 0.875rem;
+  min-height: 40px;
+  padding: 0.5rem 1rem;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  font-size: 0.9375rem;
   font-weight: 600;
-  padding: 0.625rem 1.25rem;
-  border-radius: 8px;
-  border: none;
-  cursor: pointer;
-  transition: all 0.2s ease;
+  line-height: 1.2;
   white-space: nowrap;
-  min-height: 44px;
+  text-decoration: none;
+  cursor: pointer;
+  transition:
+    background-color 0.15s ease,
+    border-color 0.15s ease;
+}
+
+.button:hover {
+  text-decoration: none;
 }
 
 .button:disabled {
@@ -20,32 +27,30 @@
   cursor: not-allowed;
 }
 
-/* Secondary variant */
+.primary {
+  background: var(--accent);
+  color: var(--on-accent);
+}
+
+.primary:disabled {
+  background: var(--surface-hover);
+  color: var(--text-3);
+  opacity: 1;
+}
+
+.primary:hover:not(:disabled) {
+  background: var(--accent-hover);
+  color: var(--on-accent);
+}
+
 .secondary {
-  background: var(--bg-tertiary);
-  border: 1px solid var(--border-color-light);
-  color: var(--text-primary);
+  background: transparent;
+  border-color: var(--line-strong);
+  color: var(--text);
 }
 
 .secondary:hover:not(:disabled) {
-  background: var(--bg-card-hover);
-  border-color: var(--text-muted);
-}
-
-/* Outline variant */
-.outline {
-  background: transparent;
-  border: 1px solid var(--border-color-light);
-  color: var(--text-primary);
-}
-
-.outline:hover:not(:disabled) {
-  background: var(--bg-tertiary);
-  border-color: var(--strava-orange);
-}
-
-@media (max-width: 480px) {
-  .button {
-    width: 100%;
-  }
+  background: var(--surface-hover);
+  border-color: var(--text-3);
+  color: var(--text);
 }

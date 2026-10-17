@@ -81,12 +81,12 @@ export default function Home(): React.JSX.Element {
   }, []);
 
   if (authLoading) {
-    return <Loader loading message="Loading..." />;
+    return <Loader loading message="Loading…" />;
   }
 
   return (
     <>
-      <Loader loading={isLoading} message="Fetching activities..." />
+      <Loader loading={isLoading} message="Loading activities…" />
 
       <Header
         isStravaConnected={isAuthenticated}
@@ -95,50 +95,45 @@ export default function Home(): React.JSX.Element {
       />
 
       <main className={styles.main}>
-        <div className={styles.container}>
-          {!isAuthenticated ? (
-            <div className={styles.hero}>
-              <h1 className={styles.title}>
-                Create verifiable attestations for your
-                <span className={styles.highlight}> Strava segments</span>
-              </h1>
-              <p className={styles.subtitle}>
-                Connect your Strava account, select a segment you've completed, and create an
-                onchain attestation on Linea using the Verax protocol.
+        {!isAuthenticated ? (
+          <section className={styles.hero}>
+            <div className={styles.pitch}>
+              <h1 className={styles.title}>Prove your Strava segments onchain</h1>
+              <p className={styles.lead}>
+                Turn a segment you completed into a Verax attestation on Linea. Anyone can verify
+                it.
               </p>
-              <div className={styles.cta}>
-                <StravaLoginButton />
-              </div>
-              <div className={styles.features}>
-                <div className={styles.feature}>
-                  <span className={styles.featureIcon}>🔐</span>
-                  <span>Cryptographically verified</span>
-                </div>
-                <div className={styles.feature}>
-                  <span className={styles.featureIcon}>⛓️</span>
-                  <span>Onchain on Linea</span>
-                </div>
-                <div className={styles.feature}>
-                  <span className={styles.featureIcon}>🏆</span>
-                  <span>Prove your achievements</span>
-                </div>
-              </div>
+              <StravaLoginButton />
             </div>
-          ) : (
-            <Activities
-              activities={activities}
-              onActivityClick={onActivityClick}
-              loadingActivityId={loadingActivityId}
-              hasMore={hasMore}
-              isLoadingMore={isLoadingMore}
-              activitiesError={activitiesError}
-              isRetryBlocked={isRetryBlocked}
-              isAuthenticationError={isAuthenticationError}
-              segmentErrors={segmentErrors}
-              onLoadMore={handleLoadMore}
-            />
-          )}
-        </div>
+            <ol className={styles.steps}>
+              <li>
+                <strong>Connect Strava</strong>
+                <span>Read-only access to your activities.</span>
+              </li>
+              <li>
+                <strong>Pick a segment</strong>
+                <span>From one of your recent activities.</span>
+              </li>
+              <li>
+                <strong>Attest</strong>
+                <span>Signed by the backend, recorded on Linea.</span>
+              </li>
+            </ol>
+          </section>
+        ) : (
+          <Activities
+            activities={activities}
+            onActivityClick={onActivityClick}
+            loadingActivityId={loadingActivityId}
+            hasMore={hasMore}
+            isLoadingMore={isLoadingMore}
+            activitiesError={activitiesError}
+            isRetryBlocked={isRetryBlocked}
+            isAuthenticationError={isAuthenticationError}
+            segmentErrors={segmentErrors}
+            onLoadMore={handleLoadMore}
+          />
+        )}
       </main>
 
       <SegmentsModal
@@ -148,7 +143,7 @@ export default function Home(): React.JSX.Element {
         accessToken={auth.accessToken || ''}
       />
 
-      <Footer isStravaConnected={isAuthenticated} />
+      <Footer />
     </>
   );
 }

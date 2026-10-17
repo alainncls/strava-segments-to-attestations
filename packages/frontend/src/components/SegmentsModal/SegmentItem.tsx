@@ -1,6 +1,7 @@
 import React, { memo, useCallback } from 'react';
 import type { Segment } from '../../types';
-import { formatDistance, formatSegmentDate, getActivityIcon } from '@/utils/format.ts';
+import { formatDate, formatDistance } from '@/utils/format.ts';
+import { Button } from '../Button/Button';
 import styles from './SegmentItem.module.css';
 
 interface SegmentItemProps {
@@ -24,41 +25,30 @@ function SegmentItem({
     onAttest(segment);
   }, [onAttest, segment]);
 
-  const buttonText = isLoading
-    ? 'Signing...'
-    : isAttesting
-      ? 'Creating attestation...'
-      : isWalletConnected
-        ? 'Create Attestation'
-        : 'Connect wallet';
+  const isBusy = isLoading || isAttesting;
+  const buttonText = isLoading ? 'Signing…' : isAttesting ? 'Attesting…' : 'Attest';
 
   return (
-    <div className={styles.item}>
+    <li className={styles.item}>
       <div className={styles.info}>
-        <div className={styles.header}>
-          <span className={styles.icon}>{getActivityIcon(segment.activityType)}</span>
-          <h4 className={styles.name}>{segment.name}</h4>
-        </div>
-        <div className={styles.meta}>
+        <h3 className={styles.name}>{segment.name}</h3>
+        <p className={styles.meta}>
           <span>{formatDistance(segment.distance)}</span>
-          {segment.completionDate ? (
-            <>
-              <span className={styles.separator}>•</span>
-              <span>{formatSegmentDate(segment.completionDate)}</span>
-            </>
-          ) : null}
-        </div>
+          {segment.completionDate ? <span>{formatDate(segment.completionDate)}</span> : null}
+        </p>
       </div>
 
-      <button
-        className={styles.attestBtn}
+      <Button
+        variant="primary"
+        className={styles.attest}
         onClick={handleAttest}
-        disabled={isLoading || isAttesting || isDisabled || !isWalletConnected}
+        disabled={isBusy || isDisabled || !isWalletConnected}
+        aria-busy={isBusy}
       >
-        {isLoading || isAttesting ? <span className={styles.spinner} /> : null}
+        {isBusy ? <span className={styles.spinner} aria-hidden="true" /> : null}
         {buttonText}
-      </button>
-    </div>
+      </Button>
+    </li>
   );
 }
 

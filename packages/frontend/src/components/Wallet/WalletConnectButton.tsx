@@ -2,6 +2,7 @@ import React, { useEffect, useRef } from 'react';
 import { useAppKit } from '@reown/appkit/react';
 import { useAccount } from 'wagmi';
 import { Web3Provider } from './Web3Provider';
+import { buttonClassName } from '../Button/Button';
 import styles from '../Header/Header.module.css';
 
 interface WalletConnectButtonProps {
@@ -32,14 +33,14 @@ function WalletConnectButtonInner({
   }, [autoOpen, onAutoOpenHandled, open]);
 
   return (
-    <button onClick={() => void open()} className={styles.walletBtn}>
+    <button onClick={() => void open()} className={buttonClassName('secondary')}>
       {isConnected && address ? (
         <>
           <span className={styles.walletDot} />
           {formatAddress(address)}
         </>
       ) : (
-        'Connect Wallet'
+        'Connect wallet'
       )}
     </button>
   );

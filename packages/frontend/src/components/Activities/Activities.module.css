@@ -1,194 +1,138 @@
-.container {
-  margin: 2rem 0;
-}
-
 .title {
   font-size: 1.5rem;
   font-weight: 700;
-  margin-bottom: 1.5rem;
-  color: var(--text-primary);
+  letter-spacing: -0.015em;
+  margin-bottom: 1rem;
 }
 
-.grid {
+.list {
+  list-style: none;
+  border-top: 1px solid var(--line);
+}
+
+.row {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-  gap: 1rem;
-}
-
-.card {
-  background: var(--bg-card);
-  border: 1px solid var(--border-color);
-  border-radius: 12px;
-  content-visibility: auto;
-  contain-intrinsic-size: 0 168px;
-  padding: 1.25rem;
-  text-align: left;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  position: relative;
-  overflow: hidden;
-}
-
-.card:hover:not(:disabled) {
-  background: var(--bg-card-hover);
-  border-color: var(--strava-orange);
-  transform: translateY(-2px);
-}
-
-.card:disabled {
-  cursor: not-allowed;
-  opacity: 0.7;
-}
-
-.cardHeader {
-  display: flex;
+  grid-template-columns: minmax(0, 1fr) 7rem 7.5rem 5.5rem 7.5rem;
   align-items: center;
-  gap: 0.5rem;
-  margin-bottom: 0.75rem;
+  gap: 1rem;
+  width: 100%;
+  padding: 0.875rem 0.75rem;
+  background: none;
+  border: none;
+  border-bottom: 1px solid var(--line);
+  color: var(--text-2);
+  font-size: 0.9375rem;
+  text-align: left;
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+  content-visibility: auto;
+  contain-intrinsic-size: 0 52px;
+  transition: background-color 0.15s ease;
 }
 
-.icon {
-  font-size: 1.25rem;
+.row:hover:not(:disabled) {
+  background: var(--surface);
 }
 
-.type {
-  font-size: 0.75rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  color: var(--strava-orange);
+.row:disabled {
+  cursor: progress;
 }
 
 .name {
-  font-size: 1rem;
+  color: var(--text);
   font-weight: 600;
-  color: var(--text-primary);
-  margin: 0 0 0.5rem 0;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
 .meta {
+  display: contents;
+}
+
+.distance {
+  text-align: right;
+}
+
+.segments {
   display: flex;
   align-items: center;
+  justify-content: flex-end;
   gap: 0.5rem;
-  font-size: 0.875rem;
-  color: var(--text-muted);
-}
-
-.separator {
-  color: var(--border-color-light);
-}
-
-.segmentBadge {
-  margin-top: 0.75rem;
-  padding: 0.375rem 0.75rem;
-  border-radius: 6px;
-  font-size: 0.75rem;
+  color: var(--accent);
   font-weight: 600;
-  display: inline-block;
 }
 
-.segmentBadge.hasSegments {
-  background: rgba(252, 82, 0, 0.1);
-  border: 1px solid rgba(252, 82, 0, 0.2);
-  color: var(--strava-orange);
-}
-
-.segmentBadge.noSegments {
-  background: rgba(128, 128, 128, 0.1);
-  border: 1px solid rgba(128, 128, 128, 0.2);
-  color: var(--text-muted);
-}
-
-.loadSegments {
-  margin-top: 0.75rem;
-  padding: 0.375rem 0.75rem;
-  background: rgba(100, 100, 100, 0.1);
-  border: 1px dashed rgba(150, 150, 150, 0.3);
-  border-radius: 6px;
-  font-size: 0.75rem;
-  font-weight: 500;
-  color: var(--text-muted);
-  display: inline-flex;
-  align-items: center;
-  gap: 0.375rem;
-  transition: all 0.2s ease;
-}
-
-.loadIcon {
-  font-size: 0.875rem;
-}
-
-.card:hover:not(:disabled) .loadSegments {
-  background: rgba(252, 82, 0, 0.08);
-  border-color: rgba(252, 82, 0, 0.3);
-  color: var(--strava-orange);
-}
-
-.loading {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(10, 10, 11, 0.8);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 12px;
+.muted {
+  color: var(--text-3);
+  font-weight: 400;
 }
 
 .spinner {
-  width: 24px;
-  height: 24px;
-  border: 2px solid var(--border-color);
-  border-top-color: var(--strava-orange);
+  width: 14px;
+  height: 14px;
+  border: 2px solid var(--line-strong);
+  border-top-color: var(--accent);
   border-radius: 50%;
-  animation: spin 1s linear infinite;
+  animation: spin 0.8s linear infinite;
 }
 
 @keyframes spin {
-  from {
-    transform: rotate(0deg);
-  }
   to {
     transform: rotate(360deg);
   }
 }
 
 .empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  padding: 3rem 0;
+  color: var(--text-3);
   text-align: center;
-  padding: 3rem;
-  color: var(--text-muted);
 }
 
-.errorMessage {
-  color: var(--text-primary);
-  margin: 0.75rem auto;
+.error {
+  color: var(--danger);
+  margin: 0.75rem 0;
   max-width: 42rem;
-  text-align: center;
 }
 
-.loadMore {
+.empty .error {
+  margin: 0;
+}
+
+.more {
   display: flex;
   justify-content: center;
-  margin-top: 2rem;
+  margin-top: 1.5rem;
 }
 
-@media (max-width: 480px) {
-  .loadMore {
-    width: 100%;
+@media (max-width: 720px) {
+  .row {
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas:
+      'name segments'
+      'meta meta';
+    gap: 0.25rem 1rem;
+    padding: 0.875rem 0.25rem;
   }
 
-  .loadMore button {
-    width: 100%;
+  .name {
+    grid-area: name;
   }
-}
 
-@media (max-width: 640px) {
-  .grid {
-    grid-template-columns: 1fr;
+  .segments {
+    grid-area: segments;
+  }
+
+  .meta {
+    grid-area: meta;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0 0.75rem;
+    color: var(--text-3);
+    font-size: 0.875rem;
   }
 }

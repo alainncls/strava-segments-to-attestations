@@ -12,7 +12,7 @@ function App(): React.JSX.Element {
   useInsights();
 
   return (
-    <Suspense fallback={<Loader loading message="Loading page..." />}>
+    <Suspense fallback={<Loader loading message="Loading…" />}>
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/oauth" element={<StravaCallback />} />

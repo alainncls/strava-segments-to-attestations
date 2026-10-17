@@ -1,127 +1,74 @@
 .main {
   flex: 1;
-  padding: 3rem 1rem;
-}
-
-.container {
-  max-width: 700px;
+  width: 100%;
+  max-width: 42rem;
   margin: 0 auto;
+  padding: 3rem 1rem 4rem;
 }
 
 .title {
-  font-size: 2rem;
+  font-size: clamp(1.75rem, 4vw, 2.25rem);
   font-weight: 800;
-  color: var(--text-primary);
-  margin-bottom: 2rem;
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+  margin-bottom: 1.5rem;
 }
 
 .section {
   margin-bottom: 2.5rem;
+  color: var(--text-2);
 }
 
 .section h2 {
-  font-size: 1.25rem;
+  font-size: 1.125rem;
   font-weight: 700;
-  color: var(--strava-orange);
-  margin-bottom: 1rem;
+  color: var(--text);
+  margin-bottom: 0.75rem;
 }
 
-.section p {
-  color: var(--text-secondary);
-  line-height: 1.7;
-  margin-bottom: 1rem;
+.section p + * {
+  margin-top: 0.75rem;
 }
 
 .section a {
-  color: var(--strava-orange);
   text-decoration: underline;
 }
 
-.section a:hover {
-  color: var(--strava-orange-light);
+.lead {
+  font-size: 1.125rem;
 }
 
-.steps {
-  list-style: none;
-  padding: 0;
-  counter-reset: step;
-}
-
-.steps li {
-  position: relative;
-  padding-left: 2.5rem;
-  margin-bottom: 1rem;
-  color: var(--text-secondary);
-  line-height: 1.6;
-}
-
-.steps li::before {
-  counter-increment: step;
-  content: counter(step);
-  position: absolute;
-  left: 0;
-  top: 0;
-  width: 1.75rem;
-  height: 1.75rem;
-  background: var(--strava-orange-accessible);
-  border-radius: 50%;
-  color: white;
-  font-weight: 700;
-  font-size: 0.875rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.steps li strong {
-  color: var(--text-primary);
-}
-
+.steps,
 .list {
-  list-style: none;
-  padding: 0;
+  padding-left: 1.25rem;
 }
 
+.steps li,
 .list li {
-  position: relative;
-  padding-left: 1.5rem;
-  margin-bottom: 0.75rem;
-  color: var(--text-secondary);
+  padding-left: 0.25rem;
+  margin-bottom: 0.5rem;
 }
 
-.list li::before {
-  content: '→';
-  position: absolute;
-  left: 0;
-  color: var(--strava-orange);
+.steps li::marker {
+  color: var(--accent);
+  font-weight: 700;
 }
 
-.list li strong {
-  color: var(--text-primary);
+.list li::marker {
+  color: var(--text-3);
 }
 
-.cta {
-  text-align: center;
-  margin-top: 3rem;
+.steps strong {
+  color: var(--text);
 }
 
-.button {
-  display: inline-block;
-  padding: 0.875rem 2rem;
-  background: linear-gradient(
-    135deg,
-    var(--strava-orange-accessible) 0%,
-    var(--strava-orange-dark) 100%
-  );
-  border-radius: 8px;
-  color: white;
+.stack {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 0.5rem 1.5rem;
+}
+
+.stack dt {
+  color: var(--text);
   font-weight: 600;
-  text-decoration: none;
-  transition: all 0.2s ease;
-}
-
-.button:hover {
-  background: linear-gradient(135deg, var(--strava-orange) 0%, var(--strava-orange-dark) 100%);
-  transform: translateY(-2px);
-  color: white;
 }
