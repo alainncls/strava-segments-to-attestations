@@ -19,7 +19,7 @@ catalog:
   '@reown/appkit-adapter-wagmi': 1.8.24
 
   # Wagmi & Viem
-  '@tanstack/react-query': 5.104.2
+  '@tanstack/react-query': 5.104.4
 
   # Testing
   '@testing-library/jest-dom': 6.9.1
@@ -35,29 +35,29 @@ catalog:
   '@verax-attestation-registry/verax-contracts': 10.0.0
   '@verax-attestation-registry/verax-sdk': 5.4.0
   '@vitejs/plugin-react': 6.1.2
-  '@vitest/coverage-v8': 4.1.11
+  '@vitest/coverage-v8': 4.1.12
   '@wagmi/connectors': 8.2.0
 
   # Linting & Formatting
-  eslint: 10.12.0
+  eslint: 10.13.0
   eslint-config-prettier: 10.1.8
   globals: 17.13.0
 
   # Solidity
-  hardhat: 3.19.0
+  hardhat: 3.20.0
   prettier: 3.9.10
 
   # React
-  react: 19.3.0
-  react-dom: 19.3.0
+  react: 19.3.1
+  react-dom: 19.3.1
   react-router-dom: 7.18.4
 
   # TypeScript
   typescript: 6.0.3
   typescript-eslint: 8.71.2
-  viem: 2.57.5
+  viem: 2.57.7
   vite: 8.3.4
-  vitest: 4.1.11
+  vitest: 4.1.12
   wagmi: 3.7.7
 minimumReleaseAge: 4320
 overrides:
