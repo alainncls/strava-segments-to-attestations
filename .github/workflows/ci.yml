@@ -31,7 +31,7 @@ jobs:
       - name: Setup pnpm
         run: |
           corepack enable
-          corepack prepare pnpm@11.0.3 --activate
+          corepack prepare pnpm@12.16.1 --activate
           pnpm --version
 
       - name: Get pnpm store path

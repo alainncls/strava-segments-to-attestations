@@ -30,7 +30,7 @@ This application allows athletes to create cryptographically verifiable proofs o
 ## Prerequisites
 
 - **Node.js** 24.22.1 or higher
-- **pnpm** 11.0.3 or higher (other package managers are not supported)
+- **pnpm** 12.16.1 (other package managers are not supported)
 
 ## Quick Start
 
@@ -39,7 +39,7 @@ This application allows athletes to create cryptographically verifiable proofs o
 ```bash
 git clone https://github.com/alainncls/strava-segments-to-attestations.git
 cd strava-segments-to-attestations
-corepack pnpm@11.0.3 install
+corepack pnpm@12.16.1 install
 ```
 
 ### 2. Configure environment variables
@@ -60,7 +60,7 @@ cp packages/contracts/.env.example packages/contracts/.env
 ### 3. Run the development server
 
 ```bash
-corepack pnpm@11.0.3 dev
+corepack pnpm@12.16.1 dev
 ```
 
 ## Packages
@@ -119,11 +119,11 @@ cd packages/functions
 pnpm build
 
 # Build shared package and run local functions adapter
-corepack pnpm@11.0.3 --filter @strava-attestations/shared build
-corepack pnpm@11.0.3 --filter @strava-attestations/functions dev
+corepack pnpm@12.16.1 --filter @strava-attestations/shared build
+corepack pnpm@12.16.1 --filter @strava-attestations/functions dev
 ```
 
-The root `corepack pnpm@11.0.3 dev` runs Vite on `http://localhost:5174` and a loopback-only
+The root `corepack pnpm@12.16.1 dev` runs Vite on `http://localhost:5174` and a loopback-only
 Node adapter on port `8888`. The adapter invokes the same `Request`/`Response`
 handlers used by Netlify Functions; it does not implement OAuth or signing
 logic and is not part of production deployment. Create `packages/functions/.env`
@@ -168,10 +168,10 @@ From the root directory:
 
 ```bash
 # Install all dependencies
-corepack pnpm@11.0.3 install
+corepack pnpm@12.16.1 install
 
 # Run frontend development server
-corepack pnpm@11.0.3 dev
+corepack pnpm@12.16.1 dev
 
 # Build all packages
 pnpm build
