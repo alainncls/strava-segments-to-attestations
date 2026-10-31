@@ -77,6 +77,9 @@ overrides:
   '@graphql-tools/executor-legacy-ws': 1.1.37
   http-cache-semantics: 4.3.0
   source-map-js: 1.2.2
+  # GHSA-mrwp-f3q8-3g9p: axios' allowed range still resolves vulnerable
+  # follow-redirects 1.16.1 through the AppKit and Verax dependency graph.
+  follow-redirects: 1.16.2
   # GHSA-mmx7-hfxf-jppx, GHSA-gcfj-64vw-6mp9 and related axios advisories: @coinbase/cdp-sdk pins axios 1.16.0; 1.18.0 is the first patched 1.x release.
   '@coinbase/cdp-sdk>axios': 1.20.0
   # GHSA-g7r4-m6w7-qqqr: Netlify bundlers pin esbuild 0.28.0; 0.28.1 is the patched release on the same line.
