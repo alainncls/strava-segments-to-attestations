@@ -11,7 +11,7 @@ allowBuilds:
 
 catalog:
   # Build tools
-  '@opentelemetry/api': 1.9.1
+  '@opentelemetry/api': 1.10.0
 
   # OpenZeppelin (must match verax-contracts requirements)
   '@openzeppelin/contracts': 4.9.6
@@ -19,7 +19,7 @@ catalog:
   '@reown/appkit-adapter-wagmi': 1.8.24
 
   # Wagmi & Viem
-  '@tanstack/react-query': 5.104.4
+  '@tanstack/react-query': 5.105.0
 
   # Testing
   '@testing-library/jest-dom': 6.9.1
@@ -36,29 +36,29 @@ catalog:
   '@verax-attestation-registry/verax-sdk': 5.4.0
   '@vitejs/plugin-react': 6.1.2
   '@vitest/coverage-v8': 4.1.12
-  '@wagmi/connectors': 8.2.0
+  '@wagmi/connectors': 8.2.2
 
   # Linting & Formatting
-  eslint: 10.13.0
+  eslint: 10.14.0
   eslint-config-prettier: 10.1.8
   globals: 17.13.0
 
   # Solidity
-  hardhat: 3.20.0
+  hardhat: 3.21.2
   prettier: 3.9.10
 
   # React
   react: 19.3.1
   react-dom: 19.3.1
-  react-router-dom: 7.18.4
+  react-router-dom: 7.18.5
 
   # TypeScript
   typescript: 6.0.3
-  typescript-eslint: 8.71.2
-  viem: 2.57.7
-  vite: 8.3.4
+  typescript-eslint: 8.72.1
+  viem: 2.57.14
+  vite: 8.3.5
   vitest: 4.1.12
-  wagmi: 3.7.7
+  wagmi: 3.7.9
 minimumReleaseAge: 4320
 overrides:
   # GHSA-w74x-v6f9-j3xg, GHSA-xhq7-xmqj-769h, GHSA-wjr9-j795-jxcr and
