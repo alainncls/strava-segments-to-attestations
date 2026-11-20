@@ -27,7 +27,7 @@
   },
   "devDependencies": {
     "@eslint/js": "10.0.1",
-    "@nomicfoundation/hardhat-verify": "3.1.4",
+    "@nomicfoundation/hardhat-verify": "3.1.5",
     "@nomicfoundation/hardhat-viem": "3.1.0",
     "eslint": "catalog:",
     "eslint-config-prettier": "catalog:",
