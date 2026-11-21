@@ -199,5 +199,9 @@ test('follows the system theme and the theme switch without a flash', async ({ p
   );
   expect(await colors()).toEqual(dark);
 
+  await page.goto('/heatmap');
+  await expect(page.getByRole('heading', { name: 'Activity heatmap' })).toBeVisible();
+  expect(await colors()).toEqual(dark);
+
   runtime.assertClean();
 });

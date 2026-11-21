@@ -3,6 +3,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { StravaAuthProvider, useStravaAuth } from './useStravaAuth';
 import { STORAGE_KEYS } from '@/utils/constants';
 
+const CACHE_KEY = 'effortprint.activities.v1.123';
+
 const athlete = {
   id: 123,
   username: 'runner',
@@ -23,6 +25,7 @@ const renderAuth = (): ReturnType<typeof renderHook<ReturnType<typeof useStravaA
 describe('useStravaAuth', () => {
   beforeEach(() => {
     sessionStorage.clear();
+    localStorage.setItem(CACHE_KEY, '{}');
   });
 
   afterEach(() => {
@@ -65,6 +68,17 @@ describe('useStravaAuth', () => {
 
     expect(token).toBeNull();
     expect(sessionStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN)).toBeNull();
+    expect(result.current.isAuthenticated).toBe(false);
+    expect(localStorage.getItem(CACHE_KEY)).not.toBeNull();
+  });
+
+  it('deletes the activity cache of the athlete at logout', () => {
+    seedAuth(Math.floor(Date.now() / 1000) + 3600);
+
+    const { result } = renderAuth();
+    act(() => result.current.logout());
+
+    expect(localStorage.getItem(CACHE_KEY)).toBeNull();
     expect(result.current.isAuthenticated).toBe(false);
   });
 });

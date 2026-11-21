@@ -66,6 +66,9 @@ export default function Header(): React.JSX.Element {
         </Link>
 
         <nav className={styles.nav}>
+          <Link to="/heatmap" className={styles.navLink}>
+            Heatmap
+          </Link>
           <Link to="/about" className={styles.navLink}>
             About
           </Link>

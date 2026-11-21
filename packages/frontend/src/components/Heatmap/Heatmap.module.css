@@ -1,0 +1,123 @@
+.grid {
+  display: block;
+  color: var(--text-2);
+}
+
+.cell {
+  cursor: pointer;
+  outline: none;
+}
+
+.cell:focus-visible {
+  stroke: var(--text);
+  stroke-width: 2px;
+}
+
+.controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin: 1.5rem 0;
+}
+
+.fieldset {
+  display: flex;
+  flex: 1 1 16rem;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem 1rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+  color: var(--text-2);
+  font-size: 0.875rem;
+}
+
+.fieldset legend {
+  padding: 0 0.25rem;
+  color: var(--text);
+  font-weight: 700;
+}
+
+.fieldset label {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.fieldset select,
+.fieldset input[type='number'] {
+  min-width: 6rem;
+  padding: 0.25rem 0.5rem;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-sm);
+  background: var(--bg);
+  color: var(--text);
+  font: inherit;
+}
+
+.fieldset label.check {
+  justify-content: flex-start;
+}
+
+.check {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.threshold {
+  justify-content: flex-start;
+}
+
+.threshold input {
+  margin-left: auto;
+}
+
+.swatch {
+  width: 12px;
+  height: 12px;
+  flex-shrink: 0;
+  border-radius: 2px;
+}
+
+.tooltip {
+  position: absolute;
+  z-index: 900;
+  max-width: calc(100vw - 16px);
+  padding: 0.75rem 1rem;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+  box-shadow: 0 12px 24px -8px var(--shadow);
+  color: var(--text-2);
+  font-size: 0.875rem;
+}
+
+.tooltipTitle {
+  color: var(--text);
+  font-weight: 700;
+}
+
+.tooltipMeta {
+  color: var(--text-3);
+}
+
+.tooltipList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+  list-style: none;
+}
+
+.tooltipList li {
+  display: flex;
+  flex-direction: column;
+}
+
+.stravaLink {
+  color: var(--accent-text);
+  font-weight: 700;
+}

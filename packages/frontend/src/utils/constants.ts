@@ -13,4 +13,8 @@ export const STORAGE_KEYS = {
   EXPIRES_AT: 'strava_expires_at',
   ATHLETE: 'strava_athlete',
   OAUTH_STATE: 'strava_oauth_state',
+  RETURN_PATH: 'strava_return_path',
 } as const;
+
+// Pages that the login can return to (finding 10). Anything else returns to `/`.
+export const RETURN_PATHS = ['/', '/heatmap', '/about'];

@@ -33,6 +33,7 @@ export default function StravaLoginButton(): React.JSX.Element {
       }
 
       sessionStorage.setItem(STORAGE_KEYS.OAUTH_STATE, state);
+      sessionStorage.setItem(STORAGE_KEYS.RETURN_PATH, window.location.pathname);
 
       const params = new URLSearchParams({
         client_id: STRAVA_CLIENT_ID,

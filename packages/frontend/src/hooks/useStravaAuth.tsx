@@ -1,6 +1,7 @@
 import React, { createContext, useCallback, useContext, useMemo, useState } from 'react';
 import type { AuthState, StravaAthlete } from '@strava-attestations/shared';
 import { STORAGE_KEYS } from '@/utils/constants';
+import { clearCache } from '@/utils/activityStore';
 
 const TOKEN_EXPIRY_MARGIN_MS = 5 * 60 * 1000;
 
@@ -54,21 +55,28 @@ const StravaAuthContext = createContext<StravaAuth | null>(null);
 export function StravaAuthProvider({ children }: { children: React.ReactNode }): React.JSX.Element {
   const [auth, setAuth] = useState(readStoredAuth);
 
-  const logout = useCallback((): void => {
+  // An expired token keeps the activity cache: the next login shows it again.
+  const signOut = useCallback((): void => {
     sessionStorage.removeItem(STORAGE_KEYS.ACCESS_TOKEN);
     sessionStorage.removeItem(STORAGE_KEYS.EXPIRES_AT);
     sessionStorage.removeItem(STORAGE_KEYS.ATHLETE);
     setAuth(signedOut);
   }, []);
 
+  // Strava API Policy 2.5: a logout deletes the cached Strava data.
+  const logout = useCallback((): void => {
+    if (auth.athlete) clearCache(auth.athlete.id);
+    signOut();
+  }, [auth.athlete, signOut]);
+
   const getValidToken = useCallback(async (): Promise<string | null> => {
     if (isTokenValid(auth.expiresAt)) {
       return auth.accessToken;
     }
 
-    logout();
+    signOut();
     return null;
-  }, [auth.accessToken, auth.expiresAt, logout]);
+  }, [auth.accessToken, auth.expiresAt, signOut]);
 
   const setAuthFromCallback = useCallback<StravaAuth['setAuthFromCallback']>((data) => {
     sessionStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, data.access_token);
