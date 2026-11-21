@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { createRateLimiter } from '../src/rateLimiter';
+import { createRateLimiter } from '../src/lib/rateLimiter';
 
 describe('createRateLimiter', () => {
   it('resets an IP window and calculates Retry-After from a fake clock', () => {

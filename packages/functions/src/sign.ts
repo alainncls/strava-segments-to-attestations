@@ -1,15 +1,15 @@
 import type { Context } from '@netlify/functions';
-import type { WalletClient } from 'viem';
-import { type Address, createWalletClient, type Hex, http } from 'viem';
+import type { Address, Hex } from 'viem';
 import { privateKeyToAccount } from 'viem/accounts';
-import type { SignedSegment, StravaSegmentEffort } from '../lib/types';
 import {
   linea,
   lineaSepolia,
   PORTAL_ID_MAINNET,
   PORTAL_ID_SEPOLIA,
+  type SignedSegment,
   STRAVA_API_BASE,
-} from '../lib/constants';
+  type StravaSegmentEffort,
+} from '@strava-attestations/shared';
 import { getCorsHeaders, getEnvConfig } from '../lib/env';
 import {
   assertRecord,
@@ -20,7 +20,7 @@ import {
   UpstreamStatusError,
   upstreamSignal,
 } from '../lib/http';
-import { createRateLimiter } from './rateLimiter';
+import { createRateLimiter } from './lib/rateLimiter';
 
 const RATE_LIMIT_MAX = 10;
 const RATE_LIMIT_WINDOW = 60_000;
@@ -91,7 +91,7 @@ async function getActivitySegments(
 }
 
 async function signSegment(
-  walletClient: WalletClient,
+  privateKey: Hex,
   segmentId: number,
   completionDate: number,
   subject: Address,
@@ -117,11 +117,6 @@ async function signSegment(
     ],
   } as const;
 
-  const account = walletClient.account;
-  if (!account) {
-    throw new Error('Signer account not configured');
-  }
-
   const message = {
     segmentId: BigInt(segmentId),
     completionDate: BigInt(completionDate),
@@ -129,8 +124,7 @@ async function signSegment(
     deadline: BigInt(deadline),
   };
 
-  return await walletClient.signTypedData({
-    account,
+  return await privateKeyToAccount(privateKey).signTypedData({
     domain,
     types,
     primaryType: 'Segment',
@@ -238,8 +232,6 @@ export default async (req: Request, context: Context): Promise<Response> => {
       });
     }
 
-    const isMainnet = chainId === linea.id;
-    const chain = isMainnet ? linea : lineaSepolia;
     const completionDate = Math.floor(new Date(segmentEffort.start_date).getTime() / 1000);
     if (!Number.isSafeInteger(completionDate) || completionDate <= 0) {
       return new Response(JSON.stringify({ error: 'Invalid activity date' }), {
@@ -249,14 +241,8 @@ export default async (req: Request, context: Context): Promise<Response> => {
     }
     const deadline = Math.floor(Date.now() / 1000) + SIGNATURE_TTL_SECONDS;
 
-    const walletClient = createWalletClient({
-      account: privateKeyToAccount(config.SIGNER_PRIVATE_KEY),
-      chain,
-      transport: http(),
-    });
-
     const signature = await signSegment(
-      walletClient,
+      config.SIGNER_PRIVATE_KEY,
       segmentId,
       completionDate,
       subject as Address,

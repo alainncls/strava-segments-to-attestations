@@ -3,37 +3,23 @@ import { afterEach, beforeEach, describe, expect, it, type Mock, vi } from 'vite
 import { verifyTypedData, type Address, type Hex } from 'viem';
 import { privateKeyToAccount } from 'viem/accounts';
 import signHandler from '../src/sign';
-import { linea, lineaSepolia, PORTAL_ID_MAINNET, PORTAL_ID_SEPOLIA } from '../lib/constants';
+import { linea, lineaSepolia, PORTAL_ID_MAINNET, PORTAL_ID_SEPOLIA } from '@strava-attestations/shared';
 
-const counters = vi.hoisted(() => ({
-  walletClientCount: 0,
-  signatureCount: 0,
-}));
+const counters = vi.hoisted(() => ({ signatureCount: 0 }));
 
-vi.mock('viem', async () => {
-  const actual = await vi.importActual<typeof import('viem')>('viem');
+vi.mock('viem/accounts', async () => {
+  const actual = await vi.importActual<typeof import('viem/accounts')>('viem/accounts');
 
-  const createWalletClient: typeof actual.createWalletClient = (args) => {
-    counters.walletClientCount += 1;
-    const client = actual.createWalletClient(args);
-    return new Proxy(client, {
-      get(target, prop, receiver): unknown {
-        if (prop === 'signTypedData') {
-          return (parameters: unknown): unknown => {
-            counters.signatureCount += 1;
-            return target.signTypedData(parameters as Parameters<typeof target.signTypedData>[0]);
-          };
-        }
-        const value: unknown = Reflect.get(target, prop, receiver);
-        if (typeof value === 'function') {
-          return (value as (...fnArgs: unknown[]) => unknown).bind(target);
-        }
-        return value;
-      },
-    });
+  const privateKeyToAccount: typeof actual.privateKeyToAccount = (...args) => {
+    const account = actual.privateKeyToAccount(...args);
+    const signTypedData = ((parameters) => {
+      counters.signatureCount += 1;
+      return account.signTypedData(parameters);
+    }) as typeof account.signTypedData;
+    return { ...account, signTypedData };
   };
 
-  return { ...actual, createWalletClient };
+  return { ...actual, privateKeyToAccount };
 });
 
 vi.mock('@strava-attestations/shared', async () => import('../../shared/src/index.ts'));
@@ -131,14 +117,12 @@ function createStravaFetch(
 function expectNoSignature(body: Record<string, unknown>): void {
   expect(body.signature).toBeUndefined();
   expect(counters.signatureCount).toBe(0);
-  expect(counters.walletClientCount).toBe(0);
   expect(JSON.stringify(body)).not.toContain(ACCESS_TOKEN);
 }
 
 describe('sign handler', () => {
   beforeEach(() => {
     counters.signatureCount = 0;
-    counters.walletClientCount = 0;
     vi.stubEnv('STRAVA_CLIENT_ID', 'client-id');
     vi.stubEnv('STRAVA_CLIENT_SECRET', 'client-secret');
     vi.stubEnv('FRONTEND_URL', 'https://app.example.com');
