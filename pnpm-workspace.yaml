@@ -22,7 +22,7 @@ catalog:
   '@tanstack/react-query': 5.108.0
 
   # Testing
-  '@testing-library/jest-dom': 6.9.1
+  '@testing-library/jest-dom': 7.0.1
   '@testing-library/react': 16.3.3
   tsx: 4.23.15
 
@@ -35,7 +35,7 @@ catalog:
   '@verax-attestation-registry/verax-contracts': 10.0.0
   '@verax-attestation-registry/verax-sdk': 5.4.0
   '@vitejs/plugin-react': 6.3.0
-  '@vitest/coverage-v8': 4.1.12
+  '@vitest/coverage-v8': 5.1.1
   '@wagmi/connectors': 8.2.4
 
   # Linting & Formatting
@@ -57,7 +57,7 @@ catalog:
   typescript-eslint: 8.73.0
   viem: 2.58.0
   vite: 8.3.8
-  vitest: 4.1.12
+  vitest: 5.1.1
   wagmi: 3.7.11
 minimumReleaseAge: 4320
 overrides:
@@ -88,3 +88,6 @@ overrides:
   # GHSA-4qv8-2p9j-2685 and seven related advisories: preserve the
   # transitive 7.x major while pinning its first patched mature release.
   undici@>=7.0.0 <7.30.1: 7.30.1
+  # GHSA-3g3m-2fjr-6pw4 and GHSA-g3hv-75wg-m249: solhint 6.2.5 pins glob ^13,
+  # which has no patched release and resolves vulnerable minimatch 10.x.
+  'solhint>glob': 14.0.6
