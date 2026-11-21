@@ -110,7 +110,7 @@ Method: observation of the live application in a browser with a connected accoun
 | D15 | Keep the accent color `#fc5200`. | The brand guidelines, read in full, do not forbid it. They give this color as one option for "View on Strava" links. | A new accent color (revision 2). |
 | D16 | Hub at `/`, attestation flow at `/attestations`. The domain `strava.alainnicolas.fr` stays. | Owner decisions. | None. |
 | D17 | The agent opens, reviews and merges the pull requests (section 8). The agent does the manual tests. | Owner decision. The repository has no branch protection and permits squash merges only. | Review and merge by the owner. |
-| D18 | 5 pull requests at most (section 8.1). Each one has one commit for each part, and is squashed at the merge. | Owner decision: 20 pull requests are too many. | 20 small pull requests (revision 3). |
+| D18 | 5 pull requests at most (section 8.1). Each one has several commits, and is squashed at the merge. | Owner decision: 20 pull requests are too many. | 20 small pull requests (revision 3). |
 | D19 | One import style in `packages/frontend`: the `@/` alias for each import outside the current folder, `./` inside it. An ESLint rule refuses `../`. | Owner decision: no two styles in the codebase. The rule keeps it true. | Two styles (revision 2). |
 | D20 | A totals line under each year: activity count, distance and duration, for the current sport filter. | Owner decision. | No totals (revision 2). |
 
@@ -424,7 +424,7 @@ No user-visible change, except findings 4, 16 and 17. The existing tests are the
 | --- | --- | --- | --- |
 | 1a `fix(functions)` | Move `rateLimiter.ts` to `src/lib/`. Add the top-level file test. | 2, 14 | After deployment, `/.netlify/functions/rateLimiter` returns 404. |
 | 1b `perf(frontend)` | Delete the manual chunk group in `vite.config.ts`. Add the build output test and the wallet tests (section 9.1). | 1 | No file preloaded by `dist/index.html` is larger than 50 kB. The wallet tests pass. |
-| 1c `refactor(frontend)` | Layout route, shared authentication provider, `getValidToken`, return path after login. | 4, 5, 10, 11, 20 | `/about` shows the athlete name when connected. A login started on `/about` returns to `/about`. |
+| 1c `refactor(frontend)` | Layout route, shared authentication provider, `getValidToken`. | 4, 5, 11, 20 | `/about` shows the athlete name when connected. |
 | 1d `refactor(frontend)` | Extract `utils/strava.ts` from `useActivities`. | 6 | `useActivities.test.tsx` passes without change to its assertions. |
 | 1e `chore(frontend)` | Delete `App.test.tsx`, `trackEvent`, the refresh token remains and the pass-through files. `BRAND` constant with the current name. | 7, 9, 11, 12 | Lint, tests and build pass. The line count goes down. |
 | 1f `fix(frontend)` | Modal: `inert` on the page behind, focus moved in, focus given back. | 16 | A keyboard test: Tab stays in the modal, and focus returns to the button at close. |
@@ -469,7 +469,7 @@ Pure functions in `utils/heatmap.ts`, with unit tests written first.
 | --- | --- |
 | Route `/heatmap`, lazy, with the two `netlify.toml` entries. | A direct load of `/heatmap` and of `/heatmap/` returns 200 in the preview deployment. |
 | `HeatmapGrid`, `HeatmapControls`, `DayTooltip`. | Features F1 to F13 and F17 pass a manual check against the reference with the same account. |
-| Not connected state. | The page shows the login button and returns to `/heatmap` after login. |
+| Not connected state, with the return path of finding 10. Moved here from Phase 1: today the login button exists on `/` only, so the return path has no use before this screen. | The page shows the login button and returns to `/heatmap` after login. |
 | Accessibility. | Keyboard path works with no pointer. An automated accessibility check in the end-to-end test reports no violation. |
 | End-to-end test with mocked Strava responses. | The test loads the page, syncs, filters by sport, opens a tooltip, at desktop and mobile width. |
 | Bundle check. | The heatmap chunk does not import the wallet chunk. |
@@ -518,13 +518,13 @@ Pure functions in `utils/heatmap.ts`, with unit tests written first.
 
 | # | Phases | Title | Content |
 | --- | --- | --- | --- |
-| 1 | 0, 1 | `refactor: clean the codebase before the heatmap work` | This plan. All the findings of section 5.3 except 3 and 15. The wallet tests of section 9.1. |
+| 1 | 0, 1 | `refactor: clean the codebase before the heatmap work` | This plan. All the findings of section 5.3 except 3, 10 and 15. The wallet tests of section 9.1. |
 | 2 | 3b | `feat(frontend): add light and dark themes` | Theme variables, the switch, the wallet modal theme. |
 | 3 | 2, 3, 4, 5 | `feat(heatmap): add the activity heatmap` | Cache, synchronization, logic, screen, controls, totals line, PNG and SVG export, route. |
 | 4 | 6 | `feat: add the hub and rename the product` | Hub at `/`, attestation flow at `/attestations`, new name, SEO files, privacy section. |
 | 5 | 7, 8 | `feat(security): add a content security policy` | Findings 3 and 15, the header test, the README, the final audit and the shortcut ledger. |
 
-Cost of this grouping: pull requests 1 and 3 are large. Each one keeps one commit for each part until the squash, so the challenge review reads the parts one at a time.
+Cost of this grouping: pull requests 1 and 3 are large. Each one keeps several commits until the squash, so the challenge review reads the parts one at a time.
 
 ## 9. Test strategy
 
@@ -547,11 +547,13 @@ Fact (measured 2026-11-21): the 20 accounts of the standard Hardhat and Foundry 
 
 The proof has three parts, with no funds and no secret of the owner:
 
-1. End-to-end test in CI: Playwright injects a test wallet provider (EIP-1193, announced with EIP-6963) that uses a public test key. The test mocks the RPC responses and the `sign` function response. It connects the wallet, attests one segment and expects "Attestation confirmed".
-2. Read-only calls to the two deployed portals (Linea and Linea Sepolia): `fee()` returns a value, and the value matches the current constant.
-3. Local run before the merge: a Hardhat node that forks Linea Sepolia gives the test accounts funds and runs the real portal bytecode. The signer address of the fork is set to a test account. The same test wallet sends a real `attest` transaction to the fork.
+1. End-to-end test in CI (`e2e/wallet.spec.ts`, done in pull request 1): Playwright injects a test wallet provider (EIP-1193, announced with EIP-6963). The test mocks each remote host: Strava, the `sign` function, the RPC node and the wallet SDK services. It connects the wallet through the wallet modal, reads a fee of 0.01 ETH from the mocked contract, attests one segment and expects "Attestation confirmed". It checks the destination and the value of the transaction. It also fails if the page loads more than 400 kB of scripts before the athlete asks for a wallet (finding 1: 290 kB after the fix, 2.9 MB with the wallet code).
+2. Read-only calls to the two deployed portals (done 2026-11-21): `fee()` returns 100,000,000,000,000 wei on Linea and on Linea Sepolia, equal to the constant that pull request 1 removes.
+3. The 35 contract tests and the signature tests of the `sign` function, which pull request 1 does not weaken: the signer test still verifies the typed data signature.
 
-Parts 1 and 3 start as a spike of two hours: the wallet SDK can refuse an injected test provider. If the spike fails, the agent reports it, and the fallback is a manual check by the owner (2 minutes, on Linea Sepolia) before the merge of pull request 1.
+Not done: a real transaction. A local fork of Linea Sepolia was considered. It needs a Strava access token on the server side of the `sign` function, and the agent does not handle the token of the owner. Pull request 1 does not change the data that the contract receives, except the fee value.
+
+The end-to-end build uses `vite build --mode e2e` with public placeholder values (`packages/frontend/.env.e2e`), so the wallet is configured in CI and no local `.env` value reaches the tests.
 
 ## 10. Risks and open questions
 
