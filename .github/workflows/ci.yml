@@ -30,12 +30,11 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6.5.0
         with:
-          node-version: 24.22.3
+          node-version-file: .nvmrc
 
       - name: Setup pnpm
         run: |
           corepack enable
-          corepack prepare pnpm@12.16.1 --activate
           pnpm --version
 
       - name: Get pnpm store path
