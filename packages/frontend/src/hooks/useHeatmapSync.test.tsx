@@ -143,6 +143,33 @@ describe('useHeatmapSync', () => {
     expect(readCache(42)?.activities).toHaveLength(3);
   });
 
+  it('allows one full sync each day and runs an incremental sync instead', async () => {
+    const one = {
+      id: 1,
+      name: 'Old',
+      sportType: 'Ride',
+      startLocal: '2026-11-15T09:30:00Z',
+      distance: 1,
+      movingTime: 1,
+    };
+    writeCache({
+      version: 1,
+      athleteId: 42,
+      syncedAt: Date.now() - DAY + 60_000,
+      activities: [one],
+    });
+    const urls = mockStrava(0);
+    const { result } = renderHook(() => useHeatmapSync(42, token));
+
+    await act(() => result.current.sync('full'));
+    expect(urls[0]?.searchParams.has('after')).toBe(true);
+
+    vi.setSystemTime(Date.now() + 60_000);
+    urls.length = 0;
+    await act(() => result.current.sync('full'));
+    expect(urls[0]?.searchParams.has('after')).toBe(false);
+  });
+
   it('does a full sync when an incremental sync has no cache', async () => {
     const urls = mockStrava(10);
     const { result } = renderHook(() => useHeatmapSync(42, token));

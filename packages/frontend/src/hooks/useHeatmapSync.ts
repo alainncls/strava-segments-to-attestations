@@ -4,6 +4,8 @@ import type { StoredActivity } from '@/utils/heatmap';
 import { StravaHttpError, stravaGet } from '@/utils/strava';
 
 const PAGE_SIZE = 200;
+// A full sync reads every page: at most one each day, to spare the shared Strava rate limit.
+export const FULL_SYNC_INTERVAL_MS = 24 * 60 * 60 * 1000;
 const OVERLAP_SECONDS = 7 * 24 * 60 * 60;
 const QUARTER_HOUR_MS = 15 * 60_000;
 
@@ -88,7 +90,11 @@ export function useHeatmapSync(
 
         const cache = readCache(athleteId);
         const base = cache?.activities ?? [];
-        const full = mode === 'full' || base.length === 0;
+        const fullAllowed =
+          !cache ||
+          partial.current !== null ||
+          Date.now() - cache.syncedAt >= FULL_SYNC_INTERVAL_MS;
+        const full = (mode === 'full' && fullAllowed) || base.length === 0;
         const newest = Math.max(...base.map((a) => Date.parse(a.startLocal)));
         const after = full ? '' : `&after=${Math.floor(newest / 1000) - OVERLAP_SECONDS}`;
         // Only a direct retry of the full sync resumes it.
