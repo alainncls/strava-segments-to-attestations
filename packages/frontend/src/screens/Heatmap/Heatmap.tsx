@@ -1,6 +1,7 @@
 import React, {
   useCallback,
   useEffect,
+  useLayoutEffect,
   useMemo,
   useRef,
   useState,
@@ -8,7 +9,7 @@ import React, {
 } from 'react';
 import { usePageMetadata } from '@/hooks/usePageMetadata';
 import { useStravaAuth } from '@/hooks/useStravaAuth';
-import { useHeatmapSync } from '@/hooks/useHeatmapSync';
+import { FULL_SYNC_INTERVAL_MS, useHeatmapSync } from '@/hooks/useHeatmapSync';
 import { BRAND } from '@/utils/constants';
 import { readSettings, writeSettings, type HeatmapSettings } from '@/utils/activityStore';
 import {
@@ -20,9 +21,9 @@ import {
   yearTotals,
   type DayMap,
 } from '@/utils/heatmap';
-import { DEFAULT_PALETTE, EMPTY_CELL, PALETTES } from '@/utils/heatmapPalettes';
+import { EMPTY_CELL, shadesFor } from '@/utils/heatmapPalettes';
 import { buildExportSvg, downloadPng, downloadSvg } from '@/utils/heatmapExport';
-import { formatDistance, formatDuration, localDayKey } from '@/utils/format';
+import { localDayKey } from '@/utils/format';
 import { onThemeChange, resolvedTheme } from '@/utils/theme';
 import { Button } from '@/components/Button/Button';
 import Loader from '@/components/Loader/Loader';
@@ -36,9 +37,14 @@ const CELL_SIZES = { S: 8, M: 12, L: 16 } as const;
 const timeFormatter = new Intl.DateTimeFormat('en-US', { timeStyle: 'short' });
 const dateFormatter = new Intl.DateTimeFormat('en-US', { dateStyle: 'medium', timeStyle: 'short' });
 
+const numberFormatter = new Intl.NumberFormat('en-US');
+// One decimal for small totals, none for large ones: 8.5 km, 6,993 km.
+const amount = (value: number): string =>
+  value.toLocaleString('en-US', { maximumFractionDigits: value < 100 ? 1 : 0 });
+
 function totalsText(totals: { count: number; distance: number; duration: number }): string {
   const noun = totals.count === 1 ? 'activity' : 'activities';
-  return `${totals.count} ${noun} · ${formatDistance(totals.distance)} · ${formatDuration(totals.duration)}`;
+  return `${numberFormatter.format(totals.count)} ${noun}, ${amount(totals.distance / 1000)} km, ${amount(totals.duration / 3600)} h`;
 }
 
 function rangeTotals(
@@ -80,6 +86,19 @@ function HeatmapTool({ athleteId }: { athleteId: number }): React.JSX.Element {
   const [exportError, setExportError] = useState<string | null>(null);
   const [openDay, setOpenDay] = useState<{ key: string; anchor: SVGRectElement } | null>(null);
   const gridsRef = useRef<HTMLDivElement>(null);
+  const [gridWidth, setGridWidth] = useState(0);
+
+  // The grids shrink their cells to fit a narrow screen instead of scrolling sideways.
+  // Layout effect: the first paint already has the right width.
+  useLayoutEffect(() => {
+    const element = gridsRef.current;
+    if (!element) return;
+    setGridWidth(element.clientWidth);
+    if (typeof ResizeObserver === 'undefined') return;
+    const observer = new ResizeObserver(([entry]) => setGridWidth(entry?.contentRect.width ?? 0));
+    observer.observe(element);
+    return () => observer.disconnect();
+  }, []);
 
   // A cache gives an incremental sync, no cache a full sync (useHeatmapSync decides).
   useEffect(() => {
@@ -131,6 +150,7 @@ function HeatmapTool({ athleteId }: { athleteId: number }): React.JSX.Element {
     const svg = buildExportSvg(svgs, {
       fromYear: view.fromYear,
       toYear: view.toYear,
+      colors: shadesFor(settings.palette, exportOptions.dark),
       ...exportOptions,
     });
     try {
@@ -141,7 +161,7 @@ function HeatmapTool({ athleteId }: { athleteId: number }): React.JSX.Element {
     }
   };
 
-  const colors = PALETTES[settings.palette] ?? PALETTES[DEFAULT_PALETTE]!;
+  const colors = shadesFor(settings.palette, theme === 'dark');
   const gridProps = {
     days,
     metric: settings.metric,
@@ -150,35 +170,97 @@ function HeatmapTool({ athleteId }: { athleteId: number }): React.JSX.Element {
     emptyColor: EMPTY_CELL[theme],
     cellSize: CELL_SIZES[settings.size],
     labels: settings.labels,
+    maxWidth: gridWidth,
     onOpenDay: (key: string, anchor: SVGRectElement) => setOpenDay({ key, anchor }),
   };
   const shownYears = years.filter((y) => y >= view.fromYear && y <= view.toYear).reverse();
   const continuous = view.mode === 'continuous' ? continuousLayout(view.dayCount, today) : null;
 
+  const nextFullSync = syncedAt === null ? null : syncedAt + FULL_SYNC_INTERVAL_MS;
+  const fullSyncLocked = nextFullSync !== null && nextFullSync > Date.now();
+
+  const exportPanel =
+    view.mode === 'year' ? (
+      <div className={styles.exportPanel}>
+        <p className={styles.hint}>
+          The image shows{' '}
+          {view.fromYear === view.toYear ? view.fromYear : `${view.fromYear} to ${view.toYear}`}{' '}
+          with the current filters. It shows no activity name.
+        </p>
+        <label className={styles.check}>
+          <input
+            type="checkbox"
+            checked={exportOptions.dark}
+            onChange={(e) => setExportOptions((o) => ({ ...o, dark: e.target.checked }))}
+          />
+          Dark background
+        </label>
+        <label className={styles.check}>
+          <input
+            type="checkbox"
+            checked={exportOptions.hideFuture}
+            onChange={(e) => setExportOptions((o) => ({ ...o, hideFuture: e.target.checked }))}
+          />
+          Hide future days
+        </label>
+        <label className={styles.check}>
+          <input
+            type="checkbox"
+            checked={exportOptions.newestFirst}
+            onChange={(e) => setExportOptions((o) => ({ ...o, newestFirst: e.target.checked }))}
+          />
+          Newest year first
+        </label>
+        <div className={styles.actions}>
+          <Button type="button" variant="primary" onClick={() => void handleExport('png')}>
+            Download PNG
+          </Button>
+          <Button type="button" onClick={() => void handleExport('svg')}>
+            Download SVG
+          </Button>
+        </div>
+        {exportError ? (
+          <p role="alert" className={styles.alert}>
+            {exportError}
+          </p>
+        ) : null}
+      </div>
+    ) : (
+      <p className={styles.hint}>Choose the layout by year to export an image.</p>
+    );
+
   return (
     <main className={styles.main}>
       <Loader
         loading={status === 'syncing'}
-        message={`Syncing with Strava… ${received} activities received`}
+        message={`Syncing with Strava: ${numberFormatter.format(received)} activities received`}
       />
 
       <div className={styles.heading}>
-        <h1 className={styles.title}>Activity heatmap</h1>
-        <div className={styles.actions}>
+        <div>
+          <h1 className={styles.title}>Activity heatmap</h1>
+          <p className={styles.status}>
+            {numberFormatter.format(activities.length)} activities
+            {syncedAt ? `, full sync ${dateFormatter.format(syncedAt)}` : ''}
+          </p>
+        </div>
+        <div className={styles.syncActions}>
           <Button type="button" onClick={() => void sync('incremental')}>
             Sync
           </Button>
-          <Button type="button" onClick={() => void sync('full')}>
-            Full sync
-          </Button>
+          <button
+            type="button"
+            className={styles.textButton}
+            disabled={fullSyncLocked}
+            onClick={() => void sync('full')}
+          >
+            {fullSyncLocked && nextFullSync
+              ? `Full sync after ${dateFormatter.format(nextFullSync)}`
+              : 'Full sync'}
+          </button>
         </div>
       </div>
 
-      <p className={styles.status}>
-        {syncedAt
-          ? `${activities.length} activities. Last full sync: ${dateFormatter.format(syncedAt)}.`
-          : `${activities.length} activities.`}
-      </p>
       {status === 'rate-limited' ? (
         <p role="alert" className={styles.alert}>
           The Strava rate limit is reached. The activities received are shown. Sync again after{' '}
@@ -204,7 +286,11 @@ function HeatmapTool({ athleteId }: { athleteId: number }): React.JSX.Element {
         onView={updateView}
         sports={sports}
         years={years}
+        colors={colors}
+        emptyColor={EMPTY_CELL[theme]}
+        dark={theme === 'dark'}
         onResetThresholds={handleResetThresholds}
+        exportPanel={exportPanel}
       />
 
       <div ref={gridsRef} className={styles.grids}>
@@ -236,56 +322,6 @@ function HeatmapTool({ athleteId }: { athleteId: number }): React.JSX.Element {
           ))
         )}
       </div>
-
-      {view.mode === 'year' ? (
-        <section className={styles.export} aria-labelledby="export-title">
-          <h2 id="export-title" className={styles.subtitle}>
-            Export
-          </h2>
-          <p className={styles.status}>
-            The image shows the years {view.fromYear} to {view.toYear}. It shows no activity name.
-          </p>
-          <label className={styles.check}>
-            <input
-              type="checkbox"
-              checked={exportOptions.dark}
-              onChange={(e) => setExportOptions((o) => ({ ...o, dark: e.target.checked }))}
-            />
-            Dark background
-          </label>
-          <label className={styles.check}>
-            <input
-              type="checkbox"
-              checked={exportOptions.hideFuture}
-              onChange={(e) => setExportOptions((o) => ({ ...o, hideFuture: e.target.checked }))}
-            />
-            Hide future days
-          </label>
-          <label className={styles.check}>
-            <input
-              type="checkbox"
-              checked={exportOptions.newestFirst}
-              onChange={(e) => setExportOptions((o) => ({ ...o, newestFirst: e.target.checked }))}
-            />
-            Newest year first
-          </label>
-          <div className={styles.actions}>
-            <Button type="button" variant="primary" onClick={() => void handleExport('png')}>
-              Download PNG
-            </Button>
-            <Button type="button" onClick={() => void handleExport('svg')}>
-              Download SVG
-            </Button>
-          </div>
-          {exportError ? (
-            <p role="alert" className={styles.alert}>
-              {exportError}
-            </p>
-          ) : null}
-        </section>
-      ) : (
-        <p className={styles.status}>Select the year layout to export an image.</p>
-      )}
 
       {openDay ? (
         <DayTooltip

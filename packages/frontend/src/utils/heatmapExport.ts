@@ -4,6 +4,8 @@ export interface ExportOptions {
   newestFirst: boolean;
   fromYear: number;
   toYear: number;
+  // Shades for levels 1 to 5; the page shades stay when absent.
+  colors?: readonly string[];
 }
 
 import { EMPTY_CELL } from '@/utils/heatmapPalettes';
@@ -35,6 +37,12 @@ export function buildExportSvg(years: SVGSVGElement[], options: ExportOptions): 
     clone
       .querySelectorAll('rect[data-level="0"]')
       .forEach((el) => el.setAttribute('fill', EMPTY_CELL[options.dark ? 'dark' : 'light']));
+    const colors = options.colors;
+    if (colors)
+      clone.querySelectorAll<SVGRectElement>('rect[data-level]').forEach((el) => {
+        const level = Number(el.dataset.level);
+        if (level > 0) el.setAttribute('fill', colors[level - 1] ?? '');
+      });
     // Page CSS and currentColor do not resolve in a standalone image.
     clone
       .querySelectorAll('text, tspan')

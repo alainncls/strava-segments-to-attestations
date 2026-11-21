@@ -42,15 +42,48 @@ test('syncs, filters, opens a day and passes an accessibility check', async ({ p
 
   await page.goto('/heatmap');
   await expect(page.getByRole('heading', { name: 'Activity heatmap' })).toBeVisible();
-  await expect(page.getByText(/^3 activities\. Last full sync/)).toBeVisible();
+  await expect(page.getByText(/^3 activities, full sync/)).toBeVisible();
   expect(pages).toEqual(['1', '2']);
+  // One full sync each day: the button waits for tomorrow.
+  await expect(page.getByRole('button', { name: /^Full sync after/ })).toBeDisabled();
 
   const grid = page.locator(`svg[data-year="${year}"]`);
-  await expect(grid.getByText('3 activities · 55.00 km · 3h 15m 0s')).toBeVisible();
+  await expect(grid.getByText('3 activities, 55 km, 3.3 h')).toBeVisible();
 
   await page.getByLabel('Sport').selectOption('GravelRide');
-  await expect(grid.getByText('1 activity · 40.00 km · 2h 0m 0s')).toBeVisible();
+  await expect(grid.getByText('1 activity, 40 km, 2 h')).toBeVisible();
   await page.getByLabel('Sport').selectOption('');
+
+  // Settings stay closed until asked for.
+  const fromThreshold = page.getByLabel(/^Shade 1: from/);
+  await expect(fromThreshold).toBeHidden();
+  await page.getByRole('button', { name: 'Customize' }).click();
+  await expect(page.getByRole('button', { name: 'Customize' })).toHaveAttribute(
+    'aria-expanded',
+    'true',
+  );
+  // A day below the first value stays empty: 40 km keeps only the ride.
+  const colored = grid.locator('rect:not([data-level="0"])');
+  await expect(colored).toHaveCount(2);
+  await fromThreshold.fill('40');
+  await expect(colored).toHaveCount(1);
+  await fromThreshold.fill('0');
+  await page.getByRole('button', { name: 'Customize' }).click();
+
+  // On a phone the grid fits the screen width and the size control is hidden.
+  if (test.info().project.name === 'chromium') {
+    const width = Number(await grid.getAttribute('width'));
+    await page.getByRole('radio', { name: 'S', exact: true }).check({ force: true });
+    await expect.poll(async () => Number(await grid.getAttribute('width'))).toBeLessThan(width);
+    await page.getByRole('radio', { name: 'M', exact: true }).check({ force: true });
+  }
+
+  // Export opens above the grids.
+  await page.getByRole('button', { name: 'Export' }).click();
+  const png = page.getByRole('button', { name: 'Download PNG' });
+  await expect(png).toBeVisible();
+  expect((await png.boundingBox())!.y).toBeLessThan((await grid.boundingBox())!.y);
+  await page.getByRole('button', { name: 'Export' }).click();
 
   // Keyboard: move one week back, open the day, close it.
   const firstDay = grid.locator(`rect[data-day="${runDay}"]`);

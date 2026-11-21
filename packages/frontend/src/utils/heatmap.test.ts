@@ -64,6 +64,13 @@ describe('dayKey and aggregateByDay', () => {
 });
 
 describe('shadeLevel', () => {
+  it('leaves a day below the shade 1 threshold empty', () => {
+    expect(shadeLevel(day(2999, 0), 'distance', [40, 20, 10, 5, 3])).toBe(0);
+    expect(shadeLevel(day(3000, 0), 'distance', [40, 20, 10, 5, 3])).toBe(1);
+    expect(shadeLevel(day(8000, 0), 'distance', [40, 20, 10, 5, 62])).toBe(0);
+    expect(shadeLevel(day(70000, 0), 'distance', [40, 20, 10, 5, 62])).toBe(5);
+  });
+
   const km = [20, 10, 5, 2, 0];
   it.each([
     [undefined, 0],

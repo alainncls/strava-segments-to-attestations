@@ -28,3 +28,9 @@ export const DEFAULT_PALETTE = 'ember';
 
 // Day with no activity, and future day. Literal values: the exported image has no CSS.
 export const EMPTY_CELL = { light: '#e4e4e8', dark: '#232327' } as const;
+
+// On a dark background the lightest shade stands out most, so it marks the busiest days.
+export function shadesFor(name: string, dark: boolean): readonly string[] {
+  const shades = PALETTES[name] ?? PALETTES[DEFAULT_PALETTE]!;
+  return dark ? [...shades].reverse() : shades;
+}
