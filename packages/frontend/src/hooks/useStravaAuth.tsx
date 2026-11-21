@@ -53,7 +53,14 @@ interface StravaAuth {
 const StravaAuthContext = createContext<StravaAuth | null>(null);
 
 export function StravaAuthProvider({ children }: { children: React.ReactNode }): React.JSX.Element {
-  const [auth, setAuth] = useState(readStoredAuth);
+  const [auth, setAuth] = useState(() => {
+    try {
+      return readStoredAuth();
+    } catch {
+      // Site data blocked by the browser: render signed out instead of a blank page.
+      return signedOut;
+    }
+  });
 
   // An expired token keeps the activity cache: the next login shows it again.
   const signOut = useCallback((): void => {

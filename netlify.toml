@@ -81,3 +81,7 @@
     X-Frame-Options = "DENY"
     X-Content-Type-Options = "nosniff"
     Referrer-Policy = "strict-origin-when-cross-origin"
+    Strict-Transport-Security = "max-age=31536000; includeSubDomains"
+    Permissions-Policy = "camera=(), microphone=(), geolocation=(), payment=(), usb=(), browsing-topics=()"
+    # Also sent by the Vite dev and preview servers (vite.config.ts), so local runs and the end-to-end tests use it.
+    Content-Security-Policy = "default-src 'self'; script-src 'self' https://getinsights.io; style-src 'self' 'unsafe-inline' https://fonts.reown.com; font-src 'self' https://fonts.reown.com; img-src 'self' data: blob: https://api.web3modal.org https://*.walletconnect.com https://*.walletconnect.org; connect-src 'self' https://www.strava.com https://getinsights.io https://*.infura.io https://api.web3modal.org https://*.walletconnect.com https://*.walletconnect.org wss://*.walletconnect.com wss://*.walletconnect.org https://www.walletlink.org wss://www.walletlink.org https://rpc.wallet.coinbase.com; frame-src https://verify.walletconnect.com https://verify.walletconnect.org https://secure.walletconnect.com https://secure.walletconnect.org; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; object-src 'none'; upgrade-insecure-requests"

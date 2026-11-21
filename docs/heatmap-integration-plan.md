@@ -1,12 +1,14 @@
 # Activity heatmap integration plan
 
-Status: in execution, revision 6. Pull requests 1 and 2 are done. Date: 2026-11-21. Baseline commit: `436ca05` (`main`).
+Status: done, revision 7. Pull requests 1 to 5 are merged (section 13). Date: 2026-11-21. Baseline commit: `436ca05` (`main`).
 
 Revision 2 adds the audit done with the Ponytail plugin, the checks of the Strava legal texts, and the cuts that Ponytail makes in this plan (section 6.1).
 
 Revision 3 adds the answers of the owner (2026-11-21), the proof of the cause of finding 1, the light and dark themes, the merge process and the pull request list (section 8.1).
 
 Revision 5 (after pull request 1) sets the product name, adds the module contracts (section 7.7) and the execution guide for the next agent sessions, with subagents (section 12).
+
+Revision 7 (pull request 5) adds the closure (section 13).
 
 Revision 6 (pull request 2) adds finding 22, the checked athlete capacity and rate limits, and the Strava Developer Program screenshots after pull request 5.
 
@@ -735,3 +737,44 @@ A brief for a subagent has these parts: the goal in one sentence, the files it o
 ### 12.7 After pull request 5
 
 Prepare the screenshots for the Strava Developer Program submission after pull request 5, not before: the hub, the heatmap, the attestation flow, the About page with the privacy section, and the "Powered by Strava" and "View on Strava" marks. They show the final product name and the final look. The owner submits the form.
+
+## 13. Closure (2026-11-21)
+
+### 13.1 Pull requests
+
+| # | Pull request | Content |
+| --- | --- | --- |
+| 1 | #54 | Clean base (Phases 0 and 1). |
+| 2 | #55 | Light and dark themes, finding 22. |
+| 3 | #56 | Activity heatmap (Phases 2 to 5), finding 10. |
+| 4 | #57 | Hub, Effortprint, SEO files, privacy section. |
+| 5 | #58 | Content Security Policy, HSTS `includeSubDomains`, `Permissions-Policy` (findings 3 and 15), header test, README, shortcut ledger (`docs/shortcut-ledger.md`). |
+
+### 13.2 Comparison with the baseline of section 5.2
+
+| Check | Before (`436ca05`) | After |
+| --- | --- | --- |
+| Unit and integration tests | 175 (functions 100, frontend 40, contracts 35) | 277 (functions 108, frontend 134, contracts 35) |
+| End-to-end tests | 8 | 16 (8 tests, desktop and mobile), with an accessibility check and the policy enforced |
+| Frontend coverage (statements, branches, lines) | 74.25 %, 60.33 %, 75.69 % | 80.63 %, 71.29 %, 82.97 % |
+| Entry chunk `index` | 247.89 kB (79.31 kB gzip), plus the 3.1 MB `wallet` chunk preloaded | 268.25 kB (85.81 kB gzip). The wallet code loads only on request. |
+| Source lines (`src` and `lib`, with CSS) | 5,095 | 6,687 |
+| Test lines | 4,393 | 5,595 |
+| Production headers | 4, no policy | 6, with the Content Security Policy |
+
+### 13.3 Checks with the real account
+
+- Local and production: Strava login from `/heatmap` returns to `/heatmap`. Full sync of 3,498 activities over 15 years (19 requests, cache of 489 KB), incremental sync (2 requests), tooltip with "View on Strava" links, separated months, PNG export in the light and dark backgrounds, logout deletes the cache.
+- The reference application cannot sync (section 3.1), so the parity check compares the behavior with the feature list of section 3.2, not with a second rendering of the same data.
+
+### 13.4 Open items for the owner
+
+- Strava lists the API application as "Segments to NFTs" in the athlete settings (My Apps). The About page does not name it. Rename the application on the Strava API settings page if you want "Effortprint" there.
+- Developer Program screenshots: section 12.7.
+- SEO, medium items of the audit of pull request 4: the static HTML of `/heatmap` and `/attestations` has the canonical link of `/` until JavaScript runs; the Open Graph image is the favicon; the home title has 62 characters.
+- When the wallet modal opens, the policy blocks three things and writes console errors: the Coinbase Wallet SDK analytics (an inline script and `cca-lite.coinbase.com`), and a `Function('')` feature test of the zod library. These blocks are intended. The modal, the injected wallets and the WalletConnect QR code work under the policy (deploy preview of pull request 5).
+- Nice-to-have items of the final audit, not done: one shared function for the year totals and the range totals, and a memo for the year layouts.
+
+### 13.5 Final audit
+
+`/ponytail-audit` on the full repository: no "must fix" item. Findings 1 to 22 are closed or withdrawn. One item (a blank page when the browser blocks site storage) is fixed in pull request 5. `/ponytail-debt`: 1 marker, 0 with no trigger (`docs/shortcut-ledger.md`).

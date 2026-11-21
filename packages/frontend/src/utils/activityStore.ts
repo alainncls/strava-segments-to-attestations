@@ -6,17 +6,18 @@ const SETTINGS_KEY = 'effortprint.heatmap.settings.v1';
 
 const cacheKey = (athleteId: number): string => `effortprint.activities.v1.${athleteId}`;
 
-function parse(raw: string | null): unknown {
-  if (raw === null) return null;
+// Invalid JSON, or site data blocked by the browser: no value.
+function read(key: string): unknown {
   try {
-    return JSON.parse(raw);
+    const raw = localStorage.getItem(key);
+    return raw === null ? null : JSON.parse(raw);
   } catch {
     return null;
   }
 }
 
 export function readCache(athleteId: number, now = Date.now()): ActivityCache | null {
-  const cache = parse(localStorage.getItem(cacheKey(athleteId))) as ActivityCache | null;
+  const cache = read(cacheKey(athleteId)) as ActivityCache | null;
   if (
     cache?.version !== 1 ||
     cache.athleteId !== athleteId ||
@@ -43,7 +44,11 @@ export function writeCache(cache: ActivityCache): boolean {
 }
 
 export function clearCache(athleteId: number): void {
-  localStorage.removeItem(cacheKey(athleteId));
+  try {
+    localStorage.removeItem(cacheKey(athleteId));
+  } catch {
+    // Site data blocked: there is no cache to delete.
+  }
 }
 
 export interface HeatmapSettings {
@@ -87,7 +92,7 @@ function isSettings(value: unknown): value is HeatmapSettings {
 }
 
 export function readSettings(): HeatmapSettings {
-  const settings = parse(localStorage.getItem(SETTINGS_KEY));
+  const settings = read(SETTINGS_KEY);
   return isSettings(settings) ? settings : structuredClone(DEFAULT_SETTINGS);
 }
 
