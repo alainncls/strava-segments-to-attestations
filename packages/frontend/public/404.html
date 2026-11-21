@@ -5,9 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="robots" content="noindex,nofollow" />
     <title>Page Not Found | Strava Segment Attestations</title>
+    <script src="/theme.js"></script>
     <style>
       :root {
-        color-scheme: dark;
+        color-scheme: light dark;
         font-family:
           Inter,
           -apple-system,
@@ -15,8 +16,8 @@
           'Segoe UI',
           Roboto,
           sans-serif;
-        background: #0a0a0b;
-        color: #ffffff;
+        background: light-dark(#f6f6f7, #0a0a0b);
+        color: light-dark(#111113, #f2f2f3);
       }
 
       body {
@@ -41,7 +42,7 @@
 
       p {
         margin: 0 0 2rem;
-        color: #d4d4d8;
+        color: light-dark(#3a3a41, #c9c9cf);
       }
 
       a {
@@ -55,6 +56,14 @@
         color: #ffffff;
         font-weight: 700;
         text-decoration: none;
+      }
+
+      :root[data-theme='light'] {
+        color-scheme: light;
+      }
+
+      :root[data-theme='dark'] {
+        color-scheme: dark;
       }
     </style>
   </head>
