@@ -4,7 +4,8 @@ import Layout from '@/components/Layout/Layout';
 import { useInsights } from '@/hooks/useInsights';
 import { StravaAuthProvider } from '@/hooks/useStravaAuth';
 
-const Home = lazy(() => import('@/screens/Home/Home'));
+const Hub = lazy(() => import('@/screens/Hub/Hub'));
+const Attestations = lazy(() => import('@/screens/Attestations/Attestations'));
 const StravaCallback = lazy(() => import('@/screens/StravaCallback/StravaCallback'));
 const About = lazy(() => import('@/screens/About/About'));
 const Heatmap = lazy(() => import('@/screens/Heatmap/Heatmap'));
@@ -17,7 +18,8 @@ function App(): React.JSX.Element {
     <StravaAuthProvider>
       <Routes>
         <Route element={<Layout />}>
-          <Route path="/" element={<Home />} />
+          <Route path="/" element={<Hub />} />
+          <Route path="/attestations" element={<Attestations />} />
           <Route path="/oauth" element={<StravaCallback />} />
           <Route path="/heatmap" element={<Heatmap />} />
           <Route path="/about" element={<About />} />

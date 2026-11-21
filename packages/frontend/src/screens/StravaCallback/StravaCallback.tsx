@@ -10,7 +10,7 @@ import styles from './StravaCallback.module.css';
 export default function StravaCallback(): React.JSX.Element {
   usePageMetadata({
     title: `Strava OAuth Callback | ${BRAND}`,
-    description: 'Private Strava OAuth callback for Segment Attestations.',
+    description: `Private Strava OAuth callback for ${BRAND}.`,
     path: '/oauth',
     robots: 'noindex,nofollow',
   });

@@ -1,7 +1,7 @@
 import React, { Suspense, lazy, useCallback, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { useStravaAuth } from '@/hooks/useStravaAuth';
-import { IS_WALLET_CONFIGURED } from '@/utils/constants';
+import { BRAND, IS_WALLET_CONFIGURED } from '@/utils/constants';
 import { buttonClassName } from '@/components/Button/Button';
 import ThemeSwitch from '@/components/ThemeSwitch/ThemeSwitch';
 import styles from './Header.module.css';
@@ -56,18 +56,22 @@ function WalletButtonGate(): React.JSX.Element {
 export default function Header(): React.JSX.Element {
   const { auth, isAuthenticated, logout } = useStravaAuth();
   const athleteName = auth.athlete?.firstname;
+  const isAttestations = useLocation().pathname.startsWith('/attestations');
 
   return (
     <header className={styles.header}>
       <div className={styles.container}>
         <Link to="/" className={styles.logo}>
           <img src={logoEthOrange} alt="" width="24" height="24" />
-          <span>Segment Attestations</span>
+          <span>{BRAND}</span>
         </Link>
 
         <nav className={styles.nav}>
           <Link to="/heatmap" className={styles.navLink}>
             Heatmap
+          </Link>
+          <Link to="/attestations" className={styles.navLink}>
+            Attestations
           </Link>
           <Link to="/about" className={styles.navLink}>
             About
@@ -83,7 +87,7 @@ export default function Header(): React.JSX.Element {
           ) : null}
 
           <ThemeSwitch />
-          <WalletButtonGate />
+          {isAttestations ? <WalletButtonGate /> : null}
         </nav>
       </div>
     </header>

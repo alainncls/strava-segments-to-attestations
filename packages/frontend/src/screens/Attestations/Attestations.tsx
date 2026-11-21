@@ -8,19 +8,19 @@ import { useActivities } from '@/hooks/useActivities';
 import { SITE_URL, usePageMetadata } from '@/hooks/usePageMetadata';
 import type { Activity } from '@strava-attestations/shared';
 import { BRAND } from '@/utils/constants';
-import styles from './Home.module.css';
+import styles from './Attestations.module.css';
 
-export default function Home(): React.JSX.Element {
+export default function Attestations(): React.JSX.Element {
   usePageMetadata({
-    title: `${BRAND} | Onchain Segment Proofs`,
+    title: `Segment Attestations | ${BRAND}`,
     description:
       'Create verifiable onchain attestations for completed Strava segments on Linea with Verax. Connect Strava, choose a segment, and prove your achievement.',
-    path: '/',
+    path: '/attestations',
     schema: {
       '@context': 'https://schema.org',
       '@type': 'WebApplication',
-      name: BRAND,
-      url: `${SITE_URL}/`,
+      name: 'Segment Attestations',
+      url: `${SITE_URL}/attestations`,
       applicationCategory: 'SportsApplication',
       operatingSystem: 'Web',
       description:

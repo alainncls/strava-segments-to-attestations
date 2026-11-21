@@ -1,11 +1,13 @@
-# Strava Segment Attestations
+# Effortprint
 
-Strava Segment Attestations is a web application for creating verifiable onchain attestations for completed Strava segments on Linea using the Verax protocol.
+Effortprint is a web application with two tools for Strava activities: an activity heatmap and onchain attestations for completed Strava segments on Linea, with the Verax protocol. It is not a Strava product.
 
 ## Canonical Pages
 
-- [Home](https://strava.alainnicolas.fr/): Connect Strava, select a completed segment, and create an onchain attestation.
-- [About](https://strava.alainnicolas.fr/about): Product overview, workflow, attestation use cases, and technology stack.
+- [Home](https://strava.alainnicolas.fr/): The two tools and the Strava login.
+- [Activity heatmap](https://strava.alainnicolas.fr/heatmap): One colored cell for each day of each year, from the distance or the duration of the activities. Filters, thresholds, palettes, PNG and SVG export. The activity data stays in the browser.
+- [Segment Attestations](https://strava.alainnicolas.fr/attestations): Select a completed segment and create an onchain attestation.
+- [About](https://strava.alainnicolas.fr/about): Product overview, attestation workflow, privacy and data, technology stack.
 
 ## Related Resources
 

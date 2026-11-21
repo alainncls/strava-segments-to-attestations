@@ -19,7 +19,7 @@ const projectId = WALLETCONNECT_PROJECT_ID;
 
 const metadata = {
   name: BRAND,
-  description: 'Create verifiable attestations for your Strava segments',
+  description: 'Activity heatmap and segment attestations for your Strava activities',
   url: 'https://strava.alainnicolas.fr',
   icons: ['https://strava.alainnicolas.fr/favicon-dark.png'],
 };

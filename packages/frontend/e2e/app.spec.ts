@@ -52,12 +52,16 @@ test('renders the production home page without a blank root', async ({ page }) =
   await page.goto('/');
 
   await expect(page.locator('#root')).not.toBeEmpty();
-  await expect(page.getByRole('link', { name: /segment attestations/i })).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Effortprint' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: /your efforts, in print/i })).toBeVisible();
+  await expect(page.getByRole('button', { name: /connect with strava/i })).toBeVisible();
+  await expect(page.getByRole('button', { name: /connect wallet/i })).toHaveCount(0);
+
+  await page.getByRole('link', { name: /^segment attestations turn/i }).click();
   await expect(
     page.getByRole('heading', { name: /prove your strava segments onchain/i }),
   ).toBeVisible();
   await expect(page.getByRole('button', { name: /connect wallet/i })).toBeVisible();
-  await expect(page.getByRole('button', { name: /connect with strava/i })).toBeVisible();
 
   runtime.assertClean();
 });
@@ -68,7 +72,7 @@ test('renders the about route from the production build', async ({ page }) => {
   await page.goto('/about');
 
   await expect(page.locator('#root')).not.toBeEmpty();
-  await expect(page.getByRole('heading', { name: /about segment attestations/i })).toBeVisible();
+  await expect(page.getByRole('heading', { name: /about effortprint/i })).toBeVisible();
   await expect(page.getByRole('link', { name: /get started/i })).toBeVisible();
 
   runtime.assertClean();
@@ -153,7 +157,7 @@ test('activity pagination retries the same page, honors 429 cooldown, and remain
     await route.fulfill({ status: 200, json: { segment_efforts: [] } });
   });
 
-  await page.goto('/');
+  await page.goto('/attestations');
   await expect(page.getByRole('alert')).toContainText('page 1');
   await page.getByRole('button', { name: 'Retry' }).click();
   await expect(page.getByRole('button', { name: /^Activity 1 Ride/ }).first()).toBeVisible();

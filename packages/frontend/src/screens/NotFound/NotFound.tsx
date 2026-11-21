@@ -8,7 +8,7 @@ import styles from './NotFound.module.css';
 export default function NotFound(): React.JSX.Element {
   usePageMetadata({
     title: `Page Not Found | ${BRAND}`,
-    description: 'The requested Segment Attestations page could not be found.',
+    description: `The requested ${BRAND} page could not be found.`,
     path: '/404',
     robots: 'noindex,nofollow',
   });

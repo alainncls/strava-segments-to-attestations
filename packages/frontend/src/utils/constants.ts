@@ -1,4 +1,4 @@
-export const BRAND = 'Strava Segment Attestations';
+export const BRAND = 'Effortprint';
 
 export const STRAVA_CLIENT_ID = import.meta.env.VITE_STRAVA_CLIENT_ID || '';
 export const STRAVA_REDIRECT_URL = import.meta.env.VITE_STRAVA_REDIRECT_URL || '';
@@ -17,4 +17,4 @@ export const STORAGE_KEYS = {
 } as const;
 
 // Pages that the login can return to (finding 10). Anything else returns to `/`.
-export const RETURN_PATHS = ['/', '/heatmap', '/about'];
+export const RETURN_PATHS = ['/', '/heatmap', '/attestations', '/about'];
