@@ -138,6 +138,25 @@ handlers used by Netlify Functions; it does not implement OAuth or signing
 logic and is not part of production deployment. Create `packages/functions/.env`
 from `.env.example` before starting the functions package directly.
 
+Local notes:
+
+- Set `FRONTEND_URL=http://localhost:5174` in `packages/functions/.env`. Strava always accepts `localhost` as an OAuth callback domain.
+- Without `VITE_WALLETCONNECT_PROJECT_ID` and `VITE_INFURA_API_KEY`, the heatmap works and the wallet button is disabled. The wallet flow is covered by `e2e/wallet.spec.ts`.
+- `pnpm test:e2e` builds with `--mode e2e` (public placeholder values in `packages/frontend/.env.e2e`) and runs Playwright on the production build, at desktop and mobile width.
+
+### Frontend structure
+
+| Folder | Content |
+| --- | --- |
+| `src/screens` | `Hub`, `Heatmap`, `Attestations`, `About`, `StravaCallback`, `NotFound` (one lazy route each) |
+| `src/components` | `Layout`, `Header`, `Footer`, `Heatmap` (grid, controls, day tooltip), `ThemeSwitch`, wallet and modal components |
+| `src/hooks` | `useStravaAuth` (shared session), `useHeatmapSync` (Strava sync), `useActivities` (attestation flow) |
+| `src/utils` | `strava.ts` (API client), `heatmap.ts` (pure logic), `activityStore.ts` (local cache), `heatmapExport.ts`, `theme.ts` |
+
+### Security headers
+
+`netlify.toml` sets the Content-Security-Policy, `Strict-Transport-Security`, `Permissions-Policy` and the other headers. `vite.config.ts` sends the same policy from the preview server, and from the dev server with the local additions (inline React refresh script, HMR, functions on port 8888). `packages/functions/test/security-headers.test.ts` fails if a header is removed. A new third-party host must be added to the policy first.
+
 ## Environment Variables
 
 ### Frontend (`packages/frontend/.env.local`)
