@@ -1,19 +1,28 @@
-# Strava Segment Attestations
+# Effortprint
 
-Create verifiable onchain attestations for Strava segments you've completed.
+Two tools for your Strava activities, at [strava.alainnicolas.fr](https://strava.alainnicolas.fr). Effortprint is not a Strava product.
 
-Built on [Linea](https://linea.build/) using the [Verax](https://ver.ax/) attestation protocol.
+- **Activity heatmap** (`/heatmap`): one colored cell for each day of each year, from the distance or the duration of your activities. Filters, thresholds, 22 palettes, PNG and SVG export. The activities stay in the browser (`localStorage`, 7 days at most).
+- **Segment Attestations** (`/attestations`): verifiable onchain attestations for Strava segments you completed, on [Linea](https://linea.build/) with the [Verax](https://ver.ax/) attestation protocol.
 
 ## Overview
 
-This application allows athletes to create cryptographically verifiable proofs of their Strava segment completions. Unlike traditional NFTs, attestations are lightweight, standardized proofs that can be easily verified by other applications.
+### Routes
 
-### How it works
+| Path            | Page                                 |
+| --------------- | ------------------------------------ |
+| `/`             | Hub: the two tools and the login     |
+| `/heatmap`      | Activity heatmap                     |
+| `/attestations` | Segment attestation flow             |
+| `/about`        | About, privacy and data              |
+| `/oauth`        | Strava OAuth callback (not indexed)  |
 
-1. **Connect Strava** – OAuth authentication to access your activities
-2. **Select a segment** – Browse your recent activities and pick a completed segment
-3. **Create attestation** – Backend verifies completion and signs the data with EIP-712
-4. **Submit onchain** – Attestation is recorded on Linea via the Verax protocol
+### How an attestation works
+
+1. **Connect Strava** - OAuth authentication to access your activities
+2. **Select a segment** - Browse your recent activities and pick a completed segment
+3. **Create attestation** - Backend verifies completion and signs the data with EIP-712
+4. **Submit onchain** - Attestation is recorded on Linea via the Verax protocol
 
 ## Project Structure
 

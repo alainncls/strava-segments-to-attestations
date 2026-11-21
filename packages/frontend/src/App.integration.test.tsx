@@ -42,8 +42,21 @@ describe('App routing integration', () => {
     vi.clearAllMocks();
   });
 
-  it('renders the unauthenticated home route', async () => {
+  it('renders the hub with the two tools and no wallet button', async () => {
     renderRoute('/');
+
+    expect(await screen.findByRole('heading', { name: /your efforts, in print/i })).toBeVisible();
+    expect(screen.getByRole('link', { name: /activity heatmap/i })).toHaveAttribute(
+      'href',
+      '/heatmap',
+    );
+    expect(screen.getByRole('link', { name: /^segment attestations turn/i })).toBeVisible();
+    expect(screen.getByRole('button', { name: /connect with strava/i })).toBeVisible();
+    expect(screen.queryByRole('button', { name: /connect wallet/i })).not.toBeInTheDocument();
+  });
+
+  it('renders the attestation flow with the wallet button', async () => {
+    renderRoute('/attestations');
 
     expect(
       await screen.findByRole('heading', { name: /prove your strava segments onchain/i }),
@@ -55,10 +68,9 @@ describe('App routing integration', () => {
   it('renders the about route', async () => {
     renderRoute('/about');
 
-    expect(
-      await screen.findByRole('heading', { name: /about segment attestations/i }),
-    ).toBeVisible();
+    expect(await screen.findByRole('heading', { name: /about effortprint/i })).toBeVisible();
     expect(screen.getByRole('link', { name: /get started/i })).toBeVisible();
+    expect(screen.getByRole('heading', { name: /privacy and your data/i })).toBeVisible();
   });
 
   it('shows the connected athlete in the header of each route', async () => {
@@ -105,7 +117,7 @@ describe('App routing integration', () => {
 
   it.each([
     ['/heatmap', /^activity heatmap$/i],
-    ['//evil.example/heatmap', /no activities yet/i],
+    ['//evil.example/heatmap', /your efforts, in print/i],
   ])('returns to the saved path %s after login when it is a known route', async (path, text) => {
     sessionStorage.setItem(STORAGE_KEYS.OAUTH_STATE, 'state-1');
     sessionStorage.setItem(STORAGE_KEYS.RETURN_PATH, path);

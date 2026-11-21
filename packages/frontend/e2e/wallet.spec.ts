@@ -158,7 +158,7 @@ test('attests a segment with an injected wallet and the fee of the contract', as
     });
   });
 
-  await page.goto('/');
+  await page.goto('/attestations');
   await expect(page.getByRole('button', { name: /Morning Ride/ })).toBeVisible();
   // The wallet code is about 2.9 MB: it must not load before the athlete asks for a wallet.
   expect(scripts.reduce((sum, size) => sum + size, 0)).toBeLessThan(MAX_SCRIPT_BYTES_BEFORE_WALLET);
