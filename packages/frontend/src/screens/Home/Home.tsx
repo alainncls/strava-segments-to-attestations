@@ -1,26 +1,25 @@
 import React, { useCallback, useState } from 'react';
-import Header from '../../components/Header/Header';
-import Footer from '../../components/Footer/Footer';
-import Loader from '../../components/Loader/Loader';
-import StravaLoginButton from '../../components/StravaLoginButton/StravaLoginButton';
-import Activities from '../../components/Activities/Activities';
-import SegmentsModal from '../../components/SegmentsModal/SegmentsModal';
-import { useStravaAuth } from '@/hooks/useStravaAuth.ts';
-import { useActivities } from '@/hooks/useActivities.ts';
-import { SITE_URL, usePageMetadata } from '@/hooks/usePageMetadata.ts';
-import type { Activity } from '../../types';
+import Loader from '@/components/Loader/Loader';
+import StravaLoginButton from '@/components/StravaLoginButton/StravaLoginButton';
+import Activities from '@/components/Activities/Activities';
+import SegmentsModal from '@/components/SegmentsModal/SegmentsModal';
+import { useStravaAuth } from '@/hooks/useStravaAuth';
+import { useActivities } from '@/hooks/useActivities';
+import { SITE_URL, usePageMetadata } from '@/hooks/usePageMetadata';
+import type { Activity } from '@strava-attestations/shared';
+import { BRAND } from '@/utils/constants';
 import styles from './Home.module.css';
 
 export default function Home(): React.JSX.Element {
   usePageMetadata({
-    title: 'Strava Segment Attestations | Onchain Segment Proofs',
+    title: `${BRAND} | Onchain Segment Proofs`,
     description:
       'Create verifiable onchain attestations for completed Strava segments on Linea with Verax. Connect Strava, choose a segment, and prove your achievement.',
     path: '/',
     schema: {
       '@context': 'https://schema.org',
       '@type': 'WebApplication',
-      name: 'Strava Segment Attestations',
+      name: BRAND,
       url: `${SITE_URL}/`,
       applicationCategory: 'SportsApplication',
       operatingSystem: 'Web',
@@ -39,13 +38,7 @@ export default function Home(): React.JSX.Element {
     },
   });
 
-  const {
-    auth,
-    isAuthenticated,
-    refreshTokenIfNeeded,
-    logout,
-    isLoading: authLoading,
-  } = useStravaAuth();
+  const { auth, isAuthenticated, getValidToken } = useStravaAuth();
 
   const {
     activities,
@@ -59,7 +52,7 @@ export default function Home(): React.JSX.Element {
     hasMore,
     handleLoadMore,
     handleActivityClick,
-  } = useActivities(isAuthenticated, refreshTokenIfNeeded, auth.athlete?.id);
+  } = useActivities(isAuthenticated, getValidToken, auth.athlete?.id);
 
   const [selectedActivity, setSelectedActivity] = useState<Activity | undefined>();
   const [showModal, setShowModal] = useState(false);
@@ -80,19 +73,9 @@ export default function Home(): React.JSX.Element {
     setSelectedActivity(undefined);
   }, []);
 
-  if (authLoading) {
-    return <Loader loading message="Loading…" />;
-  }
-
   return (
     <>
       <Loader loading={isLoading} message="Loading activities…" />
-
-      <Header
-        isStravaConnected={isAuthenticated}
-        athleteName={auth.athlete?.firstname}
-        onStravaLogout={logout}
-      />
 
       <main className={styles.main}>
         {!isAuthenticated ? (
@@ -142,8 +125,6 @@ export default function Home(): React.JSX.Element {
         onHide={handleModalHide}
         accessToken={auth.accessToken || ''}
       />
-
-      <Footer />
     </>
   );
 }

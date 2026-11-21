@@ -1,12 +1,11 @@
 import { useEffect } from 'react';
-import { INSIGHTS_ID } from '../utils/constants';
+import { INSIGHTS_ID } from '@/utils/constants';
 
 declare global {
   interface Window {
     insights?: {
       init: (projectId: string) => void;
       trackPages: () => void;
-      track: (event: string, params?: Record<string, unknown>) => void;
     };
   }
 }
@@ -65,12 +64,4 @@ export function useInsights(): void {
       script?.remove();
     };
   }, []);
-}
-
-/**
- * Track a custom event
- */
-export function trackEvent(event: string, params?: Record<string, unknown>): void {
-  if (!INSIGHTS_ID || !window.insights) return;
-  window.insights.track(event, params);
 }

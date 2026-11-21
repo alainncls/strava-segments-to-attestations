@@ -1,30 +1,25 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import Header from '../../components/Header/Header';
-import Footer from '../../components/Footer/Footer';
-import { buttonClassName } from '../../components/Button/Button';
-import { usePageMetadata } from '@/hooks/usePageMetadata.ts';
+import { buttonClassName } from '@/components/Button/Button';
+import { usePageMetadata } from '@/hooks/usePageMetadata';
+import { BRAND } from '@/utils/constants';
 import styles from './NotFound.module.css';
 
 export default function NotFound(): React.JSX.Element {
   usePageMetadata({
-    title: 'Page Not Found | Strava Segment Attestations',
+    title: `Page Not Found | ${BRAND}`,
     description: 'The requested Segment Attestations page could not be found.',
     path: '/404',
     robots: 'noindex,nofollow',
   });
 
   return (
-    <>
-      <Header isStravaConnected={false} />
-      <main className={styles.main}>
-        <h1 className={styles.title}>Page not found</h1>
-        <p className={styles.description}>This page does not exist or has moved.</p>
-        <Link to="/" className={buttonClassName('primary')}>
-          Back to home
-        </Link>
-      </main>
-      <Footer />
-    </>
+    <main className={styles.main}>
+      <h1 className={styles.title}>Page not found</h1>
+      <p className={styles.description}>This page does not exist or has moved.</p>
+      <Link to="/" className={buttonClassName('primary')}>
+        Back to home
+      </Link>
+    </main>
   );
 }

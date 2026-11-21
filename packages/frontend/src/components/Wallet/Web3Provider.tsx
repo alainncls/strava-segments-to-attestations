@@ -6,13 +6,18 @@ import { WagmiProvider } from 'wagmi';
 import { http } from 'viem';
 import { linea, lineaSepolia } from '@reown/appkit/networks';
 import type { AppKitNetwork } from '@reown/appkit/networks';
-import { WALLETCONNECT_PROJECT_ID, INFURA_API_KEY, IS_WALLET_CONFIGURED } from '@/utils/constants';
+import {
+  BRAND,
+  INFURA_API_KEY,
+  IS_WALLET_CONFIGURED,
+  WALLETCONNECT_PROJECT_ID,
+} from '@/utils/constants';
 
 const queryClient = new QueryClient();
 const projectId = WALLETCONNECT_PROJECT_ID;
 
 const metadata = {
-  name: 'Strava Segment Attestations',
+  name: BRAND,
   description: 'Create verifiable attestations for your Strava segments',
   url: 'https://strava.alainnicolas.fr',
   icons: ['https://strava.alainnicolas.fr/favicon-dark.png'],

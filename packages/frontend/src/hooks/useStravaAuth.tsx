@@ -1,13 +1,10 @@
-import { useState, useEffect, useCallback } from 'react';
-import type { AuthState, StravaAthlete } from '../types';
-import { STORAGE_KEYS } from '../utils/constants';
+import React, { createContext, useCallback, useContext, useMemo, useState } from 'react';
+import type { AuthState, StravaAthlete } from '@strava-attestations/shared';
+import { STORAGE_KEYS } from '@/utils/constants';
 
-const initialState: AuthState = {
-  accessToken: null,
-  refreshToken: null,
-  expiresAt: null,
-  athlete: null,
-};
+const TOKEN_EXPIRY_MARGIN_MS = 5 * 60 * 1000;
+
+const signedOut: AuthState = { accessToken: null, expiresAt: null, athlete: null };
 
 function parseStoredAthlete(value: string | null): StravaAthlete | null {
   if (!value) {
@@ -22,11 +19,28 @@ function parseStoredAthlete(value: string | null): StravaAthlete | null {
   }
 }
 
-interface UseStravaAuthReturn {
+function readStoredAuth(): AuthState {
+  const accessToken = sessionStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN);
+  const expiresAt = sessionStorage.getItem(STORAGE_KEYS.EXPIRES_AT);
+  if (!accessToken || !expiresAt) {
+    return signedOut;
+  }
+
+  return {
+    accessToken,
+    expiresAt: parseInt(expiresAt, 10),
+    athlete: parseStoredAthlete(sessionStorage.getItem(STORAGE_KEYS.ATHLETE)),
+  };
+}
+
+function isTokenValid(expiresAt: number | null): boolean {
+  return expiresAt !== null && expiresAt * 1000 > Date.now() + TOKEN_EXPIRY_MARGIN_MS;
+}
+
+interface StravaAuth {
   auth: AuthState;
-  isLoading: boolean;
   isAuthenticated: boolean;
-  refreshTokenIfNeeded: () => Promise<string | null>;
+  getValidToken: () => Promise<string | null>;
   setAuthFromCallback: (data: {
     access_token: string;
     expires_at: number;
@@ -35,81 +49,56 @@ interface UseStravaAuthReturn {
   logout: () => void;
 }
 
-export function useStravaAuth(): UseStravaAuthReturn {
-  const [auth, setAuth] = useState<AuthState>(initialState);
-  const [isLoading, setIsLoading] = useState(true);
+const StravaAuthContext = createContext<StravaAuth | null>(null);
 
-  // Load auth from session storage on mount
-  useEffect(() => {
-    const accessToken = sessionStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN);
-    const expiresAt = sessionStorage.getItem(STORAGE_KEYS.EXPIRES_AT);
-    const athleteStr = sessionStorage.getItem(STORAGE_KEYS.ATHLETE);
+export function StravaAuthProvider({ children }: { children: React.ReactNode }): React.JSX.Element {
+  const [auth, setAuth] = useState(readStoredAuth);
 
-    sessionStorage.removeItem(STORAGE_KEYS.REFRESH_TOKEN);
-
-    if (accessToken && expiresAt) {
-      const athlete = parseStoredAthlete(athleteStr);
-      setAuth({
-        accessToken,
-        refreshToken: null,
-        expiresAt: parseInt(expiresAt, 10),
-        athlete,
-      });
-    }
-
-    setIsLoading(false);
-  }, []);
-
-  // Check if token is valid
-  const isTokenValid = useCallback(() => {
-    if (!auth.expiresAt) return false;
-    // Token is valid if it expires more than 5 minutes from now
-    return auth.expiresAt * 1000 > Date.now() + 5 * 60 * 1000;
-  }, [auth.expiresAt]);
-
-  // Logout
-  const logout = useCallback(() => {
+  const logout = useCallback((): void => {
     sessionStorage.removeItem(STORAGE_KEYS.ACCESS_TOKEN);
-    sessionStorage.removeItem(STORAGE_KEYS.REFRESH_TOKEN);
     sessionStorage.removeItem(STORAGE_KEYS.EXPIRES_AT);
     sessionStorage.removeItem(STORAGE_KEYS.ATHLETE);
-    setAuth(initialState);
+    setAuth(signedOut);
   }, []);
 
-  // Refresh token if needed
-  const refreshTokenIfNeeded = useCallback(async (): Promise<string | null> => {
-    if (isTokenValid()) {
+  const getValidToken = useCallback(async (): Promise<string | null> => {
+    if (isTokenValid(auth.expiresAt)) {
       return auth.accessToken;
     }
 
     logout();
     return null;
-  }, [auth.accessToken, isTokenValid, logout]);
+  }, [auth.accessToken, auth.expiresAt, logout]);
 
-  // Set auth after OAuth callback
-  const setAuthFromCallback = useCallback(
-    (data: { access_token: string; expires_at: number; athlete: StravaAthlete }): void => {
-      sessionStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, data.access_token);
-      sessionStorage.removeItem(STORAGE_KEYS.REFRESH_TOKEN);
-      sessionStorage.setItem(STORAGE_KEYS.EXPIRES_AT, data.expires_at.toString());
-      sessionStorage.setItem(STORAGE_KEYS.ATHLETE, JSON.stringify(data.athlete));
+  const setAuthFromCallback = useCallback<StravaAuth['setAuthFromCallback']>((data) => {
+    sessionStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, data.access_token);
+    sessionStorage.setItem(STORAGE_KEYS.EXPIRES_AT, data.expires_at.toString());
+    sessionStorage.setItem(STORAGE_KEYS.ATHLETE, JSON.stringify(data.athlete));
+    setAuth({
+      accessToken: data.access_token,
+      expiresAt: data.expires_at,
+      athlete: data.athlete,
+    });
+  }, []);
 
-      setAuth({
-        accessToken: data.access_token,
-        refreshToken: null,
-        expiresAt: data.expires_at,
-        athlete: data.athlete,
-      });
-    },
-    [],
+  const value = useMemo(
+    () => ({
+      auth,
+      isAuthenticated: !!auth.accessToken && isTokenValid(auth.expiresAt),
+      getValidToken,
+      setAuthFromCallback,
+      logout,
+    }),
+    [auth, getValidToken, setAuthFromCallback, logout],
   );
 
-  return {
-    auth,
-    isLoading,
-    isAuthenticated: !!auth.accessToken && isTokenValid(),
-    refreshTokenIfNeeded,
-    setAuthFromCallback,
-    logout,
-  };
+  return <StravaAuthContext value={value}>{children}</StravaAuthContext>;
+}
+
+export function useStravaAuth(): StravaAuth {
+  const value = useContext(StravaAuthContext);
+  if (!value) {
+    throw new Error('useStravaAuth needs a StravaAuthProvider');
+  }
+  return value;
 }

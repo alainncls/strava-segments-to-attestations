@@ -1,6 +1,6 @@
 import React, { Suspense, lazy } from 'react';
-import type { Activity } from '../../types';
-import { Modal } from '../Modal/Modal';
+import type { Activity } from '@strava-attestations/shared';
+import { Modal } from '@/components/Modal/Modal';
 import styles from './SegmentsModal.module.css';
 
 interface SegmentsModalProps {

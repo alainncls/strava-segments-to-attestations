@@ -39,6 +39,23 @@ export default tseslint.config(
     },
   },
   {
+    files: ['packages/frontend/src/**'],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          patterns: [
+            {
+              regex: '^\\.\\./|^\\./.+/',
+              message: 'Use the @/ alias outside the current folder.',
+            },
+            { regex: '\\.tsx?$', message: 'Do not write the TypeScript file extension.' },
+          ],
+        },
+      ],
+    },
+  },
+  {
     ignores: [
       '**/node_modules/**',
       '**/dist/**',

@@ -2,8 +2,8 @@ import React, { useEffect, useRef } from 'react';
 import { useAppKit } from '@reown/appkit/react';
 import { useAccount } from 'wagmi';
 import { Web3Provider } from './Web3Provider';
-import { buttonClassName } from '../Button/Button';
-import styles from '../Header/Header.module.css';
+import { buttonClassName } from '@/components/Button/Button';
+import styles from '@/components/Header/Header.module.css';
 
 interface WalletConnectButtonProps {
   autoOpen?: boolean;

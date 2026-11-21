@@ -1,9 +1,9 @@
 import React from 'react';
 import styles from './Footer.module.css';
-import poweredByStrava from '../../assets/powered-by-strava.svg';
-import githubIcon from '../../assets/github-icon.svg';
-import xIcon from '../../assets/x-icon.svg';
-import veraxLogo from '../../assets/verax-logo.svg';
+import poweredByStrava from '@/assets/powered-by-strava.svg';
+import githubIcon from '@/assets/github-icon.svg';
+import xIcon from '@/assets/x-icon.svg';
+import veraxLogo from '@/assets/verax-logo.svg';
 
 const links = [
   {

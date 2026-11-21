@@ -2,13 +2,13 @@ import { render, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import App from './App';
-import { STORAGE_KEYS } from './utils/constants';
+import { STORAGE_KEYS } from '@/utils/constants';
 
 const openWalletMock = vi.fn();
 const writeContractMock = vi.fn();
 const resetWriteMock = vi.fn();
 
-vi.mock('./hooks/useInsights', () => ({
+vi.mock('@/hooks/useInsights', () => ({
   useInsights: vi.fn(),
 }));
 
@@ -18,6 +18,7 @@ vi.mock('@reown/appkit/react', () => ({
 
 vi.mock('wagmi', () => ({
   useAccount: () => ({ address: undefined, chainId: 59144, isConnected: false }),
+  useReadContract: () => ({ data: 100000000000000n }),
   useWaitForTransactionReceipt: () => ({ isLoading: false, isSuccess: false }),
   useWriteContract: () => ({
     data: undefined,
@@ -58,6 +59,17 @@ describe('App routing integration', () => {
       await screen.findByRole('heading', { name: /about segment attestations/i }),
     ).toBeVisible();
     expect(screen.getByRole('link', { name: /get started/i })).toBeVisible();
+  });
+
+  it('shows the connected athlete in the header of each route', async () => {
+    sessionStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, 'access-token');
+    sessionStorage.setItem(STORAGE_KEYS.EXPIRES_AT, String(Math.floor(Date.now() / 1000) + 3600));
+    sessionStorage.setItem(STORAGE_KEYS.ATHLETE, JSON.stringify({ id: 1, firstname: 'Test' }));
+
+    renderRoute('/about');
+
+    expect(await screen.findByRole('button', { name: /log out/i })).toBeVisible();
+    expect(screen.getByText('Test')).toBeVisible();
   });
 
   it('renders the OAuth error route when no code is present', async () => {

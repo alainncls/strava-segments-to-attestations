@@ -3,7 +3,12 @@ import { afterEach, beforeEach, describe, expect, it, type Mock, vi } from 'vite
 import { verifyTypedData, type Address, type Hex } from 'viem';
 import { privateKeyToAccount } from 'viem/accounts';
 import signHandler from '../src/sign';
-import { linea, lineaSepolia, PORTAL_ID_MAINNET, PORTAL_ID_SEPOLIA } from '@strava-attestations/shared';
+import {
+  linea,
+  lineaSepolia,
+  PORTAL_ID_MAINNET,
+  PORTAL_ID_SEPOLIA,
+} from '@strava-attestations/shared';
 
 const counters = vi.hoisted(() => ({ signatureCount: 0 }));
 

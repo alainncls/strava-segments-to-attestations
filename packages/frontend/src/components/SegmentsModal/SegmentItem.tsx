@@ -1,7 +1,7 @@
 import React, { memo, useCallback } from 'react';
-import type { Segment } from '../../types';
-import { formatDate, formatDistance } from '@/utils/format.ts';
-import { Button } from '../Button/Button';
+import type { Segment } from '@strava-attestations/shared';
+import { formatDate, formatDistance } from '@/utils/format';
+import { Button } from '@/components/Button/Button';
 import styles from './SegmentItem.module.css';
 
 interface SegmentItemProps {

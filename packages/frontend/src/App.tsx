@@ -1,25 +1,28 @@
-import React, { Suspense, lazy } from 'react';
+import React, { lazy } from 'react';
 import { Route, Routes } from 'react-router-dom';
-import { useInsights } from './hooks/useInsights';
-import Loader from './components/Loader/Loader';
+import Layout from '@/components/Layout/Layout';
+import { useInsights } from '@/hooks/useInsights';
+import { StravaAuthProvider } from '@/hooks/useStravaAuth';
 
-const Home = lazy(() => import('./screens/Home/Home'));
-const StravaCallback = lazy(() => import('./screens/StravaCallback/StravaCallback'));
-const About = lazy(() => import('./screens/About/About'));
-const NotFound = lazy(() => import('./screens/NotFound/NotFound'));
+const Home = lazy(() => import('@/screens/Home/Home'));
+const StravaCallback = lazy(() => import('@/screens/StravaCallback/StravaCallback'));
+const About = lazy(() => import('@/screens/About/About'));
+const NotFound = lazy(() => import('@/screens/NotFound/NotFound'));
 
 function App(): React.JSX.Element {
   useInsights();
 
   return (
-    <Suspense fallback={<Loader loading message="Loading…" />}>
+    <StravaAuthProvider>
       <Routes>
-        <Route path="/" element={<Home />} />
-        <Route path="/oauth" element={<StravaCallback />} />
-        <Route path="/about" element={<About />} />
-        <Route path="*" element={<NotFound />} />
+        <Route element={<Layout />}>
+          <Route path="/" element={<Home />} />
+          <Route path="/oauth" element={<StravaCallback />} />
+          <Route path="/about" element={<About />} />
+          <Route path="*" element={<NotFound />} />
+        </Route>
       </Routes>
-    </Suspense>
+    </StravaAuthProvider>
   );
 }
 

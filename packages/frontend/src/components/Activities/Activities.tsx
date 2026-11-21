@@ -1,7 +1,7 @@
 import React, { memo, useCallback } from 'react';
-import type { Activity } from '../../types';
-import { formatActivityType, formatDate, formatDistance } from '@/utils/format.ts';
-import { Button } from '../Button/Button';
+import type { Activity } from '@strava-attestations/shared';
+import { formatActivityType, formatDate, formatDistance } from '@/utils/format';
+import { Button } from '@/components/Button/Button';
 import styles from './Activities.module.css';
 
 interface ActivitiesProps {
