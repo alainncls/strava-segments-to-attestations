@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useEffectEvent, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import styles from './Modal.module.css';
 
@@ -20,8 +20,9 @@ export function Modal({
   footer,
 }: ModalProps): React.JSX.Element | null {
   const dialogRef = useRef<HTMLDivElement>(null);
-  const onHideRef = useRef(onHide);
-  onHideRef.current = onHide;
+  const handleKeyDown = useEffectEvent((e: KeyboardEvent): void => {
+    if (e.key === 'Escape') onHide();
+  });
 
   useEffect(() => {
     if (!show) return;
@@ -29,9 +30,6 @@ export function Modal({
     const root = document.getElementById('root');
     const previousFocus = document.activeElement;
     const previousBodyOverflow = document.body.style.overflow;
-    const handleKeyDown = (e: KeyboardEvent): void => {
-      if (e.key === 'Escape') onHideRef.current();
-    };
 
     document.addEventListener('keydown', handleKeyDown);
     document.body.style.overflow = 'hidden';

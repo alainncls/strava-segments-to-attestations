@@ -69,7 +69,7 @@ function SegmentsModalContent({
   const portalAddress: Address = isMainnet ? PORTAL_ID_MAINNET : PORTAL_ID_SEPOLIA;
 
   // The contract owner can change the fee, so read it from the contract.
-  const { data: fee } = useReadContract({
+  const { data: fee, refetch: refetchFee } = useReadContract({
     address: portalAddress,
     abi: STRAVA_PORTAL_ABI,
     functionName: 'fee',
@@ -94,6 +94,7 @@ function SegmentsModalContent({
       }
 
       if (fee === undefined) {
+        void refetchFee();
         setError('Could not read the attestation fee. Retry in a moment.');
         return;
       }
@@ -185,7 +186,17 @@ function SegmentsModalContent({
         setAttestingSegmentId(null);
       }
     },
-    [accessToken, activity, address, chainId, fee, portalAddress, resetWrite, writeContract],
+    [
+      accessToken,
+      activity,
+      address,
+      chainId,
+      fee,
+      portalAddress,
+      refetchFee,
+      resetWrite,
+      writeContract,
+    ],
   );
 
   const modalTitle = activity?.name || 'Segments';

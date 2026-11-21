@@ -412,7 +412,7 @@ Limits of the checks:
 | Read the full Strava API Policy, API Agreement and brand guidelines. | Each obligation that applies is a row of section 5.4. |
 | Answer the questions of section 10. | All closed except Q1 (the name, needed for pull request 4 only). |
 | Drop `stash@{0}` after the owner confirms (Q8). | Done (revision 4). |
-| Local environment (owner, only if the files do not exist yet). `packages/functions/.env`: `STRAVA_CLIENT_ID`, `STRAVA_CLIENT_SECRET`, `FRONTEND_URL=http://localhost:5174`, `SIGNER_PRIVATE_KEY`. `packages/frontend/.env`: the keys of `.env.example`. The agent does not read these files. | `pnpm dev` completes a Strava login on `localhost`. |
+| Local environment (owner, only if the files do not exist yet). `packages/functions/.env`: `STRAVA_CLIENT_ID`, `STRAVA_CLIENT_SECRET`, `FRONTEND_URL=http://localhost:5174`, `SIGNER_PRIVATE_KEY`. `packages/frontend/.env.local`: the keys of `.env.example`. Checked on 2026-11-21: `packages/functions/.env` does not exist, and the frontend file has no wallet values. The agent does not read these files. | `pnpm dev` completes a Strava login on `localhost`. |
 | Run the end-to-end tests once. | Done (revision 4): 8 passed of 8. |
 | Commit this plan in pull request 1. | The plan is on `main`. |
 
@@ -553,7 +553,7 @@ The proof has three parts, with no funds and no secret of the owner:
 
 Not done: a real transaction. A local fork of Linea Sepolia was considered. It needs a Strava access token on the server side of the `sign` function, and the agent does not handle the token of the owner. Pull request 1 does not change the data that the contract receives, except the fee value.
 
-The end-to-end build uses `vite build --mode e2e` with public placeholder values (`packages/frontend/.env.e2e`), so the wallet is configured in CI and no local `.env` value reaches the tests.
+The end-to-end build uses `vite build --mode e2e` with public placeholder values (`packages/frontend/.env.e2e`), so the wallet is configured in CI and no local `.env.local` value reaches the tests.
 
 ## 10. Risks and open questions
 

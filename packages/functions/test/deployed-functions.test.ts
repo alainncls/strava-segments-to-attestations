@@ -6,7 +6,9 @@ import { expect, it } from 'vitest';
 const directory = join(import.meta.dirname, '../src');
 
 it('keeps only files with a handler at the top level of the functions directory', () => {
-  const files = readdirSync(directory).filter((name) => name.endsWith('.ts'));
+  const files = readdirSync(directory)
+    .filter((name) => name.endsWith('.ts'))
+    .sort();
 
   expect(files).toEqual(['auth.ts', 'oauth-state-cleanup.ts', 'sign.ts']);
   for (const name of files) {
