@@ -10,10 +10,9 @@ const links = [
     href: 'https://github.com/alainncls/strava-segments-to-attestations',
     label: 'GitHub',
     icon: githubIcon,
-    invert: true,
   },
-  { href: 'https://x.com/Alain_Ncls', label: 'X', icon: xIcon, invert: true },
-  { href: 'https://explorer.ver.ax', label: 'Verax Explorer', icon: veraxLogo, invert: false },
+  { href: 'https://x.com/Alain_Ncls', label: 'X', icon: xIcon },
+  { href: 'https://explorer.ver.ax', label: 'Verax Explorer', icon: veraxLogo },
 ];
 
 export default function Footer(): React.JSX.Element {
@@ -28,17 +27,16 @@ export default function Footer(): React.JSX.Element {
         </p>
 
         <a href="https://www.strava.com" target="_blank" rel="noopener noreferrer">
-          <img
-            src={poweredByStrava}
-            alt="Powered by Strava"
-            width="300"
-            height="56"
-            className={styles.strava}
+          <span
+            role="img"
+            aria-label="Powered by Strava"
+            className={`${styles.mask} ${styles.strava}`}
+            style={{ maskImage: `url("${poweredByStrava}")` }}
           />
         </a>
 
         <ul className={styles.links}>
-          {links.map(({ href, label, icon, invert }) => (
+          {links.map(({ href, label, icon }) => (
             <li key={href}>
               <a
                 href={href}
@@ -48,12 +46,9 @@ export default function Footer(): React.JSX.Element {
                 aria-label={label}
                 title={label}
               >
-                <img
-                  src={icon}
-                  alt=""
-                  width="18"
-                  height="18"
-                  className={invert ? styles.invert : undefined}
+                <span
+                  className={`${styles.mask} ${styles.icon}`}
+                  style={{ maskImage: `url("${icon}")` }}
                 />
               </a>
             </li>

@@ -24,10 +24,22 @@
   color: var(--text-2);
 }
 
-.strava {
+.mask {
   display: block;
+  background: var(--text);
+  mask-repeat: no-repeat;
+  mask-size: contain;
+  mask-position: center;
+}
+
+.strava {
+  width: 150px;
   height: 28px;
-  width: auto;
+}
+
+.icon {
+  width: 18px;
+  height: 18px;
 }
 
 .links {
@@ -50,8 +62,4 @@
 .iconLink:hover {
   opacity: 1;
   background: var(--surface-hover);
-}
-
-.invert {
-  filter: brightness(0) invert(1);
 }
