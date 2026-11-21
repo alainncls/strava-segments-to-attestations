@@ -102,3 +102,7 @@
     border-bottom: none;
   }
 }
+
+.modal:focus {
+  outline: none;
+}

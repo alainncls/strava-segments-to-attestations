@@ -64,8 +64,6 @@ export interface Activity {
 
 export interface AuthState {
   accessToken: string | null;
-  /** @deprecated refresh tokens are not stored in the browser. */
-  refreshToken: string | null;
   expiresAt: number | null;
   athlete: StravaAthlete | null;
 }

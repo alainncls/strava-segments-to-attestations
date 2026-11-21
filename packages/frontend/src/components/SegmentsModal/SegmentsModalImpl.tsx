@@ -1,5 +1,5 @@
 import React, { useCallback, useMemo, useState } from 'react';
-import { useAccount, useWriteContract, useWaitForTransactionReceipt } from 'wagmi';
+import { useAccount, useReadContract, useWaitForTransactionReceipt, useWriteContract } from 'wagmi';
 import {
   encodeAbiParameters,
   formatEther,
@@ -8,20 +8,22 @@ import {
   type Address,
   isAddress,
 } from 'viem';
-import type { Activity, Segment, SignedSegment } from '../../types';
 import {
-  API_URL,
+  type Activity,
+  linea,
+  lineaSepolia,
   PORTAL_ID_MAINNET,
   PORTAL_ID_SEPOLIA,
   SCHEMA_ID,
-  linea,
-  ATTESTATION_FEE,
-} from '@/utils/constants.ts';
-import { parseWalletError, isUserRejection } from '@/utils/errors.ts';
-import { STRAVA_PORTAL_ABI } from '@/abi/StravaPortal.ts';
-import { Web3Provider } from '../Wallet/Web3Provider';
-import { Modal } from '../Modal/Modal';
-import { Button } from '../Button/Button';
+  type Segment,
+  type SignedSegment,
+} from '@strava-attestations/shared';
+import { API_URL } from '@/utils/constants';
+import { isUserRejection, walletErrorMessage } from '@/utils/errors';
+import { STRAVA_PORTAL_ABI } from '@/abi/StravaPortal';
+import { Web3Provider } from '@/components/Wallet/Web3Provider';
+import { Modal } from '@/components/Modal/Modal';
+import { Button } from '@/components/Button/Button';
 import SegmentItem from './SegmentItem';
 import styles from './SegmentsModal.module.css';
 
@@ -66,6 +68,14 @@ function SegmentsModalContent({
   const isMainnet = chainId === linea.id;
   const portalAddress: Address = isMainnet ? PORTAL_ID_MAINNET : PORTAL_ID_SEPOLIA;
 
+  // The contract owner can change the fee, so read it from the contract.
+  const { data: fee, refetch: refetchFee } = useReadContract({
+    address: portalAddress,
+    abi: STRAVA_PORTAL_ABI,
+    functionName: 'fee',
+    chainId: isMainnet ? linea.id : lineaSepolia.id,
+  });
+
   const handleAttest = useCallback(
     async (segment: Segment): Promise<void> => {
       if (!activity) {
@@ -80,6 +90,12 @@ function SegmentsModalContent({
 
       if (!isAddress(address)) {
         setError('Invalid wallet address.');
+        return;
+      }
+
+      if (fee === undefined) {
+        void refetchFee();
+        setError('Could not read the attestation fee. Retry in a moment.');
         return;
       }
 
@@ -144,7 +160,7 @@ function SegmentsModalContent({
               },
               [validationPayload],
             ],
-            value: ATTESTATION_FEE,
+            value: fee,
           },
           {
             onSuccess: (hash) => {
@@ -153,8 +169,7 @@ function SegmentsModalContent({
             },
             onError: (err) => {
               if (!isUserRejection(err)) {
-                const parsed = parseWalletError(err);
-                setError(parsed.message);
+                setError(walletErrorMessage(err));
               }
               setAttestingSegmentId(null);
             },
@@ -164,15 +179,24 @@ function SegmentsModalContent({
         console.error('Attestation error:', err);
 
         if (!isUserRejection(err)) {
-          const parsed = parseWalletError(err);
-          setError(parsed.message);
+          setError(walletErrorMessage(err));
         }
 
         setLoadingSegmentId(null);
         setAttestingSegmentId(null);
       }
     },
-    [accessToken, activity, address, chainId, portalAddress, resetWrite, writeContract],
+    [
+      accessToken,
+      activity,
+      address,
+      chainId,
+      fee,
+      portalAddress,
+      refetchFee,
+      resetWrite,
+      writeContract,
+    ],
   );
 
   const modalTitle = activity?.name || 'Segments';
@@ -180,13 +204,13 @@ function SegmentsModalContent({
   const modalFooter = useMemo(
     () => (
       <>
-        <span className={styles.fee}>Fee {formatEther(ATTESTATION_FEE)} ETH</span>
+        <span className={styles.fee}>Fee {fee === undefined ? '…' : formatEther(fee)} ETH</span>
         <Button variant="secondary" onClick={onHide}>
           Close
         </Button>
       </>
     ),
-    [onHide],
+    [fee, onHide],
   );
 
   const isAnySegmentBusy =

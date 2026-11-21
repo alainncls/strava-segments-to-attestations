@@ -1,8 +1,7 @@
 import type { Context } from '@netlify/functions';
 import { createHash, randomBytes, timingSafeEqual } from 'node:crypto';
-import type { StravaTokenResponse } from '../lib/types';
-import { STRAVA_TOKEN_URL } from '../lib/constants';
-import { getEnvConfig, getCorsHeaders } from '../lib/env';
+import { STRAVA_TOKEN_URL, type StravaTokenResponse } from '@strava-attestations/shared';
+import { getAllowedOrigins, getCorsHeaders, getEnvConfig } from '../lib/env';
 import {
   assertRecord,
   HttpError,
@@ -11,7 +10,7 @@ import {
   readUpstreamJson,
   UpstreamStatusError,
 } from '../lib/http';
-import { createRateLimiter } from './rateLimiter';
+import { createRateLimiter } from './lib/rateLimiter';
 import { createNetlifyOAuthStateStore } from './lib/oauth-state';
 import type { OAuthStateRecord, OAuthStateStore } from './lib/oauth-state';
 
@@ -213,12 +212,7 @@ export const createAuthHandler =
     try {
       // Validate environment
       const config = getEnvConfig();
-      const allowedOrigins = [
-        config.FRONTEND_URL,
-        'http://localhost:5174',
-        'http://localhost:8888',
-      ];
-      if (!origin || !allowedOrigins.includes(origin)) {
+      if (!origin || !getAllowedOrigins().includes(origin)) {
         return new Response(JSON.stringify({ error: 'Invalid origin' }), { status: 403, headers });
       }
 

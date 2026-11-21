@@ -1,17 +1,15 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
-import { usePageMetadata } from '@/hooks/usePageMetadata.ts';
-import { useStravaAuth } from '@/hooks/useStravaAuth.ts';
-import { API_URL, STORAGE_KEYS } from '@/utils/constants.ts';
-import Loader from '../../components/Loader/Loader';
-import Header from '../../components/Header/Header';
-import Footer from '../../components/Footer/Footer';
-import { buttonClassName } from '../../components/Button/Button';
+import { usePageMetadata } from '@/hooks/usePageMetadata';
+import { useStravaAuth } from '@/hooks/useStravaAuth';
+import { API_URL, BRAND, STORAGE_KEYS } from '@/utils/constants';
+import Loader from '@/components/Loader/Loader';
+import { buttonClassName } from '@/components/Button/Button';
 import styles from './StravaCallback.module.css';
 
 export default function StravaCallback(): React.JSX.Element {
   usePageMetadata({
-    title: 'Strava OAuth Callback | Strava Segment Attestations',
+    title: `Strava OAuth Callback | ${BRAND}`,
     description: 'Private Strava OAuth callback for Segment Attestations.',
     path: '/oauth',
     robots: 'noindex,nofollow',
@@ -21,8 +19,13 @@ export default function StravaCallback(): React.JSX.Element {
   const [searchParams] = useSearchParams();
   const { setAuthFromCallback } = useStravaAuth();
   const [error, setError] = useState<string | null>(null);
+  const started = useRef(false);
 
   useEffect(() => {
+    // The state and the code are single use: do not run twice under StrictMode.
+    if (started.current) return;
+    started.current = true;
+
     const code = searchParams.get('code');
     const state = searchParams.get('state');
     const errorParam = searchParams.get('error');
@@ -73,17 +76,13 @@ export default function StravaCallback(): React.JSX.Element {
 
   if (error) {
     return (
-      <>
-        <Header isStravaConnected={false} />
-        <main className={styles.main}>
-          <h1 className={styles.title}>Sign-in failed</h1>
-          <p className={styles.description}>{error}</p>
-          <Link to="/" className={buttonClassName('primary')}>
-            Back to home
-          </Link>
-        </main>
-        <Footer />
-      </>
+      <main className={styles.main}>
+        <h1 className={styles.title}>Sign-in failed</h1>
+        <p className={styles.description}>{error}</p>
+        <Link to="/" className={buttonClassName('primary')}>
+          Back to home
+        </Link>
+      </main>
     );
   }
 

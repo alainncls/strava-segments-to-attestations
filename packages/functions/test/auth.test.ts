@@ -9,9 +9,7 @@ const { getStoreMock } = vi.hoisted(() => ({ getStoreMock: vi.fn() }));
 
 vi.mock('@netlify/blobs', () => ({ getStore: getStoreMock }));
 
-vi.mock('../lib/constants', () => ({
-  STRAVA_TOKEN_URL: 'https://www.strava.com/oauth/token',
-}));
+vi.mock('@strava-attestations/shared', async () => import('../../shared/src/index.ts'));
 
 const randomState = (): string => randomBytes(32).toString('hex');
 

@@ -1,7 +1,7 @@
-import { act, renderHook, waitFor } from '@testing-library/react';
+import { act, renderHook } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { useStravaAuth } from './useStravaAuth';
-import { STORAGE_KEYS } from '../utils/constants';
+import { StravaAuthProvider, useStravaAuth } from './useStravaAuth';
+import { STORAGE_KEYS } from '@/utils/constants';
 
 const athlete = {
   id: 123,
@@ -17,6 +17,9 @@ function seedAuth(expiresAt: number): void {
   sessionStorage.setItem(STORAGE_KEYS.ATHLETE, JSON.stringify(athlete));
 }
 
+const renderAuth = (): ReturnType<typeof renderHook<ReturnType<typeof useStravaAuth>, unknown>> =>
+  renderHook(() => useStravaAuth(), { wrapper: StravaAuthProvider });
+
 describe('useStravaAuth', () => {
   beforeEach(() => {
     sessionStorage.clear();
@@ -26,18 +29,16 @@ describe('useStravaAuth', () => {
     vi.unstubAllGlobals();
   });
 
-  it('hydrates a valid authenticated session from session storage', async () => {
+  it('hydrates a valid authenticated session from session storage', () => {
     seedAuth(Math.floor(Date.now() / 1000) + 3600);
 
-    const { result } = renderHook(() => useStravaAuth());
-
-    await waitFor(() => expect(result.current.isLoading).toBe(false));
+    const { result } = renderAuth();
 
     expect(result.current.isAuthenticated).toBe(true);
     expect(result.current.auth.athlete?.firstname).toBe('Test');
   });
 
-  it('drops corrupted athlete storage without breaking render', async () => {
+  it('drops corrupted athlete storage without breaking render', () => {
     sessionStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, 'access-token');
     sessionStorage.setItem(
       STORAGE_KEYS.EXPIRES_AT,
@@ -45,9 +46,7 @@ describe('useStravaAuth', () => {
     );
     sessionStorage.setItem(STORAGE_KEYS.ATHLETE, '{broken-json');
 
-    const { result } = renderHook(() => useStravaAuth());
-
-    await waitFor(() => expect(result.current.isLoading).toBe(false));
+    const { result } = renderAuth();
 
     expect(result.current.isAuthenticated).toBe(true);
     expect(result.current.auth.athlete).toBeNull();
@@ -57,17 +56,15 @@ describe('useStravaAuth', () => {
   it('clears an expired session instead of refreshing in the browser', async () => {
     seedAuth(Math.floor(Date.now() / 1000) - 3600);
 
-    const { result } = renderHook(() => useStravaAuth());
-
-    await waitFor(() => expect(result.current.isLoading).toBe(false));
+    const { result } = renderAuth();
 
     let token: string | null = null;
     await act(async () => {
-      token = await result.current.refreshTokenIfNeeded();
+      token = await result.current.getValidToken();
     });
 
     expect(token).toBeNull();
     expect(sessionStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN)).toBeNull();
-    expect(sessionStorage.getItem(STORAGE_KEYS.REFRESH_TOKEN)).toBeNull();
+    expect(result.current.isAuthenticated).toBe(false);
   });
 });

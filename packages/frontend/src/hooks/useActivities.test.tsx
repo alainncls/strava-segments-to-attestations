@@ -1,6 +1,7 @@
 import { act, renderHook, waitFor } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { parseRetryAfter, useActivities } from './useActivities';
+import { parseRetryAfter } from '@/utils/strava';
+import { useActivities } from './useActivities';
 
 const token = vi.fn(async () => 'access-token');
 

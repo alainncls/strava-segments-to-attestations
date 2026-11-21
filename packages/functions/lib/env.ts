@@ -56,13 +56,14 @@ export function getEnvConfig(): EnvConfig {
   };
 }
 
-export function getCorsHeaders(origin?: string): Record<string, string> {
-  const allowedOrigins = [
-    process.env.FRONTEND_URL,
-    'http://localhost:5174',
-    'http://localhost:8888',
-  ].filter(Boolean) as string[];
+export function getAllowedOrigins(): string[] {
+  return [process.env.FRONTEND_URL, 'http://localhost:5174', 'http://localhost:8888'].filter(
+    (origin): origin is string => Boolean(origin),
+  );
+}
 
+export function getCorsHeaders(origin?: string): Record<string, string> {
+  const allowedOrigins = getAllowedOrigins();
   const isAllowed = origin && allowedOrigins.includes(origin);
 
   return {

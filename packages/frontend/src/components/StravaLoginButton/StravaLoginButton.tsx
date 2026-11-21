@@ -1,13 +1,8 @@
 import React, { useState } from 'react';
 import styles from './StravaLoginButton.module.css';
-import connectWithStrava from '../../assets/btn_strava.svg';
-import {
-  API_URL,
-  STORAGE_KEYS,
-  STRAVA_AUTH_URL,
-  STRAVA_CLIENT_ID,
-  STRAVA_REDIRECT_URL,
-} from '../../utils/constants';
+import connectWithStrava from '@/assets/btn_strava.svg';
+import { STRAVA_AUTH_URL } from '@strava-attestations/shared';
+import { API_URL, STORAGE_KEYS, STRAVA_CLIENT_ID, STRAVA_REDIRECT_URL } from '@/utils/constants';
 
 export default function StravaLoginButton(): React.JSX.Element {
   const [isLoading, setIsLoading] = useState(false);

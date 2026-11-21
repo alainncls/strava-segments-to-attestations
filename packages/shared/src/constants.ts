@@ -11,9 +11,6 @@ export const SCHEMA_ID: Hex = '0xc1708360b3df59e91dfd33f901c659c0350461e6a30392d
 // Chain exports
 export { linea, lineaSepolia };
 
-// Attestation fee (in wei) - 0.0001 ETH
-export const ATTESTATION_FEE = BigInt('100000000000000');
-
 // Strava API
 export const STRAVA_API_BASE = 'https://www.strava.com/api/v3';
 export const STRAVA_TOKEN_URL = 'https://www.strava.com/oauth/token';

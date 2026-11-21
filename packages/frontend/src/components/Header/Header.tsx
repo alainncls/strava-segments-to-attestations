@@ -1,17 +1,12 @@
 import React, { Suspense, lazy, useCallback, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { IS_WALLET_CONFIGURED } from '@/utils/constants.ts';
-import { buttonClassName } from '../Button/Button';
+import { useStravaAuth } from '@/hooks/useStravaAuth';
+import { IS_WALLET_CONFIGURED } from '@/utils/constants';
+import { buttonClassName } from '@/components/Button/Button';
 import styles from './Header.module.css';
-import logoEthOrange from '../../assets/logo-eth-orange.svg';
+import logoEthOrange from '@/assets/logo-eth-orange.svg';
 
-const WalletConnectButton = lazy(() => import('../Wallet/WalletConnectButton'));
-
-interface HeaderProps {
-  isStravaConnected: boolean;
-  athleteName?: string;
-  onStravaLogout?: () => void;
-}
+const WalletConnectButton = lazy(() => import('@/components/Wallet/WalletConnectButton'));
 
 const walletButtonClass = buttonClassName('secondary');
 
@@ -57,11 +52,10 @@ function WalletButtonGate(): React.JSX.Element {
   );
 }
 
-export default function Header({
-  isStravaConnected,
-  athleteName,
-  onStravaLogout,
-}: HeaderProps): React.JSX.Element {
+export default function Header(): React.JSX.Element {
+  const { auth, isAuthenticated, logout } = useStravaAuth();
+  const athleteName = auth.athlete?.firstname;
+
   return (
     <header className={styles.header}>
       <div className={styles.container}>
@@ -75,14 +69,12 @@ export default function Header({
             About
           </Link>
 
-          {isStravaConnected && athleteName ? (
+          {isAuthenticated && athleteName ? (
             <span className={styles.athlete}>
               {athleteName}
-              {onStravaLogout ? (
-                <button onClick={onStravaLogout} className={styles.logout}>
-                  Log out
-                </button>
-              ) : null}
+              <button onClick={logout} className={styles.logout}>
+                Log out
+              </button>
             </span>
           ) : null}
 

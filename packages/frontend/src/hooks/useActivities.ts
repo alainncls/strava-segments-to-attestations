@@ -1,27 +1,23 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { STRAVA_API_BASE } from '../utils/constants';
-import type { Activity, ActivityDetails, Segment } from '../types';
+import type { Activity, ActivityDetails, Segment } from '@strava-attestations/shared';
+import { StravaHttpError, stravaGet } from '@/utils/strava';
 
 const ACTIVITIES_PER_PAGE = 30;
 const PREFETCH_COUNT = 3;
-const DEFAULT_RETRY_AFTER_MS = 30_000;
-const MAX_RETRY_AFTER_MS = 15 * 60_000;
-
-export function parseRetryAfter(value: string | null, now = Date.now()): number {
-  if (!value) return DEFAULT_RETRY_AFTER_MS;
-
-  const seconds = Number(value.trim());
-  const delay =
-    Number.isFinite(seconds) && value.trim() !== '' ? seconds * 1000 : Date.parse(value) - now;
-  if (!Number.isFinite(delay)) return DEFAULT_RETRY_AFTER_MS;
-  return Math.min(MAX_RETRY_AFTER_MS, Math.max(1000, delay));
-}
 
 function errorMessageForStatus(status: number, page: number): string {
   if (status === 401 || status === 403) {
     return 'Your Strava session expired. Reconnect Strava before loading more activities.';
   }
   return `Could not load activities page ${page} (HTTP ${status}). Retry this page.`;
+}
+
+interface StravaActivitySummary {
+  id: number;
+  name: string;
+  type: string;
+  start_date: string;
+  distance: number;
 }
 
 interface UseActivitiesReturn {
@@ -40,7 +36,7 @@ interface UseActivitiesReturn {
 
 export function useActivities(
   isAuthenticated: boolean,
-  refreshTokenIfNeeded: () => Promise<string | null>,
+  getValidToken: () => Promise<string | null>,
   accountId?: number,
 ): UseActivitiesReturn {
   const [activities, setActivities] = useState<Activity[]>([]);
@@ -78,16 +74,7 @@ export function useActivities(
   // Fetch segments for a single activity
   const fetchSegmentsForActivity = useCallback(
     async (activityId: number, token: string, signal: AbortSignal): Promise<Segment[]> => {
-      const response = await fetch(`${STRAVA_API_BASE}/activities/${activityId}`, {
-        headers: { Authorization: `Bearer ${token}` },
-        signal,
-      });
-
-      if (!response.ok) {
-        throw new Error(`Failed to fetch activity details (${response.status})`);
-      }
-
-      const data: ActivityDetails = await response.json();
+      const data = await stravaGet<ActivityDetails>(`/activities/${activityId}`, token, signal);
 
       const segmentsById = new Map<number, Segment>();
 
@@ -155,7 +142,7 @@ export function useActivities(
       try {
         let token: string | null;
         try {
-          token = await refreshTokenIfNeeded();
+          token = await getValidToken();
         } catch {
           if (!signal.aborted && epoch === requestEpoch.current && isAuthenticated) {
             setActivitiesError('Could not refresh Strava authentication. Reconnect and retry.');
@@ -174,50 +161,20 @@ export function useActivities(
         if (append) setIsLoadingMore(true);
         else setIsLoading(true);
 
-        const response = await fetch(
-          `${STRAVA_API_BASE}/athlete/activities?per_page=${ACTIVITIES_PER_PAGE}&page=${pageNum}`,
-          {
-            headers: { Authorization: `Bearer ${token}` },
-            signal,
-          },
+        const data = await stravaGet<StravaActivitySummary[]>(
+          `/athlete/activities?per_page=${ACTIVITIES_PER_PAGE}&page=${pageNum}`,
+          token,
+          signal,
         );
-
-        if (!response.ok) {
-          if (epoch !== requestEpoch.current || signal.aborted) return false;
-          const message = errorMessageForStatus(response.status, pageNum);
-          setActivitiesError(message);
-          setIsAuthenticationError(response.status === 401 || response.status === 403);
-          if (response.status === 429) {
-            const delay = parseRetryAfter(response.headers.get('Retry-After'));
-            setIsRetryBlocked(true);
-            if (retryTimer.current) clearTimeout(retryTimer.current);
-            retryTimer.current = setTimeout(() => {
-              if (epoch !== requestEpoch.current) return;
-              setIsRetryBlocked(false);
-              setActivitiesError(`Rate limit window ended. Retry activities page ${pageNum}.`);
-            }, delay);
-          }
-          return false;
-        }
-
-        const data = await response.json();
         if (signal.aborted || epoch !== requestEpoch.current) return false;
 
-        const newActivities: Activity[] = data.map(
-          (a: {
-            id: number;
-            name: string;
-            type: string;
-            start_date: string;
-            distance: number;
-          }) => ({
-            id: a.id,
-            name: a.name,
-            type: a.type,
-            startDate: a.start_date,
-            distance: a.distance,
-          }),
-        );
+        const newActivities: Activity[] = data.map((a) => ({
+          id: a.id,
+          name: a.name,
+          type: a.type,
+          startDate: a.start_date,
+          distance: a.distance,
+        }));
 
         // Check if there are more activities
         setHasMore(newActivities.length === ACTIVITIES_PER_PAGE);
@@ -245,11 +202,26 @@ export function useActivities(
           prefetchSegments(newActivities, token, signal);
         }
         return true;
-      } catch {
+      } catch (error) {
         if (signal.aborted || epoch !== requestEpoch.current) return false;
-        setActivitiesError(
-          `Could not load activities page ${pageNum}. Check your connection and retry.`,
-        );
+        if (!(error instanceof StravaHttpError)) {
+          setActivitiesError(
+            `Could not load activities page ${pageNum}. Check your connection and retry.`,
+          );
+          return false;
+        }
+
+        setActivitiesError(errorMessageForStatus(error.status, pageNum));
+        setIsAuthenticationError(error.isAuthError);
+        if (error.isRateLimit) {
+          setIsRetryBlocked(true);
+          if (retryTimer.current) clearTimeout(retryTimer.current);
+          retryTimer.current = setTimeout(() => {
+            if (epoch !== requestEpoch.current) return;
+            setIsRetryBlocked(false);
+            setActivitiesError(`Rate limit window ended. Retry activities page ${pageNum}.`);
+          }, error.retryAfterMs);
+        }
         return false;
       } finally {
         if (!signal.aborted && epoch === requestEpoch.current) {
@@ -258,13 +230,7 @@ export function useActivities(
         }
       }
     },
-    [
-      isAuthenticated,
-      isRetryBlocked,
-      isAuthenticationError,
-      refreshTokenIfNeeded,
-      prefetchSegments,
-    ],
+    [isAuthenticated, isRetryBlocked, isAuthenticationError, getValidToken, prefetchSegments],
   );
 
   const handleLoadMore = useCallback(async (): Promise<void> => {
@@ -321,7 +287,7 @@ export function useActivities(
       const signal = controller.current.signal;
       let token: string | null;
       try {
-        token = await refreshTokenIfNeeded();
+        token = await getValidToken();
       } catch {
         if (!signal.aborted && epoch === requestEpoch.current) {
           setSegmentErrors((previous) => ({
@@ -361,7 +327,7 @@ export function useActivities(
         if (epoch === requestEpoch.current) setLoadingActivityId(undefined);
       }
     },
-    [activities, isAuthenticated, refreshTokenIfNeeded, fetchSegmentsForActivity],
+    [activities, isAuthenticated, getValidToken, fetchSegmentsForActivity],
   );
 
   return {

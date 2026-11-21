@@ -1,4 +1,4 @@
-import React, { useEffect, useCallback } from 'react';
+import React, { useEffect, useEffectEvent, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import styles from './Modal.module.css';
 
@@ -19,28 +19,31 @@ export function Modal({
   children,
   footer,
 }: ModalProps): React.JSX.Element | null {
-  const handleKeyDown = useCallback(
-    (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        onHide();
-      }
-    },
-    [onHide],
-  );
+  const dialogRef = useRef<HTMLDivElement>(null);
+  const handleKeyDown = useEffectEvent((e: KeyboardEvent): void => {
+    if (e.key === 'Escape') onHide();
+  });
 
   useEffect(() => {
+    if (!show) return;
+
+    const root = document.getElementById('root');
+    const previousFocus = document.activeElement;
     const previousBodyOverflow = document.body.style.overflow;
 
-    if (show) {
-      document.addEventListener('keydown', handleKeyDown);
-      document.body.style.overflow = 'hidden';
-    }
+    document.addEventListener('keydown', handleKeyDown);
+    document.body.style.overflow = 'hidden';
+    // The modal is a portal outside #root: the page behind leaves the tab order.
+    root?.setAttribute('inert', '');
+    dialogRef.current?.focus();
 
     return () => {
       document.removeEventListener('keydown', handleKeyDown);
       document.body.style.overflow = previousBodyOverflow;
+      root?.removeAttribute('inert');
+      if (previousFocus instanceof HTMLElement) previousFocus.focus();
     };
-  }, [show, handleKeyDown]);
+  }, [show]);
 
   if (!show) {
     return null;
@@ -56,6 +59,8 @@ export function Modal({
     <div className={styles.overlay} onClick={handleOverlayClick}>
       <div
         className={`${styles.modal} ${size === 'lg' ? styles.modalLg : ''}`}
+        ref={dialogRef}
+        tabIndex={-1}
         role="dialog"
         aria-modal="true"
         aria-labelledby={title ? 'modal-title' : undefined}
