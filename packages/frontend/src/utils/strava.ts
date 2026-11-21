@@ -16,11 +16,14 @@ export function parseRetryAfter(value: string | null, now = Date.now()): number 
 export class StravaHttpError extends Error {
   readonly status: number;
   readonly retryAfterMs: number;
+  readonly hasRetryAfter: boolean;
 
   constructor(response: Response) {
     super(`Strava request failed (HTTP ${response.status})`);
     this.status = response.status;
-    this.retryAfterMs = parseRetryAfter(response.headers.get('Retry-After'));
+    const retryAfter = response.headers.get('Retry-After');
+    this.retryAfterMs = parseRetryAfter(retryAfter);
+    this.hasRetryAfter = retryAfter !== null;
   }
 
   get isAuthError(): boolean {
