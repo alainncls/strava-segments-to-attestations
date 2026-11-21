@@ -23,6 +23,8 @@ export default defineConfig({
   },
   server: {
     port: 5174,
+    // The dev policy allows HMR on this port only.
+    strictPort: true,
     open: true,
     headers: { 'Content-Security-Policy': devCsp },
   },
