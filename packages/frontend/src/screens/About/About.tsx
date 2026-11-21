@@ -103,13 +103,13 @@ export default function About(): React.JSX.Element {
             and the completion date) is public on Linea.
           </li>
           <li>
-            To delete the local data, log out. To remove the access, revoke {BRAND} in the{' '}
+            To delete the local data, log out. To remove the access, revoke this application in{' '}
             <a
               href="https://www.strava.com/settings/apps"
               target="_blank"
               rel="noopener noreferrer"
             >
-              Strava settings
+              My Apps of the Strava settings
             </a>
             .
           </li>

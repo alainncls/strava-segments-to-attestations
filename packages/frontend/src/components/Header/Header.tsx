@@ -10,12 +10,15 @@ import logoEthOrange from '@/assets/logo-eth-orange.svg';
 const WalletConnectButton = lazy(() => import('@/components/Wallet/WalletConnectButton'));
 
 const walletButtonClass = buttonClassName('secondary');
+// Module state: the gate unmounts outside /attestations, the wallet connection does not.
+let walletEnabled = false;
 
 function WalletButtonGate(): React.JSX.Element {
-  const [isWalletEnabled, setIsWalletEnabled] = useState(false);
+  const [isWalletEnabled, setIsWalletEnabled] = useState(walletEnabled);
   const [shouldAutoOpen, setShouldAutoOpen] = useState(false);
 
   const handleEnableWallet = useCallback((): void => {
+    walletEnabled = true;
     setShouldAutoOpen(true);
     setIsWalletEnabled(true);
   }, []);
