@@ -78,7 +78,9 @@ export function shadeLevel(
 ): number {
   if (!day?.activities.length) return 0;
   const v = value(day.distance, day.duration, metric);
-  const i = thresholds.findIndex((t) => v > t);
+  // The lowest threshold is the minimum to color a day: below it, the day stays empty.
+  if (v < (thresholds[4] ?? 0)) return 0;
+  const i = thresholds.slice(0, 4).findIndex((t) => v > t);
   return i === -1 ? 1 : 5 - i;
 }
 
