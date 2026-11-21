@@ -58,7 +58,9 @@ function initializeAppKit(): void {
     metadata,
     themeMode: resolvedTheme(),
     themeVariables: {
-      '--w3m-accent': getComputedStyle(document.documentElement).getPropertyValue('--accent'),
+      '--w3m-accent': getComputedStyle(document.documentElement)
+        .getPropertyValue('--accent')
+        .trim(),
       '--w3m-border-radius-master': '6px',
     },
     features: {

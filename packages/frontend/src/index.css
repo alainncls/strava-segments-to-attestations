@@ -19,6 +19,7 @@
   --danger: light-dark(#b91c1c, #f87171);
   --ok: light-dark(#15803d, #4ade80);
 
+  --strava-logo: light-dark(#000000, #ffffff);
   --scrim: light-dark(rgb(0 0 0 / 45%), rgb(0 0 0 / 70%));
   --shadow: light-dark(rgb(0 0 0 / 15%), rgb(0 0 0 / 60%));
 

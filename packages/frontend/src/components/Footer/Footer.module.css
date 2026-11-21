@@ -33,6 +33,7 @@
 }
 
 .strava {
+  background: var(--strava-logo);
   width: 150px;
   height: 28px;
 }
