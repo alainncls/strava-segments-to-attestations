@@ -120,7 +120,7 @@ export default function HeatmapGrid({
       viewBox={`0 0 ${width} ${height}`}
       onKeyDown={handleKeyDown}
     >
-      <text x={0} y={14} className={styles.gridTitle} fill="currentColor">
+      <text x={0} y={14} fontSize={13} fontWeight={700} fill="currentColor">
         {title}
       </text>
       {monthLabels.map((label) => (
@@ -128,7 +128,7 @@ export default function HeatmapGrid({
           key={`${label.column}-${label.month}`}
           x={left + label.column * step}
           y={TOP - 6}
-          className={styles.gridLabel}
+          fontSize={10}
           fill="currentColor"
           aria-hidden="true"
         >
@@ -141,7 +141,7 @@ export default function HeatmapGrid({
               key={name}
               x={0}
               y={TOP + row * step + cellSize - 1}
-              className={styles.gridLabel}
+              fontSize={10}
               fill="currentColor"
               aria-hidden="true"
             >
@@ -184,7 +184,7 @@ export default function HeatmapGrid({
           </g>
         ))}
       </g>
-      <text x={0} y={height - 6} className={styles.gridLabel} fill="currentColor">
+      <text x={0} y={height - 6} fontSize={10} fill="currentColor">
         {totals}
       </text>
     </svg>

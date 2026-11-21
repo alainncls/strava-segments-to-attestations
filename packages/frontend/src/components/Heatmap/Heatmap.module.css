@@ -3,15 +3,6 @@
   color: var(--text-2);
 }
 
-.gridTitle {
-  font-size: 13px;
-  font-weight: 700;
-}
-
-.gridLabel {
-  font-size: 10px;
-}
-
 .cell {
   cursor: pointer;
   outline: none;
