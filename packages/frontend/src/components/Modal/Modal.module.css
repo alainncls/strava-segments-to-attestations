@@ -6,7 +6,7 @@
   align-items: center;
   justify-content: center;
   padding: 1rem;
-  background: rgba(0, 0, 0, 0.7);
+  background: var(--scrim);
   animation: fadeIn 0.15s ease-out;
 }
 
@@ -19,7 +19,7 @@
   background: var(--surface);
   border: 1px solid var(--line-strong);
   border-radius: var(--radius-md);
-  box-shadow: 0 24px 48px -12px rgba(0, 0, 0, 0.6);
+  box-shadow: 0 24px 48px -12px var(--shadow);
   animation: rise 0.2s ease-out;
 }
 

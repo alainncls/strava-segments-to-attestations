@@ -51,7 +51,7 @@
 .steps li::before {
   content: counter(step);
   grid-row: span 2;
-  color: var(--accent);
+  color: var(--accent-text);
   font-weight: 800;
   font-size: 1.25rem;
   line-height: 1.3;

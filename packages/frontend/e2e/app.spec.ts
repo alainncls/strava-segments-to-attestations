@@ -171,3 +171,33 @@ test('activity pagination retries the same page, honors 429 cooldown, and remain
 
   runtime.assertClean([/status of 503/, /status of 429/]);
 });
+
+test('follows the system theme and the theme switch without a flash', async ({ page }) => {
+  const runtime = monitorRuntime(page);
+  const colors = (): Promise<{ background: string; text: string }> =>
+    page.evaluate(() => {
+      const style = getComputedStyle(document.body);
+      return { background: style.backgroundColor, text: style.color };
+    });
+  const dark = { background: 'rgb(10, 10, 11)', text: 'rgb(242, 242, 243)' };
+  const light = { background: 'rgb(246, 246, 247)', text: 'rgb(17, 17, 19)' };
+
+  await page.emulateMedia({ colorScheme: 'dark' });
+  await page.goto('/');
+  expect(await colors()).toEqual(dark);
+
+  await page.emulateMedia({ colorScheme: 'light' });
+  expect(await colors()).toEqual(light);
+
+  await page.getByRole('combobox', { name: 'Theme' }).selectOption('dark');
+  expect(await colors()).toEqual(dark);
+
+  // The saved choice applies before the first paint on the next load.
+  await page.goto('/about');
+  expect(await page.evaluate(() => document.documentElement.dataset.theme ?? 'missing')).toBe(
+    'dark',
+  );
+  expect(await colors()).toEqual(dark);
+
+  runtime.assertClean();
+});

@@ -49,4 +49,32 @@ describe('Activities request recovery states', () => {
     expect(screen.getByRole('alert')).toHaveTextContent('Reconnect Strava');
     expect(screen.queryByRole('button', { name: 'Retry' })).not.toBeInTheDocument();
   });
+
+  it('keeps focus on a loading activity and ignores clicks on it', () => {
+    const onActivityClick = vi.fn();
+    render(
+      <Activities
+        activities={[
+          {
+            id: 7,
+            name: 'Morning run',
+            type: 'Run',
+            startDate: '2026-06-14T07:31:02Z',
+            distance: 5000,
+          },
+        ]}
+        loadingActivityId={7}
+        onActivityClick={onActivityClick}
+      />,
+    );
+
+    const row = screen.getByRole('button', { name: /morning run/i });
+    row.focus();
+    fireEvent.click(row);
+
+    expect(row).toHaveAttribute('aria-disabled', 'true');
+    expect(row).not.toBeDisabled();
+    expect(row).toHaveFocus();
+    expect(onActivityClick).not.toHaveBeenCalled();
+  });
 });

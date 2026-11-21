@@ -1,12 +1,14 @@
 # Activity heatmap integration plan
 
-Status: in execution, revision 5. Pull request 1 is done. Date: 2026-11-21. Baseline commit: `436ca05` (`main`).
+Status: in execution, revision 6. Pull requests 1 and 2 are done. Date: 2026-11-21. Baseline commit: `436ca05` (`main`).
 
 Revision 2 adds the audit done with the Ponytail plugin, the checks of the Strava legal texts, and the cuts that Ponytail makes in this plan (section 6.1).
 
 Revision 3 adds the answers of the owner (2026-11-21), the proof of the cause of finding 1, the light and dark themes, the merge process and the pull request list (section 8.1).
 
 Revision 5 (after pull request 1) sets the product name, adds the module contracts (section 7.7) and the execution guide for the next agent sessions, with subagents (section 12).
+
+Revision 6 (pull request 2) adds finding 22, the checked athlete capacity and rate limits, and the Strava Developer Program screenshots after pull request 5.
 
 Revision 4 groups the work in 5 pull requests (owner limit), adds the totals line and the single import style, records the end-to-end baseline and changes the wallet test (section 9.1).
 
@@ -42,7 +44,7 @@ These items are refused on purpose. Each one adds code that the goal does not ne
 - Server-side storage of activities, tokens or athlete profiles.
 - Refresh tokens in the browser or on the server.
 - Strava webhooks and background synchronization.
-- Multi-athlete support. The Strava application has an athlete capacity of 1: Strava refuses the authorization of a second athlete. The settings page offers a capacity of 10 with a Strava account upgrade. A larger capacity needs a review by Strava.
+- Multi-athlete support beyond the Strava capacity. The owner wants a capacity of 10. The Strava API settings page shows 10 (checked 2026-11-21, 1 athlete connected). A larger capacity needs a review by Strava (section 12.7).
 - Server-side image rendering.
 - Statistics pages, charts other than the heatmap, internationalization.
 - Migration to Next.js or to another framework.
@@ -233,6 +235,8 @@ Method: the `ponytail-audit` skill, plugin version 5.3.3 (map the flows, then lo
 
 21. **The segments modal crashes when the wallet is not configured** (`components/SegmentsModal`). Found in the manual test of pull request 1. Without `VITE_WALLETCONNECT_PROJECT_ID` and `VITE_INFURA_API_KEY` there is no wagmi provider, and the wagmi hooks of the modal threw: blank page. Production is configured. Fixed in pull request 1 with a notice and a test.
 
+22. **The activity button loses focus while its segments load** (`components/Activities`). Found in the review of pull request 1. The button is `disabled` while the segments load, so the browser removes its focus, and the modal cannot give the focus back at close. Fix in pull request 2: `aria-disabled` and a click guard, with a test.
+
 #### Decisions to keep (not findings)
 
 - The deadline logic and the single-use state in `auth.ts`. It is long, but it is security code with 493 lines of tests.
@@ -251,8 +255,8 @@ Method: the `ponytail-audit` skill, plugin version 5.3.3 (map the flows, then lo
 | Constraint | Value | Effect |
 | --- | --- | --- |
 | API application | One for each account. Client ID shared by the two tools. | Decision D1. |
-| Athlete capacity | 1 ("single player mode"). | The site works for its owner only. This is already true today. Secondary sources (2026) give this ladder: 10 athletes by self-service in the API settings, up to 9,999 after a Developer Program review (form with screenshots, no time limit, approval not guaranteed), with an application near its capacity. Reported rejection causes: no deauthorization webhook, inefficient API use. A public launch is not in scope: the owner decides after pull request 5. |
-| Read rate limit | 100 requests each 15 minutes, 1,000 each day, shared by the two tools. | A full sync uses one request for each 200 activities, plus one. 4,000 activities use 21 requests. |
+| Athlete capacity | 10 (owner request; the Strava API settings page shows 10 on 2026-11-21, with 1 athlete connected, tier "Standard"). | Up to 10 athletes can use the site. Secondary sources (2026) give this ladder: 10 athletes by self-service in the API settings, up to 9,999 after a Developer Program review (form with screenshots, no time limit, approval not guaranteed), with an application near its capacity. Reported rejection causes: no deauthorization webhook, inefficient API use. A public launch is not in scope: the owner decides after pull request 5. |
+| Read rate limit | 200 requests each 15 minutes, 2,000 each day, shared by the two tools and by all the connected athletes (Strava API settings page, 2026-11-21). | A full sync uses one request for each 200 activities, plus one. 4,000 activities use 21 requests. |
 | Scope | `read,activity:read_all` (current). | Sufficient. No new authorization. |
 | Callback | `/oauth` on the current domain. `localhost` is always permitted. | No Strava setting changes. |
 | Logout | Do not call `POST /oauth/deauthorize`. | It revokes the access of the two tools. |
@@ -605,9 +609,9 @@ Pure functions in `utils/heatmap.ts`, with unit tests written first.
 | # | Phases | Title | Content |
 | --- | --- | --- | --- |
 | 1 | 0, 1 | `refactor: clean the codebase before the heatmap work` | This plan. All the findings of section 5.3 except 3, 10 and 15. The wallet tests of section 9.1. |
-| 2 | 3b | `feat(frontend): add light and dark themes` | Theme variables, the switch, the wallet modal theme. |
+| 2 | 3b | `feat(frontend): add light and dark themes` | Theme variables, the switch, the wallet modal theme. Finding 22. |
 | 3 | 2, 3, 4, 5 | `feat(heatmap): add the activity heatmap` | Cache, synchronization, logic, screen, controls, totals line, PNG and SVG export, route. |
-| 4 | 6 | `feat: add the hub and rename the product` | Hub at `/`, attestation flow at `/attestations`, new name, SEO files, privacy section. |
+| 4 | 6 | `feat: add the hub and rename the product` | Hub at `/`, attestation flow at `/attestations`, new name, SEO files (they stay in this pull request), privacy section. |
 | 5 | 7, 8 | `feat(security): add a content security policy` | Findings 3 and 15, the header test, the README, the final audit and the shortcut ledger. |
 
 Cost of this grouping: pull requests 1 and 3 are large. Each one keeps several commits until the squash, so the challenge review reads the parts one at a time.
@@ -727,3 +731,7 @@ A brief for a subagent has these parts: the goal in one sentence, the files it o
 ### 12.6 Start prompt for the next session
 
 > Read `docs/heatmap-integration-plan.md`, sections 4, 7, 8, 9 and 12. Build pull requests 2 to 5 in the order of section 12.5, with subagents for wave A. Follow the rules of section 12.2: no merge before all the checks are green and all the tests are done. Stop and report after each merged pull request.
+
+### 12.7 After pull request 5
+
+Prepare the screenshots for the Strava Developer Program submission after pull request 5, not before: the hub, the heatmap, the attestation flow, the About page with the privacy section, and the "Powered by Strava" and "View on Strava" marks. They show the final product name and the final look. The owner submits the form.

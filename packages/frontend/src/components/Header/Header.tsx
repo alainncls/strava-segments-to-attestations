@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { useStravaAuth } from '@/hooks/useStravaAuth';
 import { IS_WALLET_CONFIGURED } from '@/utils/constants';
 import { buttonClassName } from '@/components/Button/Button';
+import ThemeSwitch from '@/components/ThemeSwitch/ThemeSwitch';
 import styles from './Header.module.css';
 import logoEthOrange from '@/assets/logo-eth-orange.svg';
 
@@ -78,6 +79,7 @@ export default function Header(): React.JSX.Element {
             </span>
           ) : null}
 
+          <ThemeSwitch />
           <WalletButtonGate />
         </nav>
       </div>

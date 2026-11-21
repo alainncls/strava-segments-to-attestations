@@ -12,6 +12,7 @@ import {
   IS_WALLET_CONFIGURED,
   WALLETCONNECT_PROJECT_ID,
 } from '@/utils/constants';
+import { onThemeChange, resolvedTheme } from '@/utils/theme';
 
 const queryClient = new QueryClient();
 const projectId = WALLETCONNECT_PROJECT_ID;
@@ -49,17 +50,17 @@ function initializeAppKit(): void {
     return;
   }
 
-  createAppKit({
+  const appKit = createAppKit({
     adapters: [wagmiAdapter],
     networks,
     defaultNetwork,
     projectId,
     metadata,
-    themeMode: 'dark',
+    themeMode: resolvedTheme(),
     themeVariables: {
-      '--w3m-accent': '#fc5200',
-      '--w3m-color-mix': '#111216',
-      '--w3m-color-mix-strength': 0,
+      '--w3m-accent': getComputedStyle(document.documentElement)
+        .getPropertyValue('--accent')
+        .trim(),
       '--w3m-border-radius-master': '6px',
     },
     features: {
@@ -70,6 +71,7 @@ function initializeAppKit(): void {
     },
   });
 
+  onThemeChange(() => appKit.setThemeMode(resolvedTheme()));
   appKitInitialized = true;
 }
 

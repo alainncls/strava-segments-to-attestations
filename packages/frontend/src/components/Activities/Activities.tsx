@@ -41,9 +41,10 @@ const ActivityRow = memo(function ActivityRow({
   isLoading,
   onActivityClick,
 }: ActivityRowProps): React.JSX.Element {
+  // aria-disabled, not disabled: a disabled button loses focus, and the modal could not give it back.
   const handleClick = useCallback((): void => {
-    onActivityClick(activity.id);
-  }, [activity.id, onActivityClick]);
+    if (!isLoading) onActivityClick(activity.id);
+  }, [activity.id, isLoading, onActivityClick]);
 
   const isMuted = !activity.segmentsLoaded || !activity.segments?.length;
 
@@ -52,7 +53,7 @@ const ActivityRow = memo(function ActivityRow({
       <button
         className={styles.row}
         onClick={handleClick}
-        disabled={isLoading}
+        aria-disabled={isLoading}
         aria-busy={isLoading}
       >
         <span className={styles.name}>{activity.name}</span>
