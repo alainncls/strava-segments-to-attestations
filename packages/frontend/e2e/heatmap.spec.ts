@@ -4,10 +4,10 @@ import { expect, test } from '@playwright/test';
 // The wallet code is about 2.9 MB: the heatmap must not load it.
 const MAX_SCRIPT_BYTES = 400_000;
 
-// Day 1 and 2 of the current year are always past days.
+// Same weekday, one week apart: ArrowLeft moves from one to the other in any year.
 const year = new Date().getFullYear();
-const runDay = `${year}-01-01`;
-const rideDay = `${year}-01-02`;
+const runDay = `${year}-01-02`;
+const rideDay = `${year}-01-09`;
 const activities = [
   { id: 11, name: 'New Year Run', sport_type: 'Run', day: runDay, distance: 10_000, time: 3000 },
   { id: 12, name: 'Second Run', sport_type: 'Run', day: runDay, distance: 5_000, time: 1500 },
@@ -52,11 +52,11 @@ test('syncs, filters, opens a day and passes an accessibility check', async ({ p
   await expect(grid.getByText('1 activity · 40.00 km · 2h 0m 0s')).toBeVisible();
   await page.getByLabel('Sport').selectOption('');
 
-  // Keyboard: move to the first day of the year, open it, close it.
+  // Keyboard: move one week back, open the day, close it.
   const firstDay = grid.locator(`rect[data-day="${runDay}"]`);
   await grid.locator(`rect[data-day="${rideDay}"]`).click();
   await page.keyboard.press('Escape');
-  await page.keyboard.press('ArrowUp');
+  await page.keyboard.press('ArrowLeft');
   await expect(firstDay).toBeFocused();
   await page.keyboard.press('Enter');
   const dialog = page.getByRole('dialog');

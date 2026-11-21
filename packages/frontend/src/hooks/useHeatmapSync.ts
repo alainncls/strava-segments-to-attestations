@@ -91,6 +91,8 @@ export function useHeatmapSync(
         const full = mode === 'full' || base.length === 0;
         const newest = Math.max(...base.map((a) => Date.parse(a.startLocal)));
         const after = full ? '' : `&after=${Math.floor(newest / 1000) - OVERLAP_SECONDS}`;
+        // Only a direct retry of the full sync resumes it.
+        if (!full) partial.current = null;
         const resumed = full ? partial.current : null;
         let page = resumed?.nextPage ?? 1;
         let fetched = resumed?.activities ?? [];
