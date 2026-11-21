@@ -1,6 +1,7 @@
 import React, {
   useCallback,
   useEffect,
+  useLayoutEffect,
   useMemo,
   useRef,
   useState,
@@ -88,9 +89,12 @@ function HeatmapTool({ athleteId }: { athleteId: number }): React.JSX.Element {
   const [gridWidth, setGridWidth] = useState(0);
 
   // The grids shrink their cells to fit a narrow screen instead of scrolling sideways.
-  useEffect(() => {
+  // Layout effect: the first paint already has the right width.
+  useLayoutEffect(() => {
     const element = gridsRef.current;
-    if (!element || typeof ResizeObserver === 'undefined') return;
+    if (!element) return;
+    setGridWidth(element.clientWidth);
+    if (typeof ResizeObserver === 'undefined') return;
     const observer = new ResizeObserver(([entry]) => setGridWidth(entry?.contentRect.width ?? 0));
     observer.observe(element);
     return () => observer.disconnect();
@@ -284,6 +288,7 @@ function HeatmapTool({ athleteId }: { athleteId: number }): React.JSX.Element {
         years={years}
         colors={colors}
         emptyColor={EMPTY_CELL[theme]}
+        dark={theme === 'dark'}
         onResetThresholds={handleResetThresholds}
         exportPanel={exportPanel}
       />

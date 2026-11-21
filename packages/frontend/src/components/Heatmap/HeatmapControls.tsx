@@ -1,6 +1,6 @@
 import React, { useId, useState } from 'react';
 import type { HeatmapSettings } from '@/utils/activityStore';
-import { PALETTES } from '@/utils/heatmapPalettes';
+import { PALETTES, shadesFor } from '@/utils/heatmapPalettes';
 import { formatActivityType } from '@/utils/format';
 import { Button } from '@/components/Button/Button';
 import styles from './Heatmap.module.css';
@@ -21,6 +21,7 @@ interface HeatmapControlsProps {
   years: number[];
   colors: readonly string[];
   emptyColor: string;
+  dark: boolean;
   onResetThresholds: () => void;
   exportPanel: React.ReactNode;
 }
@@ -73,6 +74,7 @@ export default function HeatmapControls({
   years,
   colors,
   emptyColor,
+  dark,
   onResetThresholds,
   exportPanel,
 }: HeatmapControlsProps): React.JSX.Element {
@@ -276,7 +278,7 @@ export default function HeatmapControls({
         <fieldset className={`${styles.panelGroup} ${styles.wide}`}>
           <legend className={styles.fieldLabel}>Palette</legend>
           <div className={styles.palettes}>
-            {Object.entries(PALETTES).map(([name, shades]) => (
+            {Object.keys(PALETTES).map((name) => (
               <label key={name} className={styles.palette}>
                 <input
                   type="radio"
@@ -286,7 +288,7 @@ export default function HeatmapControls({
                   onChange={() => onSettings({ palette: name })}
                 />
                 <span className={styles.paletteSwatches} aria-hidden="true">
-                  {shades.map((shade) => (
+                  {shadesFor(name, dark).map((shade) => (
                     <span key={shade} style={{ background: shade }} />
                   ))}
                 </span>
