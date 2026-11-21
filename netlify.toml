@@ -31,6 +31,16 @@
   status = 200
 
 [[redirects]]
+  from = "/heatmap"
+  to = "/index.html"
+  status = 200
+
+[[redirects]]
+  from = "/heatmap/"
+  to = "/index.html"
+  status = 200
+
+[[redirects]]
   from = "/oauth"
   to = "/index.html"
   status = 200

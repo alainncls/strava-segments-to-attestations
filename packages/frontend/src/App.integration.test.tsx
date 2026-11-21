@@ -95,4 +95,37 @@ describe('App routing integration', () => {
     expect(await screen.findByRole('heading', { name: /sign-in failed/i })).toBeVisible();
     expect(screen.getByText(/invalid authorization state/i)).toBeVisible();
   });
+
+  it('asks for a Strava login on the heatmap route when signed out', async () => {
+    renderRoute('/heatmap');
+
+    expect(await screen.findByRole('heading', { name: /activity heatmap/i })).toBeVisible();
+    expect(screen.getByRole('button', { name: /connect with strava/i })).toBeVisible();
+  });
+
+  it.each([
+    ['/heatmap', /^activity heatmap$/i],
+    ['//evil.example/heatmap', /no activities yet/i],
+  ])('returns to the saved path %s after login when it is a known route', async (path, text) => {
+    sessionStorage.setItem(STORAGE_KEYS.OAUTH_STATE, 'state-1');
+    sessionStorage.setItem(STORAGE_KEYS.RETURN_PATH, path);
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (url: RequestInfo | URL) =>
+        String(url).endsWith('/auth')
+          ? Response.json({
+              access_token: 'token',
+              expires_at: Math.floor(Date.now() / 1000) + 3600,
+              athlete: { id: 5, firstname: 'Test' },
+            })
+          : Response.json([]),
+      ),
+    );
+
+    renderRoute('/oauth?code=code-1&state=state-1');
+
+    expect(await screen.findByText(text)).toBeVisible();
+    expect(sessionStorage.getItem(STORAGE_KEYS.RETURN_PATH)).toBeNull();
+    vi.unstubAllGlobals();
+  });
 });
