@@ -1,10 +1,12 @@
 # Activity heatmap integration plan
 
-Status: approved for execution, revision 4. Date: 2026-11-21. Baseline commit: `436ca05` (`main`).
+Status: in execution, revision 5. Pull request 1 is done. Date: 2026-11-21. Baseline commit: `436ca05` (`main`).
 
 Revision 2 adds the audit done with the Ponytail plugin, the checks of the Strava legal texts, and the cuts that Ponytail makes in this plan (section 6.1).
 
 Revision 3 adds the answers of the owner (2026-11-21), the proof of the cause of finding 1, the light and dark themes, the merge process and the pull request list (section 8.1).
+
+Revision 5 (after pull request 1) sets the product name, adds the module contracts (section 7.7) and the execution guide for the next agent sessions, with subagents (section 12).
 
 Revision 4 groups the work in 5 pull requests (owner limit), adds the totals line and the single import style, records the end-to-end baseline and changes the wallet test (section 9.1).
 
@@ -104,7 +106,7 @@ Method: observation of the live application in a browser with a connected accoun
 | D9 | Follow the current folder convention (`screens`, `components`, `hooks`, `utils`). | No new structure to learn. | A `features/` folder. |
 | D10 | Palettes are a constant table in TypeScript (22 names, 5 hex values each). | The export needs literal `fill` values. CSS variables do not resolve in a serialized SVG image. | CSS `color-mix()`. Tailwind as a dependency. |
 | D11 | Delete the activity cache 7 days after the last full sync, and at logout. | Strava API Policy, section 6.2: no Strava data in a cache for more than 7 days. Section 2.5: delete the data when the user asks or revokes the access. | A permanent local archive. |
-| D12 | The product name does not contain the word "Strava". | Strava brand guidelines: "You must not use the Strava name in your application name". The current name, "Strava Segment Attestations", does not comply. | Keep the current name. |
+| D12 | The product name is "Effortprint" (owner, 2026-11-21). It does not contain the word "Strava". | Strava brand guidelines: "You must not use the Strava name in your application name". The current name, "Strava Segment Attestations", does not comply. | Keep the current name. |
 | D13 | Phase 1 fixes all the findings, also those of the attestation tool only (16 to 19). | The owner wants a clean base before the feature work. | GitHub issues for later (revision 2). |
 | D14 | Light and dark themes for the full site. Default from the system setting, with a switch in the header. | Owner decision. The colors are already CSS variables: 6 hardcoded values in 4 files to change. | A theme for the heatmap screen only. |
 | D15 | Keep the accent color `#fc5200`. | The brand guidelines, read in full, do not forbid it. They give this color as one option for "View on Strava" links. | A new accent color (revision 2). |
@@ -229,6 +231,8 @@ Method: the `ponytail-audit` skill, plugin version 5.3.3 (map the flows, then lo
 19. **The signer builds a network client that it does not use** (`functions/src/sign.ts`). `createWalletClient` with an HTTP transport is created to sign typed data, which is a local operation. Fix: call `signTypedData` on the account. About 10 lines less. Attestation tool only.
 20. **The OAuth callback effect is not safe to run twice** (`screens/StravaCallback/StravaCallback.tsx`). In development, React StrictMode runs the effect twice. The second run finds no saved state and shows "Sign-in failed" until the first run completes. Production is not affected. Found by code reading, not run. Fix it in part 1c.
 
+21. **The segments modal crashes when the wallet is not configured** (`components/SegmentsModal`). Found in the manual test of pull request 1. Without `VITE_WALLETCONNECT_PROJECT_ID` and `VITE_INFURA_API_KEY` there is no wagmi provider, and the wagmi hooks of the modal threw: blank page. Production is configured. Fixed in pull request 1 with a notice and a test.
+
 #### Decisions to keep (not findings)
 
 - The deadline logic and the single-use state in `auth.ts`. It is long, but it is security code with 493 lines of tests.
@@ -247,7 +251,7 @@ Method: the `ponytail-audit` skill, plugin version 5.3.3 (map the flows, then lo
 | Constraint | Value | Effect |
 | --- | --- | --- |
 | API application | One for each account. Client ID shared by the two tools. | Decision D1. |
-| Athlete capacity | 1 | The site works for its owner only. This is already true today. |
+| Athlete capacity | 1 ("single player mode"). | The site works for its owner only. This is already true today. Secondary sources (2026) give this ladder: 10 athletes by self-service in the API settings, up to 9,999 after a Developer Program review (form with screenshots, no time limit, approval not guaranteed), with an application near its capacity. Reported rejection causes: no deauthorization webhook, inefficient API use. A public launch is not in scope: the owner decides after pull request 5. |
 | Read rate limit | 100 requests each 15 minutes, 1,000 each day, shared by the two tools. | A full sync uses one request for each 200 activities, plus one. 4,000 activities use 21 requests. |
 | Scope | `read,activity:read_all` (current). | Sufficient. No new authorization. |
 | Callback | `/oauth` on the current domain. `localhost` is always permitted. | No Strava setting changes. |
@@ -382,6 +386,88 @@ Rules:
 - A second button downloads the SVG file (vector format, for print or zoom).
 - Text uses a system font stack, so the export needs no font file.
 - The export shows no activity name. The image contains dates and colors only.
+
+### 7.7 Module contracts
+
+These signatures are fixed before the work starts, so that subagents can build the modules in parallel (section 12). A change to a contract goes through the lead agent.
+
+```ts
+// utils/heatmap.ts (pure, no React, no storage, no Date.now(): `today` is a parameter)
+export type Metric = 'distance' | 'duration';
+export interface DayTotal {
+  distance: number; // meters
+  duration: number; // seconds
+  activities: StoredActivity[];
+}
+export type DayMap = Map<string, DayTotal>; // key: YYYY-MM-DD
+export function dayKey(startLocal: string): string;
+export function aggregateByDay(activities: StoredActivity[], sport: string | null): DayMap;
+export function listSports(activities: StoredActivity[]): string[]; // most frequent first
+export function listYears(days: DayMap): number[]; // ascending
+// Thresholds are 5 numbers in descending order, in km or in minutes (F9).
+// Returns 0 for a day with no activity, else 1 (lightest) to 5 (darkest).
+export function shadeLevel(day: DayTotal | undefined, metric: Metric, thresholds: number[]): number;
+export function resetThresholds(activities: StoredActivity[], metric: Metric): number[]; // F10
+export interface Cell {
+  key: string; // YYYY-MM-DD
+  column: number;
+  row: number; // 0 = Monday
+  future: boolean;
+}
+export interface Layout {
+  cells: Cell[];
+  columns: number;
+  monthLabels: { column: number; month: number }[]; // month: 0 to 11
+}
+export function yearLayout(year: number, today: string, converged: boolean): Layout; // F1, F3
+export function continuousLayout(dayCount: number, today: string): Layout; // F2
+export function yearTotals(days: DayMap, year: number): { count: number; distance: number; duration: number }; // D20
+
+// utils/heatmapPalettes.ts
+export const PALETTES: Record<string, readonly [string, string, string, string, string]>; // 22 names, lightest first
+export const DEFAULT_PALETTE: string;
+
+// utils/activityStore.ts (localStorage only)
+export function readCache(athleteId: number, now?: number): ActivityCache | null; // null: none, wrong version, or older than 7 days (then deleted)
+export function writeCache(cache: ActivityCache): boolean; // false on a quota error
+export function clearCache(athleteId: number): void;
+export interface HeatmapSettings {
+  sport: string | null;
+  palette: string;
+  size: 'S' | 'M' | 'L';
+  metric: Metric;
+  thresholds: { distance: number[]; duration: number[] };
+  converged: boolean;
+  labels: boolean;
+}
+export function readSettings(): HeatmapSettings; // defaults when absent or invalid
+export function writeSettings(settings: HeatmapSettings): void;
+
+// hooks/useHeatmapSync.ts (uses stravaGet and StravaHttpError of utils/strava.ts)
+export interface HeatmapSync {
+  activities: StoredActivity[];
+  syncedAt: number | null;
+  status: 'idle' | 'syncing' | 'rate-limited' | 'auth-error' | 'error';
+  received: number; // activities received in the current sync
+  retryAt: number | null; // epoch milliseconds, when rate-limited
+  sync: (mode: 'full' | 'incremental') => Promise<void>;
+}
+export function useHeatmapSync(athleteId: number | undefined, getValidToken: () => Promise<string | null>): HeatmapSync;
+
+// utils/heatmapExport.ts (works on the <svg> elements that HeatmapGrid renders)
+export interface ExportOptions {
+  dark: boolean;
+  hideFuture: boolean;
+  newestFirst: boolean;
+  fromYear: number;
+  toYear: number;
+}
+export function buildExportSvg(years: SVGSVGElement[], options: ExportOptions): string; // one serialized SVG document
+export function downloadSvg(svg: string, fileName: string): void;
+export function downloadPng(svg: string, fileName: string): Promise<void>; // canvas at 2x
+```
+
+Contract between `HeatmapGrid` and the export: each year is one `<svg data-year="2026">`. Each day is one `<rect data-day="YYYY-MM-DD" fill="#rrggbb">`, with `data-future` on a future day. All colors are literal `fill` attributes (D4, D10). The totals line is a `<text>` element inside the same `<svg>`.
 
 ## 8. Phases
 
@@ -563,7 +649,7 @@ The end-to-end build uses `vite build --mode e2e` with public placeholder values
 | R2 | The shared rate limit stops a first full sync for an athlete with many activities. | Risk | Sequential requests, resume after 429, progress kept. 100 requests cover about 19,800 activities. |
 | R3 | The Content Security Policy blocks a wallet. | Risk | The local servers and the end-to-end tests run under the policy before the merge. Revert the header if production shows a violation. |
 | R4 | Strava changes the API terms or the fields. | Risk | One client file (`utils/strava.ts`) and one mapping function to change. |
-| Q1 | Product name for the hub. | Open | "Sweat Ledger" is withdrawn: too near "Sweatcoin", a known application that pays crypto tokens for steps. Proposals: "Effortprint" (recommended, one web search found no product with this name), "Pacemark", "Trailproof". No trademark database was checked. "Segment Attestations" stays as a tool name. Needed for pull request 4 only. |
+| Q1 | Product name for the hub. | Closed: "Effortprint" | "Sweat Ledger" is withdrawn: too near "Sweatcoin", a known application that pays crypto tokens for steps. Proposals: "Effortprint" (recommended, one web search found no product with this name), "Pacemark", "Trailproof". No trademark database was checked. "Segment Attestations" stays as a tool name. Needed for pull request 4 only. |
 | Q2 | Does `/` stay the attestation flow, with the hub on another path? | Closed | Hub at `/` (D16). |
 | Q3 | Does logout remove the activity cache? | Closed | Yes (D11). |
 | Q4 | Light theme for the heatmap screen. | Closed | Light and dark themes for the full site (D14). |
@@ -583,3 +669,61 @@ The end-to-end build uses `vite build --mode e2e` with public placeholder values
 - The final Ponytail audit has no "must fix" item.
 - The product name does not contain the word "Strava".
 - The README describes the two tools.
+
+## 12. Execution guide for the next sessions
+
+This section is for the agent that builds pull requests 2 to 5. Read sections 4, 7, 8 and 9 first.
+
+### 12.1 State after pull request 1
+
+- `main` has the clean base: one layout route (`components/Layout`), one authentication provider (`hooks/useStravaAuth.tsx`), the Strava client (`utils/strava.ts`: `stravaGet`, `StravaHttpError`, `parseRetryAfter`), the `BRAND` constant (`utils/constants.ts`).
+- Open findings: 3 and 15 (pull request 5), 10 (pull request 3).
+- Checks on `main`: 164 unit tests, 10 end-to-end tests, lint and format clean.
+
+### 12.2 Rules (owner decisions)
+
+1. Never merge with a red or pending check. All the checks of the pull request must be green: `Validate`, the Netlify rules and the deploy preview. Read the failed log before any new push.
+2. Test before the merge, by yourself: unit tests, end-to-end tests, then a manual pass in a browser on `localhost` with the real Strava account, then the deploy preview (no Strava login there).
+3. After the merge, check production (`https://strava.alainnicolas.fr`) with the real account.
+4. Ask the owner only for a secret or for a product decision.
+5. Follow the process of section 8, the Ponytail rules of section 6, and the commit rules of the owner (Conventional Commits, signed, no tool attribution, English).
+6. Do not read or print the `.env` files, the Strava client secret or the tokens.
+7. No new runtime dependency. One import style (D19): `pnpm lint` enforces it.
+
+### 12.3 Local setup that works
+
+- Functions: `pnpm --filter @strava-attestations/functions dev` (port 8888). `packages/functions/.env` exists.
+- Frontend: `BROWSER=none VITE_STRAVA_CLIENT_ID=59630 pnpm --filter @strava-attestations/frontend dev` (port 5174). The local `.env.local` has no client ID and no wallet values. The client ID is public.
+- With no wallet values, the wallet button is disabled and the segments modal shows a notice. The wallet flow is tested by `e2e/wallet.spec.ts` only.
+- The Strava login needs no click on the consent page when the browser session of the owner is active.
+- `pnpm test:e2e` builds with `--mode e2e` and leaves a `dist` folder with placeholder values. Do not deploy that folder by hand.
+
+### 12.4 Lessons from pull request 1
+
+- The CI runner is about 3 times slower than the local machine. A lazy route imports its modules inside the test timeout: `setupTests.ts` sets `asyncUtilTimeout` to 5 s. Do not use fixed waits in tests.
+- wagmi batches contract reads in one Multicall3 call. An RPC mock must decode `aggregate3` (see `e2e/wallet.spec.ts`).
+- A manual chunk group in the Vite configuration preloaded the wallet code. Do not add manual chunks. The wallet test fails above 400 kB of scripts before the wallet opens.
+- Each top-level file of `packages/functions/src` is a public function. A test lists the 3 permitted files.
+- A build with no wallet values is a real case (local, CI unit tests). Each new screen must render with `IS_WALLET_CONFIGURED` false.
+
+### 12.5 Work split with subagents
+
+File ownership is exclusive: two writers never change the same file. Each subagent works in its own git worktree, on a branch from the head of the pull request branch, and gets the contracts of section 7.7. It writes its tests first, runs lint, format and its tests, and commits. It does not push, does not open a pull request and does not change the files of another package. The lead agent reviews each result (diff, not the report), merges the branches, and runs the full checks.
+
+| Wave | Runs in parallel | Owner files | Needs |
+| --- | --- | --- | --- |
+| A | Lead agent: pull request 2 (themes), complete, merged. | `index.css`, the CSS modules, `components/ThemeSwitch`, `Header`, `Web3Provider`, `index.html` | Nothing |
+| A | Subagent 1: heatmap logic. | `utils/heatmap.ts`, `utils/heatmapPalettes.ts`, their tests | Section 7.7, Phase 3 test cases |
+| A | Subagent 2: activity data. | `utils/activityStore.ts`, `hooks/useHeatmapSync.ts`, their tests | Section 7.3, 7.4, 7.7, Phase 2 test cases |
+| A | Subagent 3: export. | `utils/heatmapExport.ts`, its test | Section 7.6, 7.7 (the SVG contract) |
+| B | Lead agent: the heatmap screen, the grid, the controls, the tooltip, the route, the return path (finding 10), the end-to-end test. Then pull request 3. | `components/Heatmap`, `screens/Heatmap`, `App.tsx`, `netlify.toml`, `sitemap.xml`, `e2e/heatmap.spec.ts` | Wave A merged in the branch of pull request 3, after pull request 2 is on `main` |
+| C | Lead agent: pull request 4 (hub, Effortprint, SEO files). One subagent can run the `seo-audit` skill on the deploy preview. | Section 8, Phase 6 | Pull request 3 on `main` |
+| D | Lead agent: pull request 5 (policy, headers, closure). One subagent can run `/ponytail-audit` on the full repository. | `netlify.toml`, `vite.config.ts`, the header test, the README | Pull request 4 on `main` |
+
+Wave A is the only large gain: the three modules are pure or isolated, and their contracts are fixed. Waves B to D stay sequential because they change shared files (`App.tsx`, `Header`, `netlify.toml`).
+
+A brief for a subagent has these parts: the goal in one sentence, the files it owns, the contract (copy of the block of section 7.7), the test cases (copy of the rows of section 8), the rules 5 to 7 of section 12.2, and the definition of done (lint, format and its tests pass, one signed commit).
+
+### 12.6 Start prompt for the next session
+
+> Read `docs/heatmap-integration-plan.md`, sections 4, 7, 8, 9 and 12. Build pull requests 2 to 5 in the order of section 12.5, with subagents for wave A. Follow the rules of section 12.2: no merge before all the checks are green and all the tests are done. Stop and report after each merged pull request.
