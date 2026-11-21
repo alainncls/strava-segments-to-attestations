@@ -15,7 +15,6 @@ import {
   aggregateByDay,
   continuousLayout,
   listSports,
-  listYears,
   resetThresholds,
   yearLayout,
   yearTotals,
@@ -94,7 +93,10 @@ function HeatmapTool({ athleteId }: { athleteId: number }): React.JSX.Element {
     () => aggregateByDay(activities, settings.sport),
     [activities, settings.sport],
   );
-  const firstYear = Math.min(currentYear, ...listYears(aggregateByDay(activities, null)));
+  const firstYear = useMemo(
+    () => Math.min(currentYear, ...activities.map((a) => Number(a.startLocal.slice(0, 4)))),
+    [activities, currentYear],
+  );
   const years = Array.from({ length: currentYear - firstYear + 1 }, (_, i) => firstYear + i);
 
   // Show all the years once the first activities arrive.

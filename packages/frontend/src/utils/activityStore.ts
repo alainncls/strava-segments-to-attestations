@@ -76,7 +76,7 @@ function isSettings(value: unknown): value is HeatmapSettings {
   return (
     (s?.sport === null || typeof s?.sport === 'string') &&
     typeof s.palette === 'string' &&
-    s.palette in PALETTES &&
+    Object.hasOwn(PALETTES, s.palette) &&
     ['S', 'M', 'L'].includes(s.size) &&
     ['distance', 'duration'].includes(s.metric) &&
     isThresholds(s.thresholds?.distance) &&
