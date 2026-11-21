@@ -111,3 +111,18 @@ describe('heatmap settings', () => {
     expect(readSettings()).toEqual(settings);
   });
 });
+
+describe('blocked site data', () => {
+  it('reads nothing and does not throw', () => {
+    const blocked = (): never => {
+      throw new DOMException('blocked', 'SecurityError');
+    };
+    const get = vi.spyOn(Storage.prototype, 'getItem').mockImplementation(blocked);
+    const remove = vi.spyOn(Storage.prototype, 'removeItem').mockImplementation(blocked);
+    expect(readCache(42)).toBeNull();
+    expect(readSettings().palette).toBe('ember');
+    expect(() => clearCache(42)).not.toThrow();
+    get.mockRestore();
+    remove.mockRestore();
+  });
+});
