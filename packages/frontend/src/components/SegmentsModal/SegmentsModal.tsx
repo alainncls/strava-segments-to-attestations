@@ -1,6 +1,7 @@
 import React, { Suspense, lazy } from 'react';
 import type { Activity } from '@strava-attestations/shared';
 import { Modal } from '@/components/Modal/Modal';
+import { IS_WALLET_CONFIGURED } from '@/utils/constants';
 import styles from './SegmentsModal.module.css';
 
 interface SegmentsModalProps {
@@ -23,6 +24,17 @@ export default function SegmentsModal({
   }
 
   const modalTitle = activity?.name || 'Segments';
+
+  // Without the wallet configuration there is no wagmi provider: do not load the wallet code.
+  if (!IS_WALLET_CONFIGURED) {
+    return (
+      <Modal show={displayModal} onHide={onHide} title={modalTitle} size="lg">
+        <p className={styles.empty}>
+          Attestations are not available: wallet configuration is missing.
+        </p>
+      </Modal>
+    );
+  }
 
   return (
     <Suspense
