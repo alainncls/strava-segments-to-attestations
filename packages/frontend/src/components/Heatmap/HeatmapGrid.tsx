@@ -6,6 +6,7 @@ import styles from './Heatmap.module.css';
 const GAP = 2;
 const TOP = 36;
 const LABEL_WIDTH = 30;
+const MONTH_LABEL_WIDTH = 24;
 const BOTTOM = 24;
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 const WEEKDAYS: [number, string][] = [
@@ -54,9 +55,12 @@ export default function HeatmapGrid({
 }: HeatmapGridProps): React.JSX.Element {
   const svgRef = useRef<SVGSVGElement>(null);
   const [active, setActive] = useState<string | null>(null);
-  const left = labels ? LABEL_WIDTH : 0;
-  const fit = maxWidth ? Math.floor((maxWidth - left) / layout.columns) : Infinity;
-  const step = Math.max(4, Math.min(preferredSize + GAP, fit));
+  const fit = (offset: number): number =>
+    maxWidth ? Math.floor((maxWidth - offset) / layout.columns) : Infinity;
+  // Day names need rows of 8 px: below that they hide and the cells take their width.
+  const showDays = labels && Math.min(preferredSize + GAP, fit(LABEL_WIDTH)) >= 8;
+  const left = showDays ? LABEL_WIDTH : 0;
+  const step = Math.max(4, Math.min(preferredSize + GAP, fit(left)));
   const cellSize = step - (step < 8 ? 1 : GAP);
   const width = left + layout.columns * step;
   const height = TOP + 7 * step + BOTTOM;
@@ -69,14 +73,16 @@ export default function HeatmapGrid({
     () => Array.from({ length: 7 }, (_, row) => layout.cells.filter((cell) => cell.row === row)),
     [layout],
   );
-  const monthLabels = useMemo(
-    () =>
-      layout.monthLabels.filter(
-        // Skip a label too near the previous one (a range that starts at the end of a month).
-        (label, i, all) => i === 0 || label.column - all[i - 1]!.column >= 3,
-      ),
-    [layout],
-  );
+  // Skip a month label that would touch the previous one (small cells, or a range that starts at the end of a month).
+  const monthLabels = useMemo(() => {
+    const kept: Layout['monthLabels'] = [];
+    for (const label of layout.monthLabels) {
+      const previous = kept.at(-1);
+      if (!previous || (label.column - previous.column) * step >= MONTH_LABEL_WIDTH)
+        kept.push(label);
+    }
+    return kept;
+  }, [layout, step]);
 
   // One tab stop: the selected day, else today or the last past day.
   const focusKey =
@@ -140,7 +146,7 @@ export default function HeatmapGrid({
           {MONTHS[label.month]}
         </text>
       ))}
-      {labels
+      {showDays
         ? WEEKDAYS.map(([row, name]) => (
             <text
               key={name}
