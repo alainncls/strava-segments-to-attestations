@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { DEFAULT_PALETTE, PALETTES } from './heatmapPalettes';
+import { DEFAULT_PALETTE, PALETTES, shadesFor } from './heatmapPalettes';
 
 // WCAG relative luminance and contrast ratio.
 const luminance = (hex: string): number => {
@@ -30,5 +30,13 @@ describe('heatmap palettes', () => {
     }
     // Lightest first.
     expect(luminance(shades[0])).toBeGreaterThan(luminance(shades[4]));
+  });
+});
+
+describe('shadesFor', () => {
+  it('reverses the shades on a dark background and falls back to the default palette', () => {
+    expect(shadesFor('green', false)[0]).toBe(PALETTES.green![0]);
+    expect(shadesFor('green', true)[0]).toBe(PALETTES.green![4]);
+    expect(shadesFor('unknown', false)).toEqual(PALETTES[DEFAULT_PALETTE]);
   });
 });

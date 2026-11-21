@@ -28,6 +28,8 @@ interface HeatmapGridProps {
   colors: readonly string[];
   emptyColor: string;
   cellSize: number;
+  // Width available on the page: the cells shrink to fit it (4 px at least). 0 means no limit.
+  maxWidth?: number;
   labels: boolean;
   title: string;
   year?: number;
@@ -42,7 +44,8 @@ export default function HeatmapGrid({
   thresholds,
   colors,
   emptyColor,
-  cellSize,
+  cellSize: preferredSize,
+  maxWidth = 0,
   labels,
   title,
   year,
@@ -51,8 +54,10 @@ export default function HeatmapGrid({
 }: HeatmapGridProps): React.JSX.Element {
   const svgRef = useRef<SVGSVGElement>(null);
   const [active, setActive] = useState<string | null>(null);
-  const step = cellSize + GAP;
   const left = labels ? LABEL_WIDTH : 0;
+  const fit = maxWidth ? Math.floor((maxWidth - left) / layout.columns) : Infinity;
+  const step = Math.max(4, Math.min(preferredSize + GAP, fit));
+  const cellSize = step - (step < 8 ? 1 : GAP);
   const width = left + layout.columns * step;
   const height = TOP + 7 * step + BOTTOM;
 
@@ -120,7 +125,7 @@ export default function HeatmapGrid({
       viewBox={`0 0 ${width} ${height}`}
       onKeyDown={handleKeyDown}
     >
-      <text x={0} y={14} fontSize={13} fontWeight={700} fill="currentColor">
+      <text x={0} y={14} fontSize={13} fontWeight={600} fill="currentColor">
         {title}
       </text>
       {monthLabels.map((label) => (

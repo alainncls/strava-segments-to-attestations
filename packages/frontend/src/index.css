@@ -79,6 +79,11 @@ button {
   font-family: inherit;
 }
 
+h1,
+h2 {
+  text-wrap: balance;
+}
+
 :focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 2px;

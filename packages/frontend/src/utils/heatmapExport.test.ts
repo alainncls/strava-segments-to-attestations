@@ -46,6 +46,13 @@ afterEach(() => {
 });
 
 describe('buildExportSvg', () => {
+  it('recolors the shades with the given colors', () => {
+    document.body.innerHTML = `<svg data-year="2026" width="10" height="10"><rect data-day="2026-01-01" data-level="2" fill="#000001"></rect></svg>`;
+    years = Array.from(document.querySelectorAll<SVGSVGElement>('svg[data-year]'));
+    const root = build({ colors: ['#111111', '#222222', '#333333', '#444444', '#555555'] });
+    expect(root.querySelector('rect[data-level="2"]')?.getAttribute('fill')).toBe('#222222');
+  });
+
   it('gives the empty days the empty color of the export background', () => {
     const empty = (root: Element): string | null | undefined =>
       root.querySelector('rect[data-level="0"]')?.getAttribute('fill');

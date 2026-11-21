@@ -16,7 +16,7 @@
 
 .title {
   font-size: clamp(1.75rem, 4vw, 2.25rem);
-  font-weight: 800;
+  font-weight: 600;
   line-height: 1.15;
   letter-spacing: -0.02em;
 }
@@ -25,11 +25,6 @@
   max-width: 34rem;
   margin: 1rem 0 1.5rem;
   color: var(--text-2);
-}
-
-.subtitle {
-  font-size: 1.125rem;
-  font-weight: 700;
 }
 
 .actions {
@@ -67,17 +62,57 @@
   overflow-x: auto;
 }
 
-.export {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-  margin-top: 2rem;
-}
-
 .check {
   display: flex;
   align-items: center;
   gap: 0.5rem;
   color: var(--text-2);
   font-size: 0.875rem;
+}
+
+.syncActions {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+}
+
+.textButton {
+  padding: 4px 0;
+  border: 0;
+  background: none;
+  color: var(--text-3);
+  font: inherit;
+  font-size: 0.8125rem;
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+  cursor: pointer;
+}
+
+.textButton:hover:not(:disabled) {
+  color: var(--text);
+}
+
+.textButton:disabled {
+  text-decoration: none;
+  cursor: default;
+}
+
+.exportPanel {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.hint {
+  color: var(--text-3);
+  font-size: 0.8125rem;
+}
+
+@media (max-width: 640px) {
+  .syncActions {
+    flex-direction: row;
+    align-items: center;
+    gap: 16px;
+  }
 }
