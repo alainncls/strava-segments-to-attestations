@@ -81,15 +81,11 @@ export function StravaAuthProvider({ children }: { children: React.ReactNode }):
     });
   }, []);
 
+  // Outside the memo: the result changes with time, not only with the state.
+  const isAuthenticated = !!auth.accessToken && isTokenValid(auth.expiresAt);
   const value = useMemo(
-    () => ({
-      auth,
-      isAuthenticated: !!auth.accessToken && isTokenValid(auth.expiresAt),
-      getValidToken,
-      setAuthFromCallback,
-      logout,
-    }),
-    [auth, getValidToken, setAuthFromCallback, logout],
+    () => ({ auth, isAuthenticated, getValidToken, setAuthFromCallback, logout }),
+    [auth, isAuthenticated, getValidToken, setAuthFromCallback, logout],
   );
 
   return <StravaAuthContext value={value}>{children}</StravaAuthContext>;
