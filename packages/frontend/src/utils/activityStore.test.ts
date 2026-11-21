@@ -73,7 +73,7 @@ describe('heatmap settings', () => {
 
   const defaults: HeatmapSettings = {
     sport: null,
-    palette: 'orange',
+    palette: 'ember',
     size: 'M',
     metric: 'distance',
     thresholds: { distance: [40, 20, 10, 5, 0], duration: [180, 120, 60, 30, 0] },

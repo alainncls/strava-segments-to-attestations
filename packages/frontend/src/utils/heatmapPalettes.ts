@@ -25,3 +25,6 @@ export const PALETTES: Record<string, readonly [string, string, string, string, 
 };
 
 export const DEFAULT_PALETTE = 'ember';
+
+// Day with no activity, and future day. Literal values: the exported image has no CSS.
+export const EMPTY_CELL = { light: '#e4e4e8', dark: '#232327' } as const;

@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { usePageMetadata } from '@/hooks/usePageMetadata';
 import { useStravaAuth } from '@/hooks/useStravaAuth';
-import { API_URL, BRAND, STORAGE_KEYS } from '@/utils/constants';
+import { API_URL, BRAND, RETURN_PATHS, STORAGE_KEYS } from '@/utils/constants';
 import Loader from '@/components/Loader/Loader';
 import { buttonClassName } from '@/components/Button/Button';
 import styles from './StravaCallback.module.css';
@@ -30,8 +30,11 @@ export default function StravaCallback(): React.JSX.Element {
     const state = searchParams.get('state');
     const errorParam = searchParams.get('error');
     const expectedState = sessionStorage.getItem(STORAGE_KEYS.OAUTH_STATE);
+    const savedPath = sessionStorage.getItem(STORAGE_KEYS.RETURN_PATH) ?? '/';
+    const returnPath = RETURN_PATHS.includes(savedPath) ? savedPath : '/';
 
     sessionStorage.removeItem(STORAGE_KEYS.OAUTH_STATE);
+    sessionStorage.removeItem(STORAGE_KEYS.RETURN_PATH);
 
     if (errorParam) {
       setError('Strava access was denied.');
@@ -64,7 +67,7 @@ export default function StravaCallback(): React.JSX.Element {
 
         const data = await response.json();
         setAuthFromCallback(data);
-        navigate('/');
+        navigate(returnPath, { replace: true });
       } catch (err) {
         console.error('OAuth error:', err);
         setError('Could not finish sign-in.');

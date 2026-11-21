@@ -10,6 +10,7 @@ const yearSvg = (year: number, width: number, height: number): string => `
     <rect data-day="${year}-01-01" fill="#ebedf0"><title>Morning Run</title></rect>
     <rect data-day="${year}-01-02" fill="#40c463" aria-label="Morning Run"></rect>
     <rect data-day="${year}-12-31" fill="#ebedf0" data-future=""></rect>
+    <rect data-day="${year}-06-01" fill="#232327" data-level="0"></rect>
   </svg>`;
 
 const defaults: ExportOptions = {
@@ -45,6 +46,13 @@ afterEach(() => {
 });
 
 describe('buildExportSvg', () => {
+  it('gives the empty days the empty color of the export background', () => {
+    const empty = (root: Element): string | null | undefined =>
+      root.querySelector('rect[data-level="0"]')?.getAttribute('fill');
+    expect(empty(build({ dark: false }))).toBe('#e4e4e8');
+    expect(empty(build({ dark: true }))).toBe('#232327');
+  });
+
   it('returns a parseable SVG document with the SVG namespace and a system font', () => {
     const root = build();
     expect(root.querySelector('parsererror')).toBeNull();
@@ -99,7 +107,7 @@ describe('buildExportSvg', () => {
   it('removes the future cells and keeps the others when hideFuture is set', () => {
     const root = build({ hideFuture: true });
     expect(root.querySelectorAll('rect[data-future]')).toHaveLength(0);
-    expect(root.querySelectorAll('rect[data-day]')).toHaveLength(6);
+    expect(root.querySelectorAll('rect[data-day]')).toHaveLength(9);
     expect(build().querySelectorAll('rect[data-future]')).toHaveLength(3);
   });
 
@@ -129,11 +137,15 @@ describe('downloadSvg', () => {
       expect(this.getAttribute('href')).toBe('blob:svg');
     });
 
+    vi.useFakeTimers();
     downloadSvg('<svg/>', 'effortprint-heatmap.svg');
 
     expect(createObjectURL.mock.calls[0]?.[0].type).toBe('image/svg+xml');
     expect(click).toHaveBeenCalledOnce();
+    expect(revokeObjectURL).not.toHaveBeenCalled();
+    vi.runAllTimers();
     expect(revokeObjectURL).toHaveBeenCalledWith('blob:svg');
+    vi.useRealTimers();
   });
 });
 

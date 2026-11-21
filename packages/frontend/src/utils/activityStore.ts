@@ -1,4 +1,5 @@
 import type { ActivityCache, Metric } from '@/utils/heatmap';
+import { DEFAULT_PALETTE, PALETTES } from '@/utils/heatmapPalettes';
 
 const MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000;
 const SETTINGS_KEY = 'effortprint.heatmap.settings.v1';
@@ -57,7 +58,7 @@ export interface HeatmapSettings {
 
 const DEFAULT_SETTINGS: HeatmapSettings = {
   sport: null,
-  palette: 'orange',
+  palette: DEFAULT_PALETTE,
   size: 'M',
   metric: 'distance',
   thresholds: { distance: [40, 20, 10, 5, 0], duration: [180, 120, 60, 30, 0] },
@@ -75,6 +76,7 @@ function isSettings(value: unknown): value is HeatmapSettings {
   return (
     (s?.sport === null || typeof s?.sport === 'string') &&
     typeof s.palette === 'string' &&
+    s.palette in PALETTES &&
     ['S', 'M', 'L'].includes(s.size) &&
     ['distance', 'duration'].includes(s.metric) &&
     isThresholds(s.thresholds?.distance) &&

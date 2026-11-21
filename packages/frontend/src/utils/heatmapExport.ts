@@ -6,6 +6,8 @@ export interface ExportOptions {
   toYear: number;
 }
 
+import { EMPTY_CELL } from '@/utils/heatmapPalettes';
+
 const SVG_NS = 'http://www.w3.org/2000/svg';
 const GAP = 16;
 const FONT_STACK = 'system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif';
@@ -30,6 +32,9 @@ export function buildExportSvg(years: SVGSVGElement[], options: ExportOptions): 
     );
     if (options.hideFuture)
       clone.querySelectorAll('rect[data-future]').forEach((el) => el.remove());
+    clone
+      .querySelectorAll('rect[data-level="0"]')
+      .forEach((el) => el.setAttribute('fill', EMPTY_CELL[options.dark ? 'dark' : 'light']));
     // Page CSS and currentColor do not resolve in a standalone image.
     clone
       .querySelectorAll('text, tspan')
@@ -59,7 +64,8 @@ function downloadBlob(blob: Blob, fileName: string): void {
   link.href = url;
   link.download = fileName;
   link.click();
-  URL.revokeObjectURL(url);
+  // Safari can cancel the download when the URL is revoked at once.
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
 export function downloadSvg(svg: string, fileName: string): void {
