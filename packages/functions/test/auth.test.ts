@@ -4,6 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createAuthHandler } from '../src/auth';
 import { createMemoryOAuthStateStore } from '../src/lib/oauth-state';
 import type { OAuthStateStore } from '../src/lib/oauth-state';
+import type { StravaTokenResponse } from '@strava-attestations/shared';
 
 const { getStoreMock } = vi.hoisted(() => ({ getStoreMock: vi.fn() }));
 
@@ -234,9 +235,9 @@ describe('auth handler', () => {
     let exchangeSignal: AbortSignal | undefined;
     const exchange = vi.fn((_code, _id, _secret, signal: AbortSignal) => {
       exchangeSignal = signal;
-      return new Promise((resolve) => {
+      return new Promise<unknown>((resolve) => {
         releaseExchange = resolve;
-      });
+      }) as Promise<StravaTokenResponse>;
     });
     authHandler = createAuthHandler({ budgetMs: 20, stateStore, exchange });
     const response = await authHandler(

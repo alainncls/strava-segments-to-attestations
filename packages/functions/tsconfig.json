@@ -1,16 +1,10 @@
 {
-  "extends": "../../tsconfig.json",
+  "extends": "../../tsconfig.base.json",
   "compilerOptions": {
-    "target": "ES2022",
-    "lib": ["ES2022", "DOM"],
+    "lib": ["ES2023", "DOM"],
     "types": ["node"],
-    "module": "ESNext",
-    "moduleResolution": "bundler",
-    "outDir": "./dist",
-    "rootDir": "./",
-    "declaration": false,
-    "declarationMap": false
+    "noEmit": true,
+    "allowImportingTsExtensions": true
   },
-  "include": ["./src/**/*", "./lib/**/*", "./verify-netlify-preview.ts"],
-  "exclude": ["node_modules", "dist"]
+  "include": ["src/**/*", "lib/**/*", "test/**/*", "verify-netlify-preview.ts", "vitest.config.ts"]
 }

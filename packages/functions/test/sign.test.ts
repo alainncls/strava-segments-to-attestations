@@ -68,7 +68,7 @@ function createSignRequest(
     headers,
     body:
       method === 'GET' || method === 'OPTIONS'
-        ? undefined
+        ? null
         : (options?.rawBody ?? JSON.stringify(body)),
   });
 }

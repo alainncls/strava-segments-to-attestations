@@ -79,8 +79,11 @@ function logStateStorageError(error: unknown): void {
 }
 
 class AuthTimeoutError extends Error {
-  constructor(readonly stage: string) {
+  readonly stage: string;
+
+  constructor(stage: string) {
     super(`OAuth ${stage} exceeded its request deadline`);
+    this.stage = stage;
   }
 }
 

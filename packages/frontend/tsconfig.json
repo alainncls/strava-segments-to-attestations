@@ -1,20 +1,16 @@
 {
-  "extends": "../../tsconfig.json",
+  "extends": "../../tsconfig.base.json",
   "compilerOptions": {
-    "target": "ES2022",
-    "lib": ["ES2022", "DOM", "DOM.Iterable"],
-    "module": "ESNext",
-    "moduleResolution": "bundler",
+    "lib": ["ES2023", "DOM", "DOM.Iterable"],
+    "types": ["vite/client", "node"],
     "jsx": "react-jsx",
+    // Reown AppKit 1.8 WagmiAdapter is not assignable to its own ChainAdapter type with this option.
+    "exactOptionalPropertyTypes": false,
     "noEmit": true,
-    "isolatedModules": true,
     "allowImportingTsExtensions": true,
-    "allowSyntheticDefaultImports": true,
-    "baseUrl": ".",
     "paths": {
-      "@/*": ["src/*"]
+      "@/*": ["./src/*"]
     }
   },
-  "include": ["src/**/*", "vite.config.ts"],
-  "exclude": ["node_modules", "dist"]
+  "include": ["src/**/*", "e2e/**/*", "vite.config.ts", "vitest.config.ts", "playwright.config.ts"]
 }
