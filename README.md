@@ -38,8 +38,8 @@ Two tools for your Strava activities, at [strava.alainnicolas.fr](https://strava
 
 ## Prerequisites
 
-- **Node.js** 24.22.3 or higher
-- **pnpm** 12.16.1 (other package managers are not supported)
+- **Node.js** 24.22.3 (pinned in `.nvmrc` and `devEngines`)
+- **pnpm** 12.21.0 (pinned in `packageManager` and `devEngines`; other package managers are not supported)
 
 ## Quick Start
 
@@ -48,7 +48,7 @@ Two tools for your Strava activities, at [strava.alainnicolas.fr](https://strava
 ```bash
 git clone https://github.com/alainncls/strava-segments-to-attestations.git
 cd strava-segments-to-attestations
-corepack pnpm@12.16.1 install
+pnpm install
 ```
 
 ### 2. Configure environment variables
@@ -69,7 +69,7 @@ cp packages/contracts/.env.example packages/contracts/.env
 ### 3. Run the development server
 
 ```bash
-corepack pnpm@12.16.1 dev
+pnpm dev
 ```
 
 ## Packages
@@ -128,11 +128,11 @@ cd packages/functions
 pnpm build
 
 # Build shared package and run local functions adapter
-corepack pnpm@12.16.1 --filter @strava-attestations/shared build
-corepack pnpm@12.16.1 --filter @strava-attestations/functions dev
+pnpm --filter @strava-attestations/shared build
+pnpm --filter @strava-attestations/functions dev
 ```
 
-The root `corepack pnpm@12.16.1 dev` runs Vite on `http://localhost:5174` and a loopback-only
+The root `pnpm dev` runs Vite on `http://localhost:5174` and a loopback-only
 Node adapter on port `8888`. The adapter invokes the same `Request`/`Response`
 handlers used by Netlify Functions; it does not implement OAuth or signing
 logic and is not part of production deployment. Create `packages/functions/.env`
@@ -196,10 +196,10 @@ From the root directory:
 
 ```bash
 # Install all dependencies
-corepack pnpm@12.16.1 install
+pnpm install
 
 # Run frontend development server
-corepack pnpm@12.16.1 dev
+pnpm dev
 
 # Build all packages
 pnpm build
@@ -260,9 +260,9 @@ The project is configured for Netlify deployment:
 
 ## Technology Stack
 
-- **Frontend**: React 19, Vite 6, TypeScript, Wagmi, Web3Modal
+- **Frontend**: React 19, Vite 8, TypeScript, Wagmi, Reown AppKit
 - **Contracts**: Solidity 0.8.21, Hardhat, OpenZeppelin 4.9.6, Verax
-- **Functions**: Node.js 22, TypeScript, Netlify Functions
+- **Functions**: Node.js 24, TypeScript, Netlify Functions
 - **Blockchain**: Linea (Mainnet & Sepolia)
 - **Attestations**: Verax Protocol
 

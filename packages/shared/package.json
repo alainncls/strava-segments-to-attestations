@@ -21,12 +21,14 @@
   "types": "./dist/index.d.ts",
   "scripts": {
     "build": "tsup",
-    "clean": "rm -rf dist"
+    "clean": "rm -rf dist",
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "viem": "catalog:"
   },
   "devDependencies": {
+    "@typescript/native": "catalog:",
     "tsup": "9.0.0",
     "typescript": "catalog:"
   }

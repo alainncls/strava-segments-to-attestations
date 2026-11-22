@@ -20,6 +20,7 @@
     "format": "prettier --check .",
     "format:fix": "prettier --write .",
     "lint": "pnpm --filter @strava-attestations/shared build && eslint . --max-warnings 0",
+    "typecheck": "pnpm --filter @strava-attestations/shared build && tsc && pnpm -r run typecheck",
     "lint:fix": "pnpm --filter @strava-attestations/shared build && eslint . --fix --max-warnings 0",
     "test": "pnpm -r test",
     "test:e2e": "pnpm --filter @strava-attestations/frontend test:e2e",
@@ -29,6 +30,7 @@
   "devDependencies": {
     "@eslint/js": "10.0.1",
     "@types/node": "24.19.2",
+    "@typescript/native": "catalog:",
     "eslint": "catalog:",
     "eslint-config-prettier": "catalog:",
     "eslint-plugin-react-hooks": "7.1.1",
