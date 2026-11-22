@@ -4,7 +4,7 @@ import { usePageMetadata } from '@/hooks/usePageMetadata';
 import { useStravaAuth } from '@/hooks/useStravaAuth';
 import { API_URL, BRAND, RETURN_PATHS, STORAGE_KEYS } from '@/utils/constants';
 import Loader from '@/components/Loader/Loader';
-import { buttonClassName } from '@/components/Button/Button';
+import { buttonClassName } from '@/components/Button/buttonClassName';
 import styles from './StravaCallback.module.css';
 
 export default function StravaCallback(): React.JSX.Element {
@@ -36,22 +36,22 @@ export default function StravaCallback(): React.JSX.Element {
     sessionStorage.removeItem(STORAGE_KEYS.OAUTH_STATE);
     sessionStorage.removeItem(STORAGE_KEYS.RETURN_PATH);
 
-    if (errorParam) {
-      setError('Strava access was denied.');
-      return;
-    }
-
-    if (!state || !expectedState || state !== expectedState) {
-      setError('Invalid authorization state.');
-      return;
-    }
-
-    if (!code) {
-      setError('No authorization code received.');
-      return;
-    }
-
     const exchangeCode = async (): Promise<void> => {
+      if (errorParam) {
+        setError('Strava access was denied.');
+        return;
+      }
+
+      if (!state || !expectedState || state !== expectedState) {
+        setError('Invalid authorization state.');
+        return;
+      }
+
+      if (!code) {
+        setError('No authorization code received.');
+        return;
+      }
+
       try {
         const response = await fetch(`${API_URL}/auth`, {
           method: 'POST',
@@ -65,16 +65,16 @@ export default function StravaCallback(): React.JSX.Element {
           return;
         }
 
-        const data = await response.json();
+        const data = (await response.json()) as Parameters<typeof setAuthFromCallback>[0];
         setAuthFromCallback(data);
-        navigate(returnPath, { replace: true });
+        void navigate(returnPath, { replace: true });
       } catch (err) {
         console.error('OAuth error:', err);
         setError('Could not finish sign-in.');
       }
     };
 
-    exchangeCode();
+    void exchangeCode();
   }, [searchParams, setAuthFromCallback, navigate]);
 
   if (error) {

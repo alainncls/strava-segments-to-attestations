@@ -35,8 +35,8 @@ describe('heatmap palettes', () => {
 
 describe('shadesFor', () => {
   it('reverses the shades on a dark background and falls back to the default palette', () => {
-    expect(shadesFor('green', false)[0]).toBe(PALETTES.green![0]);
-    expect(shadesFor('green', true)[0]).toBe(PALETTES.green![4]);
+    expect(shadesFor('green', false)[0]).toBe(PALETTES.green?.[0]);
+    expect(shadesFor('green', true)[0]).toBe(PALETTES.green?.[4]);
     expect(shadesFor('unknown', false)).toEqual(PALETTES[DEFAULT_PALETTE]);
   });
 });

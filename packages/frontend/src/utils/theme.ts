@@ -26,14 +26,19 @@ export function setThemeMode(mode: ThemeMode): void {
   window.dispatchEvent(new Event(CHANGE_EVENT));
 }
 
+// jsdom has no matchMedia.
+function darkQuery(): MediaQueryList | undefined {
+  return (window as Partial<Window>).matchMedia?.(DARK_QUERY);
+}
+
 export function resolvedTheme(): 'light' | 'dark' {
   const mode = document.documentElement.dataset.theme;
   if (mode === 'light' || mode === 'dark') return mode;
-  return window.matchMedia?.(DARK_QUERY).matches ? 'dark' : 'light';
+  return darkQuery()?.matches ? 'dark' : 'light';
 }
 
 export function onThemeChange(listener: () => void): () => void {
-  const media = window.matchMedia?.(DARK_QUERY);
+  const media = darkQuery();
   window.addEventListener(CHANGE_EVENT, listener);
   media?.addEventListener('change', listener);
   return () => {

@@ -30,7 +30,7 @@ export default function Footer(): React.JSX.Element {
           <span
             role="img"
             aria-label="Powered by Strava"
-            className={`${styles.mask} ${styles.strava}`}
+            className={`${String(styles.mask)} ${String(styles.strava)}`}
             style={{ maskImage: `url("${poweredByStrava}")` }}
           />
         </a>
@@ -47,7 +47,7 @@ export default function Footer(): React.JSX.Element {
                 title={label}
               >
                 <span
-                  className={`${styles.mask} ${styles.icon}`}
+                  className={`${String(styles.mask)} ${String(styles.icon)}`}
                   style={{ maskImage: `url("${icon}")` }}
                 />
               </a>

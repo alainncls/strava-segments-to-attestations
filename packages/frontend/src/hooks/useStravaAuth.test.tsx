@@ -1,6 +1,7 @@
 import { act, renderHook } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { StravaAuthProvider, useStravaAuth } from './useStravaAuth';
+import { StravaAuthProvider } from './StravaAuthProvider';
+import { useStravaAuth } from './useStravaAuth';
 import { STORAGE_KEYS } from '@/utils/constants';
 
 const CACHE_KEY = 'effortprint.activities.v1.123';
@@ -76,7 +77,9 @@ describe('useStravaAuth', () => {
     seedAuth(Math.floor(Date.now() / 1000) + 3600);
 
     const { result } = renderAuth();
-    act(() => result.current.logout());
+    act(() => {
+      result.current.logout();
+    });
 
     expect(localStorage.getItem(CACHE_KEY)).toBeNull();
     expect(result.current.isAuthenticated).toBe(false);

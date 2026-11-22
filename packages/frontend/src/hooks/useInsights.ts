@@ -41,7 +41,8 @@ export function useInsights(): void {
       document.head.appendChild(script);
     };
 
-    const idleWindow = window as Window & {
+    // Safari has no requestIdleCallback.
+    const idleWindow = window as Omit<Window, 'requestIdleCallback' | 'cancelIdleCallback'> & {
       requestIdleCallback?: (callback: IdleRequestCallback) => number;
       cancelIdleCallback?: (handle: number) => void;
     };

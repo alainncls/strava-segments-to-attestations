@@ -3,15 +3,15 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { parseRetryAfter } from '@/utils/strava';
 import { useActivities } from './useActivities';
 
-const token = vi.fn(async () => 'access-token');
+const token = vi.fn(() => Promise.resolve('access-token'));
 
 function activities(
   from: number,
   count: number,
-): Array<{ id: number; name: string; type: string; start_date: string; distance: number }> {
+): { id: number; name: string; type: string; start_date: string; distance: number }[] {
   return Array.from({ length: count }, (_, index) => ({
     id: from + index,
-    name: `Activity ${from + index}`,
+    name: `Activity ${String(from + index)}`,
     type: 'Ride',
     start_date: '2026-01-01T10:00:00Z',
     distance: 1000,
@@ -36,32 +36,38 @@ describe('useActivities pagination and session boundaries', () => {
 
   it('retries the initial page after rate limiting and blocks requests until Retry-After expires', async () => {
     const requestedPages: string[] = [];
-    const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
+    const fetchMock = vi.fn((input: string | URL) => {
       const url = new URL(String(input));
       if (url.pathname.endsWith('/athlete/activities')) {
         const page = url.searchParams.get('page') ?? '';
         requestedPages.push(page);
         if (requestedPages.length === 1) {
-          return new Response(JSON.stringify({ message: 'rate limited' }), {
-            status: 429,
-            headers: { 'Retry-After': '1' },
-          });
+          return Promise.resolve(
+            new Response(JSON.stringify({ message: 'rate limited' }), {
+              status: 429,
+              headers: { 'Retry-After': '1' },
+            }),
+          );
         }
-        return response(activities(1, 30));
+        return Promise.resolve(response(activities(1, 30)));
       }
-      return response({ segment_efforts: [] });
+      return Promise.resolve(response({ segment_efforts: [] }));
     });
     vi.stubGlobal('fetch', fetchMock);
 
     const { result } = renderHook(() => useActivities(true, token, 123));
-    await waitFor(() => expect(result.current.isRetryBlocked).toBe(true));
+    await waitFor(() => {
+      expect(result.current.isRetryBlocked).toBe(true);
+    });
     expect(result.current.activitiesError).toContain('page 1');
 
     await act(async () => result.current.handleLoadMore());
     expect(requestedPages).toEqual(['1']);
 
     await act(async () => new Promise((resolve) => setTimeout(resolve, 1100)));
-    await waitFor(() => expect(result.current.isRetryBlocked).toBe(false));
+    await waitFor(() => {
+      expect(result.current.isRetryBlocked).toBe(false);
+    });
     await act(async () => result.current.handleLoadMore());
 
     expect(requestedPages).toEqual(['1', '1']);
@@ -71,19 +77,22 @@ describe('useActivities pagination and session boundaries', () => {
 
   it('shows authentication expiry and never retries 401 or 403 automatically', async () => {
     let pageTwoAttempts = 0;
-    const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
+    const fetchMock = vi.fn((input: string | URL) => {
       const url = new URL(String(input));
       if (url.pathname.endsWith('/athlete/activities')) {
-        if (url.searchParams.get('page') === '1') return response(activities(1, 30));
+        if (url.searchParams.get('page') === '1')
+          return Promise.resolve(response(activities(1, 30)));
         pageTwoAttempts += 1;
-        return response({ message: 'expired' }, 401);
+        return Promise.resolve(response({ message: 'expired' }, 401));
       }
-      return response({ segment_efforts: [] });
+      return Promise.resolve(response({ segment_efforts: [] }));
     });
     vi.stubGlobal('fetch', fetchMock);
 
     const { result } = renderHook(() => useActivities(true, token, 123));
-    await waitFor(() => expect(result.current.activities).toHaveLength(30));
+    await waitFor(() => {
+      expect(result.current.activities).toHaveLength(30);
+    });
     await act(async () => result.current.handleLoadMore());
 
     expect(result.current.isAuthenticationError).toBe(true);
@@ -95,12 +104,14 @@ describe('useActivities pagination and session boundaries', () => {
   it('surfaces token refresh failure as an authentication error', async () => {
     const fetchMock = vi.fn();
     vi.stubGlobal('fetch', fetchMock);
-    const refreshFailure = vi.fn(async () => {
-      throw new Error('refresh token revoked');
+    const refreshFailure = vi.fn(() => {
+      return Promise.reject(new Error('refresh token revoked'));
     });
 
     const { result } = renderHook(() => useActivities(true, refreshFailure, 123));
-    await waitFor(() => expect(result.current.isAuthenticationError).toBe(true));
+    await waitFor(() => {
+      expect(result.current.isAuthenticationError).toBe(true);
+    });
 
     expect(result.current.activitiesError).toContain('Could not refresh Strava authentication');
     expect(fetchMock).not.toHaveBeenCalled();
@@ -108,22 +119,25 @@ describe('useActivities pagination and session boundaries', () => {
 
   it('retries the same page after failure and deduplicates overlapping activity IDs', async () => {
     let pageTwoAttempts = 0;
-    const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
+    const fetchMock = vi.fn((input: string | URL) => {
       const url = new URL(String(input));
       if (url.pathname.endsWith('/athlete/activities')) {
         const page = url.searchParams.get('page');
-        if (page === '1') return response(activities(1, 30));
+        if (page === '1') return Promise.resolve(response(activities(1, 30)));
         pageTwoAttempts += 1;
-        if (pageTwoAttempts === 1) return response({ message: 'temporary failure' }, 503);
+        if (pageTwoAttempts === 1)
+          return Promise.resolve(response({ message: 'temporary failure' }, 503));
         expect(page).toBe('2');
-        return response([activities(30, 2)[0], activities(31, 1)[0]]);
+        return Promise.resolve(response([activities(30, 2)[0], activities(31, 1)[0]]));
       }
-      return response({ segment_efforts: [] });
+      return Promise.resolve(response({ segment_efforts: [] }));
     });
     vi.stubGlobal('fetch', fetchMock);
 
     const { result } = renderHook(() => useActivities(true, token, 123));
-    await waitFor(() => expect(result.current.activities).toHaveLength(30));
+    await waitFor(() => {
+      expect(result.current.activities).toHaveLength(30);
+    });
 
     await act(async () => result.current.handleLoadMore());
     expect(result.current.hasMore).toBe(true);
@@ -139,25 +153,31 @@ describe('useActivities pagination and session boundaries', () => {
 
   it('does not mark a failed segment lookup as empty and permits a user retry', async () => {
     let segmentAttempts = 0;
-    const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
+    const fetchMock = vi.fn((input: string | URL) => {
       const url = new URL(String(input));
-      if (url.pathname.endsWith('/athlete/activities')) return response(activities(7, 1));
+      if (url.pathname.endsWith('/athlete/activities'))
+        return Promise.resolve(response(activities(7, 1)));
       segmentAttempts += 1;
-      if (segmentAttempts === 1) return response({ message: 'temporary failure' }, 503);
-      return response({
-        segment_efforts: [
-          {
-            id: 1,
-            segment: { id: 70, name: 'Hill', activity_type: 'Ride', distance: 500 },
-            start_date: '2026-01-01T10:00:00Z',
-          },
-        ],
-      });
+      if (segmentAttempts === 1)
+        return Promise.resolve(response({ message: 'temporary failure' }, 503));
+      return Promise.resolve(
+        response({
+          segment_efforts: [
+            {
+              id: 1,
+              segment: { id: 70, name: 'Hill', activity_type: 'Ride', distance: 500 },
+              start_date: '2026-01-01T10:00:00Z',
+            },
+          ],
+        }),
+      );
     });
     vi.stubGlobal('fetch', fetchMock);
 
     const { result } = renderHook(() => useActivities(true, token, 123));
-    await waitFor(() => expect(result.current.activities[0]?.segmentsLoaded).toBe(false));
+    await waitFor(() => {
+      expect(result.current.activities[0]?.segmentsLoaded).toBe(false);
+    });
 
     await act(async () => {
       await result.current.handleActivityClick(7);
@@ -177,16 +197,20 @@ describe('useActivities pagination and session boundaries', () => {
   });
 
   it('marks a successful empty segment response as loaded and does not fetch it again', async () => {
-    const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
+    const fetchMock = vi.fn((input: string | URL) => {
       const url = new URL(String(input));
-      return url.pathname.endsWith('/athlete/activities')
-        ? response(activities(9, 1))
-        : response({ segment_efforts: [] });
+      return Promise.resolve(
+        url.pathname.endsWith('/athlete/activities')
+          ? response(activities(9, 1))
+          : response({ segment_efforts: [] }),
+      );
     });
     vi.stubGlobal('fetch', fetchMock);
 
     const { result } = renderHook(() => useActivities(true, token, 123));
-    await waitFor(() => expect(result.current.activities[0]?.segmentsLoaded).toBe(true));
+    await waitFor(() => {
+      expect(result.current.activities[0]?.segmentsLoaded).toBe(true);
+    });
     const detailsRequestCount = fetchMock.mock.calls.filter(([input]) =>
       String(input).includes('/activities/9'),
     ).length;
@@ -204,7 +228,7 @@ describe('useActivities pagination and session boundaries', () => {
   it('ignores an in-flight old account page when the account changes', async () => {
     let finishPageTwo: ((value: Response) => void) | undefined;
     let pageOneRequests = 0;
-    const fetchMock = vi.fn((input: RequestInfo | URL) => {
+    const fetchMock = vi.fn((input: string | URL) => {
       const url = new URL(String(input));
       if (url.pathname.endsWith('/athlete/activities')) {
         const page = url.searchParams.get('page');
@@ -225,7 +249,9 @@ describe('useActivities pagination and session boundaries', () => {
       ({ accountId }: { accountId: number }) => useActivities(true, token, accountId),
       { initialProps: { accountId: 123 } },
     );
-    await waitFor(() => expect(result.current.activities[0]?.id).toBe(12_300));
+    await waitFor(() => {
+      expect(result.current.activities[0]?.id).toBe(12_300);
+    });
 
     let loadMore: Promise<void> | undefined;
     let duplicateLoad: Promise<void> | undefined;
@@ -233,10 +259,14 @@ describe('useActivities pagination and session boundaries', () => {
       loadMore = result.current.handleLoadMore();
       duplicateLoad = result.current.handleLoadMore();
     });
-    await waitFor(() => expect(finishPageTwo).toBeDefined());
+    await waitFor(() => {
+      expect(finishPageTwo).toBeDefined();
+    });
 
     rerender({ accountId: 456 });
-    await waitFor(() => expect(result.current.activities[0]?.id).toBe(45_600));
+    await waitFor(() => {
+      expect(result.current.activities[0]?.id).toBe(45_600);
+    });
     await act(async () => {
       finishPageTwo?.(response(activities(12_330, 1)));
       await loadMore;
@@ -249,7 +279,7 @@ describe('useActivities pagination and session boundaries', () => {
 
   it('clears activities on logout and ignores a delayed page response', async () => {
     let finishPageTwo: ((value: Response) => void) | undefined;
-    const fetchMock = vi.fn((input: RequestInfo | URL) => {
+    const fetchMock = vi.fn((input: string | URL) => {
       const url = new URL(String(input));
       if (url.pathname.endsWith('/athlete/activities')) {
         if (url.searchParams.get('page') === '1')
@@ -266,15 +296,21 @@ describe('useActivities pagination and session boundaries', () => {
       ({ authenticated }: { authenticated: boolean }) => useActivities(authenticated, token, 123),
       { initialProps: { authenticated: true } },
     );
-    await waitFor(() => expect(result.current.activities).toHaveLength(30));
+    await waitFor(() => {
+      expect(result.current.activities).toHaveLength(30);
+    });
 
     let loadMore: Promise<void> | undefined;
     act(() => {
       loadMore = result.current.handleLoadMore();
     });
-    await waitFor(() => expect(finishPageTwo).toBeDefined());
+    await waitFor(() => {
+      expect(finishPageTwo).toBeDefined();
+    });
     rerender({ authenticated: false });
-    await waitFor(() => expect(result.current.activities).toEqual([]));
+    await waitFor(() => {
+      expect(result.current.activities).toEqual([]);
+    });
 
     await act(async () => {
       finishPageTwo?.(response(activities(31, 1)));
@@ -286,27 +322,29 @@ describe('useActivities pagination and session boundaries', () => {
 
   it('aborts segment prefetch when the hook unmounts', async () => {
     let detailSignal: AbortSignal | undefined;
-    const fetchMock = vi.fn((input: RequestInfo | URL, init?: RequestInit) => {
+    const fetchMock = vi.fn((input: string | URL, init?: RequestInit) => {
       const url = new URL(String(input));
       if (url.pathname.endsWith('/athlete/activities')) {
         return Promise.resolve(response(activities(77, 1)));
       }
       detailSignal = init?.signal as AbortSignal | undefined;
-      return new Promise<Response>(() => {});
+      return new Promise<Response>(() => undefined);
     });
     vi.stubGlobal('fetch', fetchMock);
 
     const { unmount } = renderHook(() => useActivities(true, token, 123));
-    await waitFor(() => expect(detailSignal).toBeDefined());
+    await waitFor(() => {
+      expect(detailSignal).toBeDefined();
+    });
     expect(detailSignal?.aborted).toBe(false);
     unmount();
     expect(detailSignal?.aborted).toBe(true);
   });
 
   it('does not let an old account finally unlock a newer page request', async () => {
-    const pendingPages: Array<(value: Response) => void> = [];
+    const pendingPages: ((value: Response) => void)[] = [];
     let pageOneRequests = 0;
-    const fetchMock = vi.fn((input: RequestInfo | URL) => {
+    const fetchMock = vi.fn((input: string | URL) => {
       const url = new URL(String(input));
       if (url.pathname.endsWith('/athlete/activities')) {
         if (url.searchParams.get('page') === '1') {
@@ -324,22 +362,30 @@ describe('useActivities pagination and session boundaries', () => {
       ({ accountId }: { accountId: number }) => useActivities(true, token, accountId),
       { initialProps: { accountId: 123 } },
     );
-    await waitFor(() => expect(result.current.activities[0]?.id).toBe(12_300));
+    await waitFor(() => {
+      expect(result.current.activities[0]?.id).toBe(12_300);
+    });
 
     let oldLoad: Promise<void> | undefined;
     act(() => {
       oldLoad = result.current.handleLoadMore();
     });
-    await waitFor(() => expect(pendingPages).toHaveLength(1));
+    await waitFor(() => {
+      expect(pendingPages).toHaveLength(1);
+    });
 
     rerender({ accountId: 456 });
-    await waitFor(() => expect(result.current.activities[0]?.id).toBe(45_600));
+    await waitFor(() => {
+      expect(result.current.activities[0]?.id).toBe(45_600);
+    });
 
     let newLoad: Promise<void> | undefined;
     act(() => {
       newLoad = result.current.handleLoadMore();
     });
-    await waitFor(() => expect(pendingPages).toHaveLength(2));
+    await waitFor(() => {
+      expect(pendingPages).toHaveLength(2);
+    });
 
     await act(async () => {
       pendingPages[0]?.(response(activities(12_330, 1)));

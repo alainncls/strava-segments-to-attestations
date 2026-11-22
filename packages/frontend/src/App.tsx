@@ -2,7 +2,7 @@ import React, { lazy } from 'react';
 import { Route, Routes } from 'react-router-dom';
 import Layout from '@/components/Layout/Layout';
 import { useInsights } from '@/hooks/useInsights';
-import { StravaAuthProvider } from '@/hooks/useStravaAuth';
+import { StravaAuthProvider } from '@/hooks/StravaAuthProvider';
 
 const Hub = lazy(() => import('@/screens/Hub/Hub'));
 const Attestations = lazy(() => import('@/screens/Attestations/Attestations'));

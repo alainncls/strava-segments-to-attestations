@@ -105,7 +105,7 @@ function withDeadline<T>(
       onTimeout?.();
       reject(new AuthTimeoutError(stage));
     }, remaining);
-    timer.unref?.();
+    timer.unref();
   });
   // Start each operation only after checking the remaining budget. In
   // particular, never invoke the provider transport with an already-expired
@@ -154,7 +154,7 @@ function buildStateCookie(state: string, req: Request): string {
   const secureAttribute = isSecure ? '; Secure' : '';
   return `${OAUTH_STATE_COOKIE}=${encodeURIComponent(
     state,
-  )}; HttpOnly; Path=/; SameSite=Lax; Max-Age=${OAUTH_STATE_MAX_AGE_SECONDS}${secureAttribute}`;
+  )}; HttpOnly; Path=/; SameSite=Lax; Max-Age=${String(OAUTH_STATE_MAX_AGE_SECONDS)}${secureAttribute}`;
 }
 
 function buildClearStateCookie(req: Request): string {
@@ -203,7 +203,8 @@ export const createAuthHandler =
     }
 
     // Rate limiting
-    const clientIp = context.ip ?? 'unknown';
+    // The local dev server and the tests give a partial context.
+    const clientIp = (context as Partial<Context>).ip ?? 'unknown';
     const rateLimit = authRateLimiter.consume(clientIp);
     if (!rateLimit.allowed) {
       return new Response(JSON.stringify({ error: 'Too many requests' }), {
@@ -230,9 +231,11 @@ export const createAuthHandler =
             deadlineAt,
             monotonicNow,
             'request body',
-            () => requestBodyController.abort(new AuthTimeoutError('request body')),
+            () => {
+              requestBodyController.abort(new AuthTimeoutError('request body'));
+            },
           ),
-        ) as AuthRequestBody;
+        );
       } catch (error) {
         if (error instanceof HttpError) {
           return new Response(JSON.stringify(error.payload), {
@@ -255,7 +258,8 @@ export const createAuthHandler =
         };
         try {
           const store =
-            dependencies.stateStore ?? createNetlifyOAuthStateStore(context.deploy?.context);
+            dependencies.stateStore ??
+            createNetlifyOAuthStateStore((context as Partial<Context>).deploy?.context);
           const created = await withDeadline(
             () => store.create(hashState(state), record),
             deadlineAt,
@@ -305,7 +309,8 @@ export const createAuthHandler =
       }
 
       const store =
-        dependencies.stateStore ?? createNetlifyOAuthStateStore(context.deploy?.context);
+        dependencies.stateStore ??
+        createNetlifyOAuthStateStore((context as Partial<Context>).deploy?.context);
       let entry;
       try {
         entry = await withDeadline(
@@ -324,9 +329,9 @@ export const createAuthHandler =
       }
       const now = dependencies.now?.() ?? Date.now();
       if (
-        !entry ||
-        entry.record.status !== 'pending' ||
-        entry.record.version !== 1 ||
+        entry?.record.status !== 'pending' ||
+        // Stored data: do not trust the version type.
+        (entry.record.version as number) !== 1 ||
         entry.record.origin !== origin ||
         !Number.isFinite(entry.record.issuedAt) ||
         !Number.isFinite(entry.record.expiresAt) ||
@@ -380,7 +385,9 @@ export const createAuthHandler =
           deadlineAt,
           monotonicNow,
           'token exchange',
-          () => controller.abort(new AuthTimeoutError('token exchange')),
+          () => {
+            controller.abort(new AuthTimeoutError('token exchange'));
+          },
         );
       } finally {
         if (!controller.signal.aborted) controller.abort();

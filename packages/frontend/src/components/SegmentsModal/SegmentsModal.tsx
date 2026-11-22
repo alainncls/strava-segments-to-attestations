@@ -23,7 +23,7 @@ export default function SegmentsModal({
     return <></>;
   }
 
-  const modalTitle = activity?.name || 'Segments';
+  const modalTitle = activity === undefined || activity.name === '' ? 'Segments' : activity.name;
 
   // Without the wallet configuration there is no wagmi provider: do not load the wallet code.
   if (!IS_WALLET_CONFIGURED) {

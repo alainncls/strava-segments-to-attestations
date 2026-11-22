@@ -1,5 +1,4 @@
 import { defineConfig, configVariable } from 'hardhat/config';
-import type { SensitiveString } from 'hardhat/types/config';
 import HardhatViem from '@nomicfoundation/hardhat-viem';
 import HardhatVerify from '@nomicfoundation/hardhat-verify';
 
@@ -36,14 +35,18 @@ export default defineConfig({
   networks: {
     'linea-sepolia': {
       type: 'http',
-      url: configVariable('INFURA_API_KEY', 'https://linea-sepolia.infura.io/v3/{variable}'),
-      accounts: [configVariable('PRIVATE_KEY') as SensitiveString],
+      url: configVariable('INFURA_API_KEY', {
+        format: 'https://linea-sepolia.infura.io/v3/{variable}',
+      }),
+      accounts: [configVariable('PRIVATE_KEY')],
       chainId: 59141,
     },
     linea: {
       type: 'http',
-      url: configVariable('INFURA_API_KEY', 'https://linea-mainnet.infura.io/v3/{variable}'),
-      accounts: [configVariable('PRIVATE_KEY') as SensitiveString],
+      url: configVariable('INFURA_API_KEY', {
+        format: 'https://linea-mainnet.infura.io/v3/{variable}',
+      }),
+      accounts: [configVariable('PRIVATE_KEY')],
       chainId: 59144,
     },
   },

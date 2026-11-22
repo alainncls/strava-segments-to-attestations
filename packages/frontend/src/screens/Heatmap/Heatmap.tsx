@@ -70,7 +70,8 @@ function HeatmapTool({ athleteId }: { athleteId: number }): React.JSX.Element {
   );
   const theme = useSyncExternalStore(onThemeChange, resolvedTheme);
   const [settings, setSettings] = useState<HeatmapSettings>(readSettings);
-  const today = localDayKey(new Date());
+  const now = new Date();
+  const today = localDayKey(now);
   const currentYear = Number(today.slice(0, 4));
   const [view, setView] = useState<ViewState>({
     mode: 'year',
@@ -95,9 +96,13 @@ function HeatmapTool({ athleteId }: { athleteId: number }): React.JSX.Element {
     if (!element) return;
     setGridWidth(element.clientWidth);
     if (typeof ResizeObserver === 'undefined') return;
-    const observer = new ResizeObserver(([entry]) => setGridWidth(entry?.contentRect.width ?? 0));
+    const observer = new ResizeObserver(([entry]) => {
+      setGridWidth(entry?.contentRect.width ?? 0);
+    });
     observer.observe(element);
-    return () => observer.disconnect();
+    return () => {
+      observer.disconnect();
+    };
   }, []);
 
   // A cache gives an incremental sync, no cache a full sync (useHeatmapSync decides).
@@ -105,7 +110,9 @@ function HeatmapTool({ athleteId }: { athleteId: number }): React.JSX.Element {
     void sync('incremental');
   }, [sync]);
 
-  useEffect(() => writeSettings(settings), [settings]);
+  useEffect(() => {
+    writeSettings(settings);
+  }, [settings]);
 
   const sports = useMemo(() => listSports(activities), [activities]);
   const days = useMemo(
@@ -127,10 +134,15 @@ function HeatmapTool({ athleteId }: { athleteId: number }): React.JSX.Element {
     }
   }, [firstYear]);
 
-  const updateSettings = (change: Partial<HeatmapSettings>): void =>
+  const updateSettings = (change: Partial<HeatmapSettings>): void => {
     setSettings((s) => ({ ...s, ...change }));
-  const updateView = (change: Partial<ViewState>): void => setView((v) => ({ ...v, ...change }));
-  const closeDay = useCallback(() => setOpenDay(null), []);
+  };
+  const updateView = (change: Partial<ViewState>): void => {
+    setView((v) => ({ ...v, ...change }));
+  };
+  const closeDay = useCallback(() => {
+    setOpenDay(null);
+  }, []);
 
   const handleResetThresholds = (): void => {
     const filtered = activities.filter((a) => !settings.sport || a.sportType === settings.sport);
@@ -171,27 +183,33 @@ function HeatmapTool({ athleteId }: { athleteId: number }): React.JSX.Element {
     cellSize: CELL_SIZES[settings.size],
     labels: settings.labels,
     maxWidth: gridWidth,
-    onOpenDay: (key: string, anchor: SVGRectElement) => setOpenDay({ key, anchor }),
+    onOpenDay: (key: string, anchor: SVGRectElement) => {
+      setOpenDay({ key, anchor });
+    },
   };
   const shownYears = years.filter((y) => y >= view.fromYear && y <= view.toYear).reverse();
   const continuous = view.mode === 'continuous' ? continuousLayout(view.dayCount, today) : null;
 
   const nextFullSync = syncedAt === null ? null : syncedAt + FULL_SYNC_INTERVAL_MS;
-  const fullSyncLocked = nextFullSync !== null && nextFullSync > Date.now();
+  const fullSyncLocked = nextFullSync !== null && nextFullSync > now.getTime();
 
   const exportPanel =
     view.mode === 'year' ? (
       <div className={styles.exportPanel}>
         <p className={styles.hint}>
           The image shows{' '}
-          {view.fromYear === view.toYear ? view.fromYear : `${view.fromYear} to ${view.toYear}`}{' '}
+          {view.fromYear === view.toYear
+            ? view.fromYear
+            : `${String(view.fromYear)} to ${String(view.toYear)}`}{' '}
           with the current filters. It shows no activity name.
         </p>
         <label className={styles.check}>
           <input
             type="checkbox"
             checked={exportOptions.dark}
-            onChange={(e) => setExportOptions((o) => ({ ...o, dark: e.target.checked }))}
+            onChange={(e) => {
+              setExportOptions((o) => ({ ...o, dark: e.target.checked }));
+            }}
           />
           Dark background
         </label>
@@ -199,7 +217,9 @@ function HeatmapTool({ athleteId }: { athleteId: number }): React.JSX.Element {
           <input
             type="checkbox"
             checked={exportOptions.hideFuture}
-            onChange={(e) => setExportOptions((o) => ({ ...o, hideFuture: e.target.checked }))}
+            onChange={(e) => {
+              setExportOptions((o) => ({ ...o, hideFuture: e.target.checked }));
+            }}
           />
           Hide future days
         </label>
@@ -207,7 +227,9 @@ function HeatmapTool({ athleteId }: { athleteId: number }): React.JSX.Element {
           <input
             type="checkbox"
             checked={exportOptions.newestFirst}
-            onChange={(e) => setExportOptions((o) => ({ ...o, newestFirst: e.target.checked }))}
+            onChange={(e) => {
+              setExportOptions((o) => ({ ...o, newestFirst: e.target.checked }));
+            }}
           />
           Newest year first
         </label>
@@ -299,7 +321,7 @@ function HeatmapTool({ athleteId }: { athleteId: number }): React.JSX.Element {
             <HeatmapGrid
               {...gridProps}
               layout={continuous}
-              title={`Last ${view.dayCount} days`}
+              title={`Last ${String(view.dayCount)} days`}
               totals={totalsText(
                 rangeTotals(
                   days,

@@ -1,5 +1,6 @@
-import React, { createContext, useCallback, useContext, useMemo, useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import type { AuthState, StravaAthlete } from '@strava-attestations/shared';
+import { StravaAuthContext, type StravaAuth } from './useStravaAuth';
 import { STORAGE_KEYS } from '@/utils/constants';
 import { clearCache } from '@/utils/activityStore';
 
@@ -38,20 +39,6 @@ function isTokenValid(expiresAt: number | null): boolean {
   return expiresAt !== null && expiresAt * 1000 > Date.now() + TOKEN_EXPIRY_MARGIN_MS;
 }
 
-interface StravaAuth {
-  auth: AuthState;
-  isAuthenticated: boolean;
-  getValidToken: () => Promise<string | null>;
-  setAuthFromCallback: (data: {
-    access_token: string;
-    expires_at: number;
-    athlete: StravaAthlete;
-  }) => void;
-  logout: () => void;
-}
-
-const StravaAuthContext = createContext<StravaAuth | null>(null);
-
 export function StravaAuthProvider({ children }: { children: React.ReactNode }): React.JSX.Element {
   const [auth, setAuth] = useState(() => {
     try {
@@ -76,13 +63,13 @@ export function StravaAuthProvider({ children }: { children: React.ReactNode }):
     signOut();
   }, [auth.athlete, signOut]);
 
-  const getValidToken = useCallback(async (): Promise<string | null> => {
+  const getValidToken = useCallback((): Promise<string | null> => {
     if (isTokenValid(auth.expiresAt)) {
-      return auth.accessToken;
+      return Promise.resolve(auth.accessToken);
     }
 
     signOut();
-    return null;
+    return Promise.resolve(null);
   }, [auth.accessToken, auth.expiresAt, signOut]);
 
   const setAuthFromCallback = useCallback<StravaAuth['setAuthFromCallback']>((data) => {
@@ -104,12 +91,4 @@ export function StravaAuthProvider({ children }: { children: React.ReactNode }):
   );
 
   return <StravaAuthContext value={value}>{children}</StravaAuthContext>;
-}
-
-export function useStravaAuth(): StravaAuth {
-  const value = useContext(StravaAuthContext);
-  if (!value) {
-    throw new Error('useStravaAuth needs a StravaAuthProvider');
-  }
-  return value;
 }

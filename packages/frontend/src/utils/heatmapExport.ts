@@ -28,15 +28,19 @@ export function buildExportSvg(years: SVGSVGElement[], options: ExportOptions): 
   let y = 0;
   for (const svg of selected) {
     const clone = svg.cloneNode(true) as SVGSVGElement;
-    clone.querySelectorAll('title, desc').forEach((el) => el.remove());
-    [clone, ...clone.querySelectorAll('[aria-label]')].forEach((el) =>
-      el.removeAttribute('aria-label'),
-    );
+    clone.querySelectorAll('title, desc').forEach((el) => {
+      el.remove();
+    });
+    [clone, ...clone.querySelectorAll('[aria-label]')].forEach((el) => {
+      el.removeAttribute('aria-label');
+    });
     if (options.hideFuture)
-      clone.querySelectorAll('rect[data-future]').forEach((el) => el.remove());
-    clone
-      .querySelectorAll('rect[data-level="0"]')
-      .forEach((el) => el.setAttribute('fill', EMPTY_CELL[options.dark ? 'dark' : 'light']));
+      clone.querySelectorAll('rect[data-future]').forEach((el) => {
+        el.remove();
+      });
+    clone.querySelectorAll('rect[data-level="0"]').forEach((el) => {
+      el.setAttribute('fill', EMPTY_CELL[options.dark ? 'dark' : 'light']);
+    });
     const colors = options.colors;
     if (colors)
       clone.querySelectorAll<SVGRectElement>('rect[data-level]').forEach((el) => {
@@ -44,9 +48,9 @@ export function buildExportSvg(years: SVGSVGElement[], options: ExportOptions): 
         if (level > 0) el.setAttribute('fill', colors[level - 1] ?? '');
       });
     // Page CSS and currentColor do not resolve in a standalone image.
-    clone
-      .querySelectorAll('text, tspan')
-      .forEach((el) => el.setAttribute('fill', options.dark ? '#e6e6e6' : '#1f2328'));
+    clone.querySelectorAll('text, tspan').forEach((el) => {
+      el.setAttribute('fill', options.dark ? '#e6e6e6' : '#1f2328');
+    });
     clone.setAttribute('x', '0');
     clone.setAttribute('y', String(y));
     root.append(clone);
@@ -57,7 +61,7 @@ export function buildExportSvg(years: SVGSVGElement[], options: ExportOptions): 
 
   root.setAttribute('width', String(width));
   root.setAttribute('height', String(height));
-  root.setAttribute('viewBox', `0 0 ${width} ${height}`);
+  root.setAttribute('viewBox', `0 0 ${String(width)} ${String(height)}`);
   root.setAttribute('font-family', FONT_STACK);
   background.setAttribute('width', '100%');
   background.setAttribute('height', '100%');
@@ -73,7 +77,9 @@ function downloadBlob(blob: Blob, fileName: string): void {
   link.download = fileName;
   link.click();
   // Safari can cancel the download when the URL is revoked at once.
-  setTimeout(() => URL.revokeObjectURL(url), 1000);
+  setTimeout(() => {
+    URL.revokeObjectURL(url);
+  }, 1000);
 }
 
 export function downloadSvg(svg: string, fileName: string): void {
@@ -83,8 +89,12 @@ export function downloadSvg(svg: string, fileName: string): void {
 export async function downloadPng(svg: string, fileName: string): Promise<void> {
   const image = new Image();
   await new Promise<void>((resolve, reject) => {
-    image.onload = () => resolve();
-    image.onerror = () => reject(new Error('Could not load the heatmap image'));
+    image.onload = () => {
+      resolve();
+    };
+    image.onerror = () => {
+      reject(new Error('Could not load the heatmap image'));
+    };
     image.src = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
   });
 
@@ -95,7 +105,9 @@ export async function downloadPng(svg: string, fileName: string): Promise<void> 
   if (!context) throw new Error('Canvas 2D is not available');
   context.drawImage(image, 0, 0, canvas.width, canvas.height);
 
-  const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, 'image/png'));
+  const blob = await new Promise<Blob | null>((resolve) => {
+    canvas.toBlob(resolve, 'image/png');
+  });
   if (!blob) throw new Error('Could not encode the heatmap PNG');
   downloadBlob(blob, fileName);
 }

@@ -22,7 +22,7 @@ export async function pruneExpiredOAuthStates(
       signal?.throwIfAborted();
       const entry = await store.getWithMetadata(key, { type: 'json', consistency: 'strong' });
       scanned += 1;
-      const record = entry?.data;
+      const record: unknown = entry?.data;
       if (
         record &&
         typeof record === 'object' &&

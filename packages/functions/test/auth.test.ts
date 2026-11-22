@@ -85,7 +85,7 @@ describe('auth handler', () => {
 
     expect(response.status).toBe(200);
     expect(body.state).toMatch(/^[a-f0-9]{64}$/);
-    expect(cookie).toContain(`strava_oauth_state=${body.state}`);
+    expect(cookie).toContain(`strava_oauth_state=${String(body.state)}`);
     expect(cookie).toContain('HttpOnly');
     expect(cookie).toContain('SameSite=Lax');
   });
@@ -99,11 +99,11 @@ describe('auth handler', () => {
           new Promise((resolve) => {
             releaseWrite = resolve;
           }),
-        async read() {
-          return null;
+        read() {
+          return Promise.resolve(null);
         },
-        async compareAndSet() {
-          return false;
+        compareAndSet() {
+          return Promise.resolve(false);
         },
       },
     });
@@ -146,12 +146,12 @@ describe('auth handler', () => {
     authHandler = createAuthHandler({
       budgetMs: 20,
       stateStore: {
-        async create() {
-          return true;
+        create() {
+          return Promise.resolve(true);
         },
-        async read() {
+        read() {
           const now = Date.now();
-          return {
+          return Promise.resolve({
             record: {
               version: 1,
               origin: 'https://app.example.com',
@@ -160,7 +160,7 @@ describe('auth handler', () => {
               status: 'pending',
             },
             etag: 'etag',
-          };
+          });
         },
         compareAndSet: () =>
           new Promise((resolve) => {
@@ -188,12 +188,12 @@ describe('auth handler', () => {
       budgetMs: 1_000,
       monotonicNow: () => monotonicTime,
       stateStore: {
-        async create() {
-          return true;
+        create() {
+          return Promise.resolve(true);
         },
-        async read() {
+        read() {
           const now = Date.now();
-          return {
+          return Promise.resolve({
             record: {
               version: 1,
               origin: 'https://app.example.com',
@@ -202,7 +202,7 @@ describe('auth handler', () => {
               status: 'pending',
             },
             etag: 'etag',
-          };
+          });
         },
         compareAndSet: () =>
           Promise.resolve(true).then((consumed) => {
@@ -371,7 +371,7 @@ describe('auth handler', () => {
         },
         body: rawBody,
       }),
-      createContext(`198.51.100.${rawBody.length}`),
+      createContext(`198.51.100.${String(rawBody.length)}`),
     );
 
     await expect(response.json()).resolves.toEqual({ error: 'Invalid request body' });
@@ -452,7 +452,7 @@ describe('auth handler', () => {
 
       const response = await authHandler(
         createAuthRequest({ code: 'oauth-code', state }, `strava_oauth_state=${state}`),
-        createContext(`198.51.100.${upstreamStatus}`),
+        createContext(`198.51.100.${String(upstreamStatus)}`),
       );
 
       const body = (await response.json()) as Record<string, unknown>;
@@ -477,7 +477,7 @@ describe('auth handler with Netlify Blobs state store', () => {
     vi.stubEnv('FRONTEND_URL', 'https://app.example.com');
     vi.stubEnv('SIGNER_PRIVATE_KEY', `0x${'1'.repeat(64)}`);
     vi.stubEnv('CONTEXT', undefined);
-    getStoreMock.mockReturnValue({ setJSON: vi.fn(async () => ({ modified: true })) });
+    getStoreMock.mockReturnValue({ setJSON: vi.fn(() => Promise.resolve({ modified: true })) });
 
     const response = await createAuthHandler()(createAuthRequest({ action: 'start' }), {
       ip: '203.0.113.50',

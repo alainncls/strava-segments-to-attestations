@@ -1,15 +1,9 @@
 import React from 'react';
-import styles from './Button.module.css';
-
-type ButtonVariant = 'primary' | 'secondary';
+import { buttonClassName, type ButtonVariant } from './buttonClassName';
 
 interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: ButtonVariant;
   children: React.ReactNode;
-}
-
-export function buttonClassName(variant: ButtonVariant = 'secondary', className?: string): string {
-  return [styles.button, styles[variant], className].filter(Boolean).join(' ');
 }
 
 export function Button({

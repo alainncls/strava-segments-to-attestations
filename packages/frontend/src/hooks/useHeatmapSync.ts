@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { readCache, writeCache } from '@/utils/activityStore';
 import type { StoredActivity } from '@/utils/heatmap';
-import { StravaHttpError, stravaGet } from '@/utils/strava';
+import { StravaHttpError, isAborted, stravaGet } from '@/utils/strava';
 
 const PAGE_SIZE = 200;
 // A full sync reads every page: at most one each day, to spare the shared Strava rate limit.
@@ -62,12 +62,15 @@ export function useHeatmapSync(
     running.current = false;
     partial.current = null;
     const cache = athleteId === undefined ? null : readCache(athleteId);
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- resets the state of the previous athlete; a render-time reset would change the first paint
     setActivities(cache?.activities ?? []);
     setSyncedAt(cache?.syncedAt ?? null);
     setStatus('idle');
     setReceived(0);
     setRetryAt(null);
-    return () => active.abort();
+    return () => {
+      active.abort();
+    };
   }, [athleteId]);
 
   const sync = useCallback(
@@ -96,7 +99,7 @@ export function useHeatmapSync(
           Date.now() - cache.syncedAt >= FULL_SYNC_INTERVAL_MS;
         const full = (mode === 'full' && fullAllowed) || base.length === 0;
         const newest = Math.max(...base.map((a) => Date.parse(a.startLocal)));
-        const after = full ? '' : `&after=${Math.floor(newest / 1000) - OVERLAP_SECONDS}`;
+        const after = full ? '' : `&after=${String(Math.floor(newest / 1000) - OVERLAP_SECONDS)}`;
         // Only a direct retry of the full sync resumes it.
         if (!full) partial.current = null;
         const resumed = full ? partial.current : null;
@@ -109,7 +112,7 @@ export function useHeatmapSync(
         try {
           for (;;) {
             const data = await stravaGet<StravaActivity[]>(
-              `/athlete/activities?per_page=${PAGE_SIZE}&page=${page}${after}`,
+              `/athlete/activities?per_page=${String(PAGE_SIZE)}&page=${String(page)}${after}`,
               token,
               signal,
             );
@@ -121,7 +124,7 @@ export function useHeatmapSync(
             setReceived(fetched.length);
           }
         } catch (error) {
-          if (signal.aborted) return;
+          if (isAborted(signal)) return;
           if (error instanceof StravaHttpError && error.isRateLimit) {
             const now = Date.now();
             setRetryAt(
@@ -138,9 +141,11 @@ export function useHeatmapSync(
           return;
         }
 
-        const next = full
-          ? { activities: fetched, syncedAt: Date.now() }
-          : { activities: mergeById(base, fetched), syncedAt: cache!.syncedAt };
+        // Without a cache the sync is always full.
+        const next =
+          full || !cache
+            ? { activities: fetched, syncedAt: Date.now() }
+            : { activities: mergeById(base, fetched), syncedAt: cache.syncedAt };
         partial.current = null;
         writeCache({ version: 1, athleteId, ...next });
         setActivities(next.activities);

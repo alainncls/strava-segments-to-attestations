@@ -4,16 +4,16 @@ import { readCache, writeCache } from '@/utils/activityStore';
 import { useHeatmapSync } from './useHeatmapSync';
 
 const DAY = 24 * 60 * 60 * 1000;
-const token = vi.fn(async (): Promise<string | null> => 'access-token');
+const token = vi.fn((): Promise<string | null> => Promise.resolve('access-token'));
 
 function stravaActivities(
   from: number,
   count: number,
   startLocal = '2026-11-01T08:00:00Z',
-): Array<Record<string, unknown>> {
+): Record<string, unknown>[] {
   return Array.from({ length: count }, (_, index) => ({
     id: from + index,
-    name: `Activity ${from + index}`,
+    name: `Activity ${String(from + index)}`,
     sport_type: 'Run',
     start_date_local: startLocal,
     start_date: startLocal,
@@ -33,14 +33,16 @@ function mockStrava(
   override?: (page: number, url: URL) => Response | undefined,
 ): URL[] {
   const urls: URL[] = [];
-  const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
+  const fetchMock = vi.fn((input: string | URL) => {
     const url = new URL(String(input));
     urls.push(url);
     const page = Number(url.searchParams.get('page'));
     const custom = override?.(page, url);
-    if (custom) return custom;
+    if (custom) return Promise.resolve(custom);
     const from = (page - 1) * 200;
-    return json(stravaActivities(from + 1, Math.max(0, Math.min(200, total - from))));
+    return Promise.resolve(
+      json(stravaActivities(from + 1, Math.max(0, Math.min(200, total - from)))),
+    );
   });
   vi.stubGlobal('fetch', fetchMock);
   return urls;
@@ -227,24 +229,24 @@ describe('useHeatmapSync', () => {
 
   it('reports auth-error without a request when no token is available', async () => {
     const urls = mockStrava(10);
-    const { result } = renderHook(() => useHeatmapSync(42, async () => null));
+    const { result } = renderHook(() => useHeatmapSync(42, () => Promise.resolve(null)));
     await act(() => result.current.sync('full'));
     expect(result.current.status).toBe('auth-error');
     expect(urls).toHaveLength(0);
   });
 
   it('aborts on unmount without a state update', async () => {
-    const errors = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const errors = vi.spyOn(console, 'error').mockImplementation(() => undefined);
     let signal: AbortSignal | undefined;
     vi.stubGlobal(
       'fetch',
       vi.fn(
-        (_input: RequestInfo | URL, init?: RequestInit) =>
+        (_input: string | URL, init?: RequestInit) =>
           new Promise<Response>((_resolve, reject) => {
             signal = init?.signal ?? undefined;
-            signal?.addEventListener('abort', () =>
-              reject(new DOMException('aborted', 'AbortError')),
-            );
+            signal?.addEventListener('abort', () => {
+              reject(new DOMException('aborted', 'AbortError'));
+            });
           }),
       ),
     );
@@ -252,7 +254,9 @@ describe('useHeatmapSync', () => {
     let pending: Promise<void> = Promise.resolve();
     await act(async () => {
       pending = result.current.sync('full');
-      await vi.waitFor(() => expect(signal).toBeDefined());
+      await vi.waitFor(() => {
+        expect(signal).toBeDefined();
+      });
     });
     expect(result.current.status).toBe('syncing');
     unmount();

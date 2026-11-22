@@ -6,7 +6,7 @@ import styles from './Activities.module.css';
 
 interface ActivitiesProps {
   activities: Activity[];
-  onActivityClick: (activityId: number) => void;
+  onActivityClick: (activityId: number) => Promise<void>;
   loadingActivityId?: number;
   hasMore?: boolean;
   isLoadingMore?: boolean;
@@ -14,13 +14,13 @@ interface ActivitiesProps {
   isRetryBlocked?: boolean;
   isAuthenticationError?: boolean;
   segmentErrors?: Record<number, string>;
-  onLoadMore?: () => void;
+  onLoadMore?: () => Promise<void>;
 }
 
 interface ActivityRowProps {
   activity: Activity;
   isLoading: boolean;
-  onActivityClick: (activityId: number) => void;
+  onActivityClick: (activityId: number) => Promise<void>;
 }
 
 function segmentLabel(activity: Activity): string {
@@ -33,7 +33,7 @@ function segmentLabel(activity: Activity): string {
     return 'No segments';
   }
 
-  return `${count} segment${count > 1 ? 's' : ''}`;
+  return `${String(count)} segment${count > 1 ? 's' : ''}`;
 }
 
 const ActivityRow = memo(function ActivityRow({
@@ -43,7 +43,7 @@ const ActivityRow = memo(function ActivityRow({
 }: ActivityRowProps): React.JSX.Element {
   // aria-disabled, not disabled: a disabled button loses focus, and the modal could not give it back.
   const handleClick = useCallback((): void => {
-    if (!isLoading) onActivityClick(activity.id);
+    if (!isLoading) void onActivityClick(activity.id);
   }, [activity.id, isLoading, onActivityClick]);
 
   const isMuted = !activity.segmentsLoaded || !activity.segments?.length;
@@ -62,7 +62,7 @@ const ActivityRow = memo(function ActivityRow({
           <span>{formatDate(activity.startDate)}</span>
           <span className={styles.distance}>{formatDistance(activity.distance)}</span>
         </span>
-        <span className={`${styles.segments} ${isMuted ? styles.muted : ''}`}>
+        <span className={`${String(styles.segments)} ${String(isMuted ? styles.muted : '')}`}>
           {isLoading ? <span className={styles.spinner} aria-hidden="true" /> : null}
           {segmentLabel(activity)}
         </span>
@@ -102,7 +102,7 @@ export default function Activities({
           <p>No activities yet.</p>
         )}
         {hasMore && activitiesError && !isAuthenticationError && onLoadMore ? (
-          <Button onClick={onLoadMore} disabled={isLoadingMore || isRetryBlocked}>
+          <Button onClick={() => void onLoadMore()} disabled={isLoadingMore || isRetryBlocked}>
             {retryLabel(isRetryBlocked, isLoadingMore, 'Retry')}
           </Button>
         ) : null}
@@ -139,7 +139,7 @@ export default function Activities({
       {hasMore && onLoadMore ? (
         <div className={styles.more}>
           <Button
-            onClick={onLoadMore}
+            onClick={() => void onLoadMore()}
             disabled={isLoadingMore || isRetryBlocked || isAuthenticationError}
           >
             {retryLabel(isRetryBlocked, isLoadingMore, activitiesError ? 'Retry' : 'Load more')}

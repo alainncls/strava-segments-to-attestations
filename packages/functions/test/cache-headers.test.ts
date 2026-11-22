@@ -65,12 +65,12 @@ describe('production CORS and auth cache headers', () => {
     const consumed = new Set<string>();
     authHandler = createAuthHandler({
       stateStore: {
-        async create() {
-          return true;
+        create() {
+          return Promise.resolve(true);
         },
-        async read(key) {
+        read(key) {
           const issuedAt = Date.now();
-          return {
+          return Promise.resolve({
             record: {
               version: 1,
               origin: ALLOWED_ORIGIN,
@@ -79,12 +79,12 @@ describe('production CORS and auth cache headers', () => {
               status: consumed.has(key) ? 'consumed' : 'pending',
             },
             etag: '1',
-          };
+          });
         },
-        async compareAndSet(key) {
-          if (consumed.has(key)) return false;
+        compareAndSet(key) {
+          if (consumed.has(key)) return Promise.resolve(false);
           consumed.add(key);
-          return true;
+          return Promise.resolve(true);
         },
       },
     });
@@ -314,7 +314,9 @@ describe('production CORS and auth cache headers', () => {
 
     expect(response.status).toBe(504);
     await expect(response.json()).resolves.toEqual({ error: 'Upstream request timed out' });
-    expect(fetchMock.mock.calls[0]?.[1]?.signal).toBeInstanceOf(AbortSignal);
+    expect((fetchMock.mock.calls[0]?.[1] as RequestInit | undefined)?.signal).toBeInstanceOf(
+      AbortSignal,
+    );
     expect(JSON.stringify(errorSpy.mock.calls)).not.toContain('client-secret');
     expect(JSON.stringify(errorSpy.mock.calls)).not.toContain('oauth-code');
     expectNonCacheable(response);
@@ -341,7 +343,8 @@ describe('production CORS and auth cache headers', () => {
     }
     expect(limited?.status).toBe(429);
     expect(limited?.headers.get('retry-after')).toBe('60');
-    expectNonCacheable(limited as Response);
+    if (!limited) throw new Error('No rate-limited response');
+    expectNonCacheable(limited);
   });
 
   it('marks a missing-env auth error non-cacheable', async () => {
@@ -375,7 +378,7 @@ describe('production CORS and auth cache headers', () => {
       status: 200,
       headers: { 'content-type': 'application/json' },
     });
-    const fetchMock = vi.fn((input: RequestInfo | URL) =>
+    const fetchMock = vi.fn((input: string | URL) =>
       Promise.resolve(String(input).endsWith('/athlete') ? profile : activity),
     );
     vi.stubGlobal('fetch', fetchMock);

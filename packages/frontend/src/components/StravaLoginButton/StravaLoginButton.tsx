@@ -51,7 +51,7 @@ export default function StravaLoginButton(): React.JSX.Element {
   };
 
   return (
-    <button onClick={handleLogin} className={styles.button} disabled={isLoading}>
+    <button onClick={() => void handleLogin()} className={styles.button} disabled={isLoading}>
       <img
         src={connectWithStrava}
         alt="Connect with Strava"

@@ -1,6 +1,6 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useLayoutEffect, useRef } from 'react';
 import type { Activity, ActivityDetails, Segment } from '@strava-attestations/shared';
-import { StravaHttpError, stravaGet } from '@/utils/strava';
+import { StravaHttpError, isAborted, stravaGet } from '@/utils/strava';
 
 const ACTIVITIES_PER_PAGE = 30;
 const PREFETCH_COUNT = 3;
@@ -9,7 +9,7 @@ function errorMessageForStatus(status: number, page: number): string {
   if (status === 401 || status === 403) {
     return 'Your Strava session expired. Reconnect Strava before loading more activities.';
   }
-  return `Could not load activities page ${page} (HTTP ${status}). Retry this page.`;
+  return `Could not load activities page ${String(page)} (HTTP ${String(status)}). Retry this page.`;
 }
 
 interface StravaActivitySummary {
@@ -54,14 +54,16 @@ export function useActivities(
   const loadingMore = useRef(false);
   const controller = useRef(new AbortController());
   const retryTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
-  const fetchActivitiesRef = useRef<(pageNum: number, append?: boolean) => Promise<boolean>>(
-    async () => false,
+  const fetchActivitiesRef = useRef<(pageNum: number, append?: boolean) => Promise<boolean>>(() =>
+    Promise.resolve(false),
   );
 
   useEffect(() => {
     const activeController = new AbortController();
     controller.current = activeController;
-    return () => controller.current.abort();
+    return () => {
+      controller.current.abort();
+    };
   }, []);
 
   useEffect(
@@ -74,7 +76,11 @@ export function useActivities(
   // Fetch segments for a single activity
   const fetchSegmentsForActivity = useCallback(
     async (activityId: number, token: string, signal: AbortSignal): Promise<Segment[]> => {
-      const data = await stravaGet<ActivityDetails>(`/activities/${activityId}`, token, signal);
+      const data = await stravaGet<ActivityDetails>(
+        `/activities/${String(activityId)}`,
+        token,
+        signal,
+      );
 
       const segmentsById = new Map<number, Segment>();
 
@@ -134,7 +140,7 @@ export function useActivities(
 
   // Fetch activities when authenticated
   const fetchActivities = useCallback(
-    async (pageNum: number, append: boolean = false): Promise<boolean> => {
+    async (pageNum: number, append = false): Promise<boolean> => {
       const epoch = requestEpoch.current;
       const signal = controller.current.signal;
       if (append && (isRetryBlocked || isAuthenticationError)) return false;
@@ -162,11 +168,11 @@ export function useActivities(
         else setIsLoading(true);
 
         const data = await stravaGet<StravaActivitySummary[]>(
-          `/athlete/activities?per_page=${ACTIVITIES_PER_PAGE}&page=${pageNum}`,
+          `/athlete/activities?per_page=${String(ACTIVITIES_PER_PAGE)}&page=${String(pageNum)}`,
           token,
           signal,
         );
-        if (signal.aborted || epoch !== requestEpoch.current) return false;
+        if (isAborted(signal) || epoch !== requestEpoch.current) return false;
 
         const newActivities: Activity[] = data.map((a) => ({
           id: a.id,
@@ -199,14 +205,14 @@ export function useActivities(
 
         // Pre-fetch segments for the first N activities (only on initial load)
         if (!append && newActivities.length > 0) {
-          prefetchSegments(newActivities, token, signal);
+          void prefetchSegments(newActivities, token, signal);
         }
         return true;
       } catch (error) {
         if (signal.aborted || epoch !== requestEpoch.current) return false;
         if (!(error instanceof StravaHttpError)) {
           setActivitiesError(
-            `Could not load activities page ${pageNum}. Check your connection and retry.`,
+            `Could not load activities page ${String(pageNum)}. Check your connection and retry.`,
           );
           return false;
         }
@@ -219,7 +225,9 @@ export function useActivities(
           retryTimer.current = setTimeout(() => {
             if (epoch !== requestEpoch.current) return;
             setIsRetryBlocked(false);
-            setActivitiesError(`Rate limit window ended. Retry activities page ${pageNum}.`);
+            setActivitiesError(
+              `Rate limit window ended. Retry activities page ${String(pageNum)}.`,
+            );
           }, error.retryAfterMs);
         }
         return false;
@@ -245,7 +253,9 @@ export function useActivities(
     }
   }, [page, fetchActivities, hasMore, isRetryBlocked, isAuthenticationError]);
 
-  fetchActivitiesRef.current = fetchActivities;
+  useLayoutEffect(() => {
+    fetchActivitiesRef.current = fetchActivities;
+  }, [fetchActivities]);
 
   useEffect(() => {
     const previous = session.current;
@@ -304,19 +314,18 @@ export function useActivities(
 
       try {
         const segments = await fetchSegmentsForActivity(activityId, token, signal);
-        if (signal.aborted || epoch !== requestEpoch.current) return undefined;
+        if (isAborted(signal) || epoch !== requestEpoch.current) return undefined;
 
         // Update activity with segments
         const updatedActivity = { ...activity, segments, segmentsLoaded: true };
         setActivities((prev) => prev.map((a) => (a.id === activityId ? updatedActivity : a)));
         setSegmentErrors((previous) => {
-          const next = { ...previous };
-          delete next[activityId];
+          const { [activityId]: _removed, ...next } = previous;
           return next;
         });
         return updatedActivity;
       } catch {
-        if (!signal.aborted && epoch === requestEpoch.current) {
+        if (!isAborted(signal) && epoch === requestEpoch.current) {
           setSegmentErrors((previous) => ({
             ...previous,
             [activityId]: 'Could not load segments. Select this activity to retry.',

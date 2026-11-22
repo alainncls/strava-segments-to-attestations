@@ -17,14 +17,14 @@ vi.mock('@reown/appkit/react', () => ({
 }));
 
 vi.mock('wagmi', () => ({
-  useAccount: () => ({ address: undefined, chainId: 59144, isConnected: false }),
+  useConnection: () => ({ address: undefined, chainId: 59144, isConnected: false }),
   useReadContract: () => ({ data: 100000000000000n }),
   useWaitForTransactionReceipt: () => ({ isLoading: false, isSuccess: false }),
   useWriteContract: () => ({
     data: undefined,
     isPending: false,
     reset: resetWriteMock,
-    writeContract: writeContractMock,
+    mutate: writeContractMock,
   }),
 }));
 
@@ -123,14 +123,16 @@ describe('App routing integration', () => {
     sessionStorage.setItem(STORAGE_KEYS.RETURN_PATH, path);
     vi.stubGlobal(
       'fetch',
-      vi.fn(async (url: RequestInfo | URL) =>
-        String(url).endsWith('/auth')
-          ? Response.json({
-              access_token: 'token',
-              expires_at: Math.floor(Date.now() / 1000) + 3600,
-              athlete: { id: 5, firstname: 'Test' },
-            })
-          : Response.json([]),
+      vi.fn((url: string | URL) =>
+        Promise.resolve(
+          String(url).endsWith('/auth')
+            ? Response.json({
+                access_token: 'token',
+                expires_at: Math.floor(Date.now() / 1000) + 3600,
+                athlete: { id: 5, firstname: 'Test' },
+              })
+            : Response.json([]),
+        ),
       ),
     );
 

@@ -155,7 +155,8 @@ export default async (req: Request, context: Context): Promise<Response> => {
     });
   }
 
-  const clientIp = context.ip ?? 'unknown';
+  // The local dev server and the tests give a partial context.
+  const clientIp = (context as Partial<Context>).ip ?? 'unknown';
   const rateLimit = signRateLimiter.consume(clientIp);
   if (!rateLimit.allowed) {
     return new Response(JSON.stringify({ error: 'Too many requests' }), {

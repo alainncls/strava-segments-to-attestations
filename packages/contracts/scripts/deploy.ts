@@ -22,11 +22,11 @@ function getEnvHex(key: string): Hex {
   if (!isHex(hexValue)) {
     throw new Error(`${key} is not a valid hex string`);
   }
-  return hexValue as Hex;
+  return hexValue;
 }
 
 async function main(): Promise<void> {
-  const connection = await network.connect();
+  const connection = await network.create();
   const viem = connection.viem;
 
   const walletClients = await viem.getWalletClients();
@@ -39,7 +39,7 @@ async function main(): Promise<void> {
   const chainId = await walletClient.getChainId();
   const isMainnet = chainId === 59144;
 
-  console.log(`Network: ${isMainnet ? 'Linea Mainnet' : 'Linea Sepolia'} (${chainId})`);
+  console.log(`Network: ${isMainnet ? 'Linea Mainnet' : 'Linea Sepolia'} (${String(chainId)})`);
 
   const privateKey = getEnvHex('PRIVATE_KEY');
   const signerAddress = getEnvAddress('SIGNER_ADDRESS');
@@ -119,7 +119,7 @@ async function main(): Promise<void> {
   console.log(`Schema: ${schemaId}`);
 }
 
-main().catch((error) => {
+main().catch((error: unknown) => {
   console.error('Deployment failed:', error);
   process.exitCode = 1;
 });

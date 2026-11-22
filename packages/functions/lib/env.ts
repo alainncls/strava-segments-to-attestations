@@ -37,7 +37,13 @@ export function getEnvConfig(): EnvConfig {
     errors.invalid.push('FRONTEND_URL must be a valid URL');
   }
 
-  if (errors.missing.length > 0 || errors.invalid.length > 0) {
+  if (
+    !STRAVA_CLIENT_ID ||
+    !STRAVA_CLIENT_SECRET ||
+    !FRONTEND_URL ||
+    !SIGNER_PRIVATE_KEY ||
+    errors.invalid.length > 0
+  ) {
     const messages: string[] = [];
     if (errors.missing.length > 0) {
       messages.push(`Missing env vars: ${errors.missing.join(', ')}`);
@@ -49,9 +55,9 @@ export function getEnvConfig(): EnvConfig {
   }
 
   return {
-    STRAVA_CLIENT_ID: STRAVA_CLIENT_ID!,
-    STRAVA_CLIENT_SECRET: STRAVA_CLIENT_SECRET!,
-    FRONTEND_URL: FRONTEND_URL!,
+    STRAVA_CLIENT_ID,
+    STRAVA_CLIENT_SECRET,
+    FRONTEND_URL,
     SIGNER_PRIVATE_KEY: SIGNER_PRIVATE_KEY as Hex,
   };
 }
@@ -67,7 +73,7 @@ export function getCorsHeaders(origin?: string): Record<string, string> {
   const isAllowed = origin && allowedOrigins.includes(origin);
 
   return {
-    'Access-Control-Allow-Origin': isAllowed ? origin : allowedOrigins[0] || '',
+    'Access-Control-Allow-Origin': isAllowed ? origin : (allowedOrigins[0] ?? ''),
     'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
     'Access-Control-Allow-Headers': 'Content-Type, Authorization',
     'Access-Control-Allow-Credentials': 'true',

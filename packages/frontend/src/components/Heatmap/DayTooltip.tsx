@@ -67,7 +67,7 @@ export default function DayTooltip({
                   {activity.name} ({formatActivityType(activity.sportType)})
                 </span>
                 <a
-                  href={`https://www.strava.com/activities/${activity.id}`}
+                  href={`https://www.strava.com/activities/${String(activity.id)}`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className={styles.stravaLink}

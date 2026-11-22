@@ -1,5 +1,6 @@
 import type { Context } from '@netlify/functions';
 import { afterEach, beforeEach, describe, expect, it, type Mock, vi } from 'vitest';
+import type * as ViemAccounts from 'viem/accounts';
 import { verifyTypedData, type Address, type Hex } from 'viem';
 import { privateKeyToAccount } from 'viem/accounts';
 import signHandler from '../src/sign';
@@ -13,7 +14,7 @@ import {
 const counters = vi.hoisted(() => ({ signatureCount: 0 }));
 
 vi.mock('viem/accounts', async () => {
-  const actual = await vi.importActual<typeof import('viem/accounts')>('viem/accounts');
+  const actual = await vi.importActual<typeof ViemAccounts>('viem/accounts');
 
   const privateKeyToAccount: typeof actual.privateKeyToAccount = (...args) => {
     const account = actual.privateKeyToAccount(...args);
@@ -29,7 +30,7 @@ vi.mock('viem/accounts', async () => {
 
 vi.mock('@strava-attestations/shared', async () => import('../../shared/src/index.ts'));
 
-const TEST_PRIVATE_KEY = `0x${'11'.repeat(32)}` as Hex;
+const TEST_PRIVATE_KEY: Hex = `0x${'11'.repeat(32)}`;
 const SIGNER = privateKeyToAccount(TEST_PRIVATE_KEY);
 const SUBJECT = '0x2222222222222222222222222222222222222222' as Address;
 const SIGN_URL = 'https://functions.example.com/sign';
@@ -49,7 +50,7 @@ let nextIp = 20;
 
 function createContext(): Context {
   nextIp += 1;
-  return { ip: `203.0.113.${nextIp}` } as Context;
+  return { ip: `203.0.113.${String(nextIp)}` } as Context;
 }
 
 function createSignRequest(
@@ -67,9 +68,7 @@ function createSignRequest(
     method,
     headers,
     body:
-      method === 'GET' || method === 'OPTIONS'
-        ? null
-        : (options?.rawBody ?? JSON.stringify(body)),
+      method === 'GET' || method === 'OPTIONS' ? null : (options?.rawBody ?? JSON.stringify(body)),
   });
 }
 
@@ -108,13 +107,13 @@ function athleteResponse(id: unknown = 123): Response {
   });
 }
 
-type StravaFetchMock = Mock<(input: RequestInfo | URL) => Promise<Response>>;
+type StravaFetchMock = Mock<(input: string | URL) => Promise<Response>>;
 
 function createStravaFetch(
   activity: Response,
   athlete: Response = athleteResponse(),
 ): StravaFetchMock {
-  return vi.fn((input: RequestInfo | URL) =>
+  return vi.fn((input: string | URL) =>
     Promise.resolve(String(input).endsWith('/athlete') ? athlete : activity),
   );
 }
@@ -164,14 +163,14 @@ describe('sign handler', () => {
       'https://www.strava.com/api/v3/activities/12345',
       expect.objectContaining({
         headers: { Authorization: `Bearer ${ACCESS_TOKEN}` },
-        signal: expect.any(AbortSignal),
+        signal: expect.any(AbortSignal) as unknown,
       }),
     );
     expect(fetchMock).toHaveBeenCalledWith(
       'https://www.strava.com/api/v3/athlete',
       expect.objectContaining({
         headers: { Authorization: `Bearer ${ACCESS_TOKEN}` },
-        signal: expect.any(AbortSignal),
+        signal: expect.any(AbortSignal) as unknown,
       }),
     );
     expect(fetchMock.mock.calls.every(([url]) => !String(url).includes(ACCESS_TOKEN))).toBe(true);

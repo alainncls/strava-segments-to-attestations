@@ -22,7 +22,11 @@ export function formatDuration(seconds: number): string {
   const h = Math.floor(seconds / 3600);
   const m = Math.floor((seconds % 3600) / 60);
   const s = Math.round(seconds % 60);
-  return h ? `${h}h ${m}m ${s}s` : m ? `${m}m ${s}s` : `${s}s`;
+  return h
+    ? `${String(h)}h ${String(m)}m ${String(s)}s`
+    : m
+      ? `${String(m)}m ${String(s)}s`
+      : `${String(s)}s`;
 }
 
 const dayFormatter = new Intl.DateTimeFormat('en-US', {

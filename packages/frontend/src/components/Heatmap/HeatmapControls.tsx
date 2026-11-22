@@ -43,7 +43,7 @@ function Segmented<T extends string>({
 }: SegmentedProps<T>): React.JSX.Element {
   const name = useId();
   return (
-    <fieldset className={`${styles.segmented} ${className ?? ''}`}>
+    <fieldset className={`${String(styles.segmented)} ${className ?? ''}`}>
       <legend className={styles.fieldLabel}>{legend}</legend>
       <div className={styles.segments}>
         {options.map(([option, label]) => (
@@ -53,7 +53,9 @@ function Segmented<T extends string>({
               name={name}
               value={option}
               checked={value === option}
-              onChange={() => onChange(option)}
+              onChange={() => {
+                onChange(option);
+              }}
             />
             <span>{label}</span>
           </label>
@@ -83,7 +85,9 @@ export default function HeatmapControls({
   const thresholds = settings.thresholds[settings.metric];
   const unit = settings.metric === 'distance' ? 'km' : 'min';
 
-  const toggle = (next: Panel): void => setPanel((current) => (current === next ? null : next));
+  const toggle = (next: Panel): void => {
+    setPanel((current) => (current === next ? null : next));
+  };
 
   // Thresholds are stored darkest first; the scale shows them lightest first.
   const setThreshold = (index: number, value: string): void => {
@@ -105,7 +109,9 @@ export default function HeatmapControls({
               <select
                 aria-label="From year"
                 value={view.fromYear}
-                onChange={(e) => onView({ fromYear: Number(e.target.value) })}
+                onChange={(e) => {
+                  onView({ fromYear: Number(e.target.value) });
+                }}
               >
                 {years
                   .filter((year) => year <= view.toYear)
@@ -117,7 +123,9 @@ export default function HeatmapControls({
               <select
                 aria-label="To year"
                 value={view.toYear}
-                onChange={(e) => onView({ toYear: Number(e.target.value) })}
+                onChange={(e) => {
+                  onView({ toYear: Number(e.target.value) });
+                }}
               >
                 {years
                   .filter((year) => year >= view.fromYear)
@@ -149,7 +157,9 @@ export default function HeatmapControls({
           <span className={styles.fieldLabel}>Sport</span>
           <select
             value={settings.sport ?? ''}
-            onChange={(e) => onSettings({ sport: e.target.value || null })}
+            onChange={(e) => {
+              onSettings({ sport: e.target.value || null });
+            }}
           >
             <option value="">All sports</option>
             {sports.map((sport) => (
@@ -167,7 +177,9 @@ export default function HeatmapControls({
             ['distance', 'Distance'],
             ['duration', 'Time'],
           ]}
-          onChange={(metric) => onSettings({ metric })}
+          onChange={(metric) => {
+            onSettings({ metric });
+          }}
         />
 
         <Segmented
@@ -179,7 +191,9 @@ export default function HeatmapControls({
             ['M', 'M'],
             ['L', 'L'],
           ]}
-          onChange={(size) => onSettings({ size })}
+          onChange={(size) => {
+            onSettings({ size });
+          }}
         />
 
         <div className={styles.toolbarActions}>
@@ -187,7 +201,9 @@ export default function HeatmapControls({
             type="button"
             aria-expanded={panel === 'customize'}
             aria-controls={`${id}-customize`}
-            onClick={() => toggle('customize')}
+            onClick={() => {
+              toggle('customize');
+            }}
           >
             Customize
           </Button>
@@ -195,7 +211,9 @@ export default function HeatmapControls({
             type="button"
             aria-expanded={panel === 'export'}
             aria-controls={`${id}-export`}
-            onClick={() => toggle('export')}
+            onClick={() => {
+              toggle('export');
+            }}
           >
             Export
           </Button>
@@ -225,14 +243,18 @@ export default function HeatmapControls({
               ['year', 'By year'],
               ['continuous', 'Last days'],
             ]}
-            onChange={(mode) => onView({ mode })}
+            onChange={(mode) => {
+              onView({ mode });
+            }}
           />
           <label className={styles.check}>
             <input
               type="checkbox"
               checked={settings.converged}
               disabled={view.mode !== 'year'}
-              onChange={(e) => onSettings({ converged: e.target.checked })}
+              onChange={(e) => {
+                onSettings({ converged: e.target.checked });
+              }}
             />
             Join the months
           </label>
@@ -240,7 +262,9 @@ export default function HeatmapControls({
             <input
               type="checkbox"
               checked={settings.labels}
-              onChange={(e) => onSettings({ labels: e.target.checked })}
+              onChange={(e) => {
+                onSettings({ labels: e.target.checked });
+              }}
             />
             Day names
           </label>
@@ -262,8 +286,10 @@ export default function HeatmapControls({
                     autoComplete="off"
                     min={0}
                     value={thresholds[index]}
-                    aria-label={`Shade ${shade + 1}: ${word.toLowerCase()} (${unit})`}
-                    onChange={(e) => setThreshold(index, e.target.value)}
+                    aria-label={`Shade ${String(shade + 1)}: ${word.toLowerCase()} (${unit})`}
+                    onChange={(e) => {
+                      setThreshold(index, e.target.value);
+                    }}
                   />
                 </label>
               );
@@ -275,7 +301,7 @@ export default function HeatmapControls({
           </Button>
         </fieldset>
 
-        <fieldset className={`${styles.panelGroup} ${styles.wide}`}>
+        <fieldset className={`${String(styles.panelGroup)} ${String(styles.wide)}`}>
           <legend className={styles.fieldLabel}>Palette</legend>
           <div className={styles.palettes}>
             {Object.keys(PALETTES).map((name) => (
@@ -285,7 +311,9 @@ export default function HeatmapControls({
                   name={`${id}-palette`}
                   value={name}
                   checked={settings.palette === name}
-                  onChange={() => onSettings({ palette: name })}
+                  onChange={() => {
+                    onSettings({ palette: name });
+                  }}
                 />
                 <span className={styles.paletteSwatches} aria-hidden="true">
                   {shadesFor(name, dark).map((shade) => (
@@ -313,5 +341,5 @@ export default function HeatmapControls({
 
 function scaleLabel(thresholds: number[], unit: string): string {
   const steps = [...thresholds].reverse();
-  return `Color scale: empty below ${steps[0]} ${unit}, then darker above ${steps.slice(1).join(', ')} ${unit}`;
+  return `Color scale: empty below ${String(steps[0])} ${unit}, then darker above ${steps.slice(1).join(', ')} ${unit}`;
 }
