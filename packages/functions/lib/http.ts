@@ -72,14 +72,14 @@ async function readLimitedBytes(
   signal?.addEventListener('abort', cancelOnAbort, { once: true });
 
   try {
-    while (true) {
+    for (;;) {
       if (signal?.aborted) throw signal.reason;
       const { done, value } = await reader.read();
       if (signal?.aborted) throw signal.reason;
       if (done) {
         break;
       }
-      if (!value || value.byteLength === 0) {
+      if (value.byteLength === 0) {
         continue;
       }
       total += value.byteLength;

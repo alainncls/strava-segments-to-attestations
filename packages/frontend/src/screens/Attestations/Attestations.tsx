@@ -123,7 +123,7 @@ export default function Attestations(): React.JSX.Element {
         activity={selectedActivity}
         displayModal={showModal}
         onHide={handleModalHide}
-        accessToken={auth.accessToken || ''}
+        accessToken={auth.accessToken ?? ''}
       />
     </>
   );

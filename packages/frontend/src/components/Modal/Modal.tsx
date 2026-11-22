@@ -58,7 +58,7 @@ export function Modal({
   const modalContent = (
     <div className={styles.overlay} onClick={handleOverlayClick}>
       <div
-        className={`${styles.modal} ${size === 'lg' ? styles.modalLg : ''}`}
+        className={`${String(styles.modal)} ${String(size === 'lg' ? styles.modalLg : '')}`}
         ref={dialogRef}
         tabIndex={-1}
         role="dialog"

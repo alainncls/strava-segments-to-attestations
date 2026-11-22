@@ -66,7 +66,7 @@ export default function HeatmapGrid({
   const height = TOP + 7 * step + BOTTOM;
 
   const byPosition = useMemo(
-    () => new Map(layout.cells.map((cell) => [`${cell.column}:${cell.row}`, cell])),
+    () => new Map(layout.cells.map((cell) => [`${String(cell.column)}:${String(cell.row)}`, cell])),
     [layout],
   );
   const rows = useMemo(
@@ -110,7 +110,7 @@ export default function HeatmapGrid({
     // Up to 3 columns: the separated view has gap columns between months.
     for (let distance = 1; distance <= 3; distance++) {
       const next = byPosition.get(
-        `${current.column + move[0] * distance}:${current.row + move[1] * distance}`,
+        `${String(current.column + move[0] * distance)}:${String(current.row + move[1] * distance)}`,
       );
       if (next) {
         setActive(next.key);
@@ -128,7 +128,7 @@ export default function HeatmapGrid({
       data-year={year}
       width={width}
       height={height}
-      viewBox={`0 0 ${width} ${height}`}
+      viewBox={`0 0 ${String(width)} ${String(height)}`}
       onKeyDown={handleKeyDown}
     >
       <text x={0} y={14} fontSize={13} fontWeight={600} fill="currentColor">
@@ -136,7 +136,7 @@ export default function HeatmapGrid({
       </text>
       {monthLabels.map((label) => (
         <text
-          key={`${label.column}-${label.month}`}
+          key={`${String(label.column)}-${String(label.month)}`}
           x={left + label.column * step}
           y={TOP - 6}
           fontSize={10}

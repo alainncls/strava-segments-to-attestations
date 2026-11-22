@@ -71,7 +71,9 @@ function initializeAppKit(): void {
     },
   });
 
-  onThemeChange(() => appKit.setThemeMode(resolvedTheme()));
+  onThemeChange(() => {
+    appKit.setThemeMode(resolvedTheme());
+  });
   appKitInitialized = true;
 }
 

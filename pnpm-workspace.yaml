@@ -110,32 +110,15 @@ minimumReleaseAgeExclude:
   - 'viem@2.58.0'
   - 'vitest@5.1.1'
 overrides:
-  # GHSA-w74x-v6f9-j3xg, GHSA-xhq7-xmqj-769h, GHSA-wjr9-j795-jxcr and
-  # GHSA-333x-w4r6-6crp: the Verax GraphQL graph resolves vulnerable
-  # fast-uri releases on three major lines. Pin each to its first patched line.
-  fast-uri@<2.4.8: 2.4.8
-  fast-uri@>=3.0.0 <3.1.9: 3.1.9
-  fast-uri@>=4.0.0 <4.2.3: 4.2.3
   # GHSA-mrhx-c7xc-m3w5 / CVE-2023-54404: Reown AppKit 1.8.24 still resolves
   # Zod 3.x. Zod 4.6.6 is the first patched release; retain this exact override
   # until the upstream graph publishes an explicitly compatible resolution.
   zod: 4.6.6
-  '@graphql-tools/utils': 12.0.3
-  axios: 1.20.0
-  '@fastify/busboy': 3.2.2
-  '@graphql-tools/executor-legacy-ws': 1.1.37
-  http-cache-semantics: 4.3.0
-  source-map-js: 1.2.2
-  # GHSA-mrwp-f3q8-3g9p: axios' allowed range still resolves vulnerable
-  # follow-redirects 1.16.1 through the AppKit and Verax dependency graph.
-  follow-redirects: 1.16.2
+  '@graphql-tools/utils': 12.1.0
   # GHSA-mmx7-hfxf-jppx, GHSA-gcfj-64vw-6mp9 and related axios advisories: @coinbase/cdp-sdk pins axios 1.16.0; 1.18.0 is the first patched 1.x release.
   '@coinbase/cdp-sdk>axios': 1.20.0
   # Transitive @types/* packages accept any @types/node; keep a single version aligned with the Node 24 runtime.
   '@types/node': 24.19.2
-  # GHSA-4qv8-2p9j-2685 and seven related advisories: preserve the
-  # transitive 7.x major while pinning its first patched mature release.
-  undici@>=7.0.0 <7.30.1: 7.30.1
   # GHSA-3g3m-2fjr-6pw4 and GHSA-g3hv-75wg-m249: solhint 6.2.5 pins glob ^13,
   # which has no patched release and resolves vulnerable minimatch 10.x.
   'solhint>glob': 14.0.6

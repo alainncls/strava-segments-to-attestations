@@ -2,7 +2,7 @@ import React, { Suspense, lazy, useCallback, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useStravaAuth } from '@/hooks/useStravaAuth';
 import { BRAND, IS_WALLET_CONFIGURED } from '@/utils/constants';
-import { buttonClassName } from '@/components/Button/Button';
+import { buttonClassName } from '@/components/Button/buttonClassName';
 import ThemeSwitch from '@/components/ThemeSwitch/ThemeSwitch';
 import styles from './Header.module.css';
 import logoEthOrange from '@/assets/logo-eth-orange.svg';

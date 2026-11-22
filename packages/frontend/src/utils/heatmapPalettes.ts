@@ -1,6 +1,10 @@
+type Shades = readonly [string, string, string, string, string];
+
+const EMBER: Shades = ['#fdd0a2', '#fdae6b', '#fd8d3c', '#fc5200', '#a63603'];
+
 // Five shades per palette, lightest first.
-export const PALETTES: Record<string, readonly [string, string, string, string, string]> = {
-  ember: ['#fdd0a2', '#fdae6b', '#fd8d3c', '#fc5200', '#a63603'],
+export const PALETTES: Record<string, Shades> = {
+  ember: EMBER,
   green: ['#c7e9c0', '#a1d99b', '#74c476', '#31a354', '#006d2c'],
   blue: ['#c6dbef', '#9ecae1', '#6baed6', '#3182bd', '#08519c'],
   purple: ['#dadaeb', '#bcbddc', '#9e9ac8', '#756bb1', '#54278f'],
@@ -31,6 +35,6 @@ export const EMPTY_CELL = { light: '#e4e4e8', dark: '#232327' } as const;
 
 // On a dark background the lightest shade stands out most, so it marks the busiest days.
 export function shadesFor(name: string, dark: boolean): readonly string[] {
-  const shades = PALETTES[name] ?? PALETTES[DEFAULT_PALETTE]!;
+  const shades = PALETTES[name] ?? EMBER;
   return dark ? [...shades].reverse() : shades;
 }

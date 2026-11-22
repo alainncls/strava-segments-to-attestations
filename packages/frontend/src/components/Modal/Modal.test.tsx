@@ -8,8 +8,20 @@ function Page(): React.JSX.Element {
 
   return (
     <>
-      <button onClick={() => setShow(true)}>Open</button>
-      <Modal show={show} onHide={() => setShow(false)} title="Segments">
+      <button
+        onClick={() => {
+          setShow(true);
+        }}
+      >
+        Open
+      </button>
+      <Modal
+        show={show}
+        onHide={() => {
+          setShow(false);
+        }}
+        title="Segments"
+      >
         Content
       </Modal>
     </>

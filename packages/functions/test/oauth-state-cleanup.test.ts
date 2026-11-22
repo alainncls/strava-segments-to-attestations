@@ -15,22 +15,23 @@ const record = (
   expiresAt,
   status,
 });
-type Fixture = {
-  list: Mock<() => AsyncGenerator<{ blobs: { key: string }[] }>>;
+interface Fixture {
+  list: Mock<() => Generator<{ blobs: { key: string }[] }>>;
   getWithMetadata: Mock<(key: string) => Promise<{ data: unknown; etag: string }>>;
   delete: Mock<(key: string) => Promise<void>>;
-};
+}
 const fixture = (entries: Record<string, unknown>): Fixture => {
-  const deleteRecord = vi.fn(async (key: string) => {
-    delete entries[key];
+  const deleteRecord = vi.fn((key: string) => {
+    Reflect.deleteProperty(entries, key);
+    return Promise.resolve();
   });
   const store = {
-    list: vi.fn(async function* () {
+    list: vi.fn(function* () {
       const keys = Object.keys(entries);
       yield { blobs: keys.slice(0, 2).map((key) => ({ key })) };
       yield { blobs: keys.slice(2).map((key) => ({ key })) };
     }),
-    getWithMetadata: vi.fn(async (key: string) => ({ data: entries[key], etag: key })),
+    getWithMetadata: vi.fn((key: string) => Promise.resolve({ data: entries[key], etag: key })),
     delete: deleteRecord,
   };
   return store;
@@ -84,9 +85,9 @@ describe('OAuth state retention', () => {
   it('stops before deleting when the budget expires during a read', async () => {
     const controller = new AbortController();
     const store = fixture({ old: record(1) });
-    store.getWithMetadata.mockImplementationOnce(async () => {
+    store.getWithMetadata.mockImplementationOnce(() => {
       controller.abort();
-      return { data: record(1), etag: 'old' };
+      return Promise.resolve({ data: record(1), etag: 'old' });
     });
     await expect(pruneExpiredOAuthStates(store as never, now, controller.signal)).rejects.toThrow();
     expect(store.delete).not.toHaveBeenCalled();

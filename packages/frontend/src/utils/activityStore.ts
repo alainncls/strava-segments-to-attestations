@@ -4,7 +4,7 @@ import { DEFAULT_PALETTE, PALETTES } from '@/utils/heatmapPalettes';
 const MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000;
 const SETTINGS_KEY = 'effortprint.heatmap.settings.v1';
 
-const cacheKey = (athleteId: number): string => `effortprint.activities.v1.${athleteId}`;
+const cacheKey = (athleteId: number): string => `effortprint.activities.v1.${String(athleteId)}`;
 
 // Invalid JSON, or site data blocked by the browser: no value.
 function read(key: string): unknown {
@@ -78,14 +78,16 @@ const isThresholds = (value: unknown): boolean =>
 
 function isSettings(value: unknown): value is HeatmapSettings {
   const s = value as HeatmapSettings | null;
+  // Stored data may miss the thresholds object.
+  const thresholds = s?.thresholds as Partial<HeatmapSettings['thresholds']> | undefined;
   return (
     (s?.sport === null || typeof s?.sport === 'string') &&
     typeof s.palette === 'string' &&
     Object.hasOwn(PALETTES, s.palette) &&
     ['S', 'M', 'L'].includes(s.size) &&
     ['distance', 'duration'].includes(s.metric) &&
-    isThresholds(s.thresholds?.distance) &&
-    isThresholds(s.thresholds?.duration) &&
+    isThresholds(thresholds?.distance) &&
+    isThresholds(thresholds?.duration) &&
     typeof s.converged === 'boolean' &&
     typeof s.labels === 'boolean'
   );

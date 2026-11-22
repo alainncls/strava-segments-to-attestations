@@ -1,13 +1,19 @@
 import AxeBuilder from '@axe-core/playwright';
-import { expect, test } from '@playwright/test';
+import { expect, test, type Locator } from '@playwright/test';
 
 // The wallet code is about 2.9 MB: the heatmap must not load it.
 const MAX_SCRIPT_BYTES = 400_000;
 
+async function top(locator: Locator): Promise<number> {
+  const box = await locator.boundingBox();
+  if (!box) throw new Error('The element is not visible');
+  return box.y;
+}
+
 // Same weekday, one week apart: ArrowLeft moves from one to the other in any year.
 const year = new Date().getFullYear();
-const runDay = `${year}-01-02`;
-const rideDay = `${year}-01-09`;
+const runDay = `${String(year)}-01-02`;
+const rideDay = `${String(year)}-01-09`;
 const activities = [
   { id: 11, name: 'New Year Run', sport_type: 'Run', day: runDay, distance: 10_000, time: 3000 },
   { id: 12, name: 'Second Run', sport_type: 'Run', day: runDay, distance: 5_000, time: 1500 },
@@ -47,7 +53,7 @@ test('syncs, filters, opens a day and passes an accessibility check', async ({ p
   // One full sync each day: the button waits for tomorrow.
   await expect(page.getByRole('button', { name: /^Full sync after/ })).toBeDisabled();
 
-  const grid = page.locator(`svg[data-year="${year}"]`);
+  const grid = page.locator(`svg[data-year="${String(year)}"]`);
   await expect(grid.getByText('3 activities, 55 km, 3.3 h')).toBeVisible();
 
   await page.getByLabel('Sport').selectOption('GravelRide');
@@ -82,7 +88,7 @@ test('syncs, filters, opens a day and passes an accessibility check', async ({ p
   await page.getByRole('button', { name: 'Export' }).click();
   const png = page.getByRole('button', { name: 'Download PNG' });
   await expect(png).toBeVisible();
-  expect((await png.boundingBox())!.y).toBeLessThan((await grid.boundingBox())!.y);
+  expect(await top(png)).toBeLessThan(await top(grid));
   await page.getByRole('button', { name: 'Export' }).click();
 
   // Keyboard: move one week back, open the day, close it.
@@ -104,7 +110,7 @@ test('syncs, filters, opens a day and passes an accessibility check', async ({ p
   await expect(firstDay).toBeFocused();
 
   const results = await new AxeBuilder({ page }).analyze();
-  expect(results.violations.map((v) => `${v.id}: ${v.nodes.length}`)).toEqual([]);
+  expect(results.violations.map((v) => `${v.id}: ${String(v.nodes.length)}`)).toEqual([]);
   expect(scripts.reduce((sum, size) => sum + size, 0)).toBeLessThan(MAX_SCRIPT_BYTES);
 });
 

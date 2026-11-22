@@ -10,7 +10,9 @@ const server = createLocalFunctionServer({
 });
 
 server.listen(port, '127.0.0.1', () => {
-  process.stdout.write(`Local Netlify function adapter listening on http://127.0.0.1:${port}\n`);
+  process.stdout.write(
+    `Local Netlify function adapter listening on http://127.0.0.1:${String(port)}\n`,
+  );
 });
 
 const shutdown = (): void => {

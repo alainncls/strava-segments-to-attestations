@@ -73,7 +73,7 @@ describe('StravaPortal', () => {
   // Helper to encode subject as bytes20
   function encodeSubject(address: Address): Hex {
     const bytes = address.toLowerCase().slice(2);
-    return `0x${bytes}` as Hex;
+    return `0x${bytes}`;
   }
 
   describe('EIP-712 Signature', () => {

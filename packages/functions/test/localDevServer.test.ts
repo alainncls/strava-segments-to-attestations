@@ -30,16 +30,19 @@ describe('local adapter invokes the real Netlify function handlers', () => {
     await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve));
     const address = server.address();
     if (!address || typeof address === 'string') throw new Error('Missing listener');
-    baseUrl = `http://127.0.0.1:${address.port}`;
+    baseUrl = `http://127.0.0.1:${String(address.port)}`;
   });
 
   afterAll(async () => {
     await new Promise<void>((resolve, reject) =>
-      server.close((error) => (error ? reject(error) : resolve())),
+      server.close((error) => {
+        if (error) reject(error);
+        else resolve();
+      }),
     );
     for (const key of envKeys) {
       const value = originalEnv[key];
-      if (value === undefined) delete process.env[key];
+      if (value === undefined) Reflect.deleteProperty(process.env, key);
       else process.env[key] = value;
     }
   });
@@ -63,7 +66,7 @@ describe('local adapter invokes the real Netlify function handlers', () => {
     expect(cookie).toContain('HttpOnly');
     expect(cookie).toContain('SameSite=Lax');
     expect(cookie).toContain('Max-Age=600');
-    expect((await response.json()).state).toMatch(/^[a-f0-9]{64}$/);
+    expect(((await response.json()) as { state: string }).state).toMatch(/^[a-f0-9]{64}$/);
   });
 
   it('preserves handler method and invalid-body responses without provider calls', async () => {

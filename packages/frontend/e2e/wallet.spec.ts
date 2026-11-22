@@ -61,8 +61,8 @@ test('attests a segment with an injected wallet and the fee of the contract', as
               return null;
           }
         },
-        on: (): void => {},
-        removeListener: (): void => {},
+        on: (): void => undefined,
+        removeListener: (): void => undefined,
       };
       const announce = (): boolean =>
         window.dispatchEvent(

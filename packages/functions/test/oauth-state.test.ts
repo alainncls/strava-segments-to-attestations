@@ -22,7 +22,7 @@ describe('Strava OAuth state persistence', () => {
       .fn()
       .mockResolvedValueOnce({ modified: true })
       .mockResolvedValueOnce({ modified: false });
-    const store = createOAuthStateStore({ getWithMetadata, setJSON } as never);
+    const store = createOAuthStateStore({ getWithMetadata, setJSON });
 
     await expect(store.create('hash', record)).resolves.toBe(true);
     await expect(store.read('hash')).resolves.toEqual({ record, etag: 'etag-1' });
@@ -44,7 +44,7 @@ describe('Strava OAuth state persistence', () => {
       .fn()
       .mockResolvedValueOnce({ data: record })
       .mockResolvedValueOnce({ data: null, etag: 'etag-2' });
-    const store = createOAuthStateStore({ getWithMetadata, setJSON: vi.fn() } as never);
+    const store = createOAuthStateStore({ getWithMetadata, setJSON: vi.fn() });
 
     await expect(store.read('missing-etag')).resolves.toBeNull();
     await expect(store.read('empty')).resolves.toBeNull();

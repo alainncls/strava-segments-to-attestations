@@ -30,7 +30,7 @@ function monitorRuntime(page: Page): RuntimeMonitor {
       return;
     }
 
-    assetFailures.push(`${resourceType} ${request.url()} ${request.failure()?.errorText}`);
+    assetFailures.push(`${resourceType} ${request.url()} ${String(request.failure()?.errorText)}`);
   });
 
   return {
@@ -118,7 +118,7 @@ test('activity pagination retries the same page, honors 429 cooldown, and remain
             status: 200,
             json: Array.from({ length: 30 }, (_, index) => ({
               id: index + 1,
-              name: `Activity ${index + 1}`,
+              name: `Activity ${String(index + 1)}`,
               type: 'Ride',
               start_date: '2026-01-01T10:00:00Z',
               distance: 1000,

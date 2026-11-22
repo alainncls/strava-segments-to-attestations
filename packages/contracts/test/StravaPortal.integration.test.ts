@@ -38,12 +38,17 @@ describe('StravaPortal Integration', () => {
   let portal: Address;
   let portalHarness: Address;
   let publicClient: PublicClient<Transport, Chain>;
-  let networkProvider: Awaited<ReturnType<typeof hre.network.connect>>['provider'];
+  let networkProvider: Awaited<ReturnType<typeof hre.network.create>>['provider'];
   let walletClient: WalletClient<Transport, Chain, Account>;
   let userWalletClient: WalletClient<Transport, Chain, Account>;
   let owner: Address;
   let user: Address;
   let chainId: number;
+
+  function deployedAddress(receipt: { contractAddress?: Address | null | undefined }): Address {
+    if (!receipt.contractAddress) throw new Error('Deployment receipt has no contract address');
+    return receipt.contractAddress;
+  }
 
   // Helper to sign a segment
   async function signSegment(
@@ -87,7 +92,7 @@ describe('StravaPortal Integration', () => {
   // Helper to encode subject as bytes20
   function encodeSubject(address: Address): Hex {
     const bytes = address.toLowerCase().slice(2);
-    return `0x${bytes}` as Hex;
+    return `0x${bytes}`;
   }
 
   // Helper to encode attestation data
@@ -107,7 +112,7 @@ describe('StravaPortal Integration', () => {
   }
 
   beforeAll(async () => {
-    const connection = await hre.network.connect();
+    const connection = await hre.network.create();
     const viem = connection.viem;
     networkProvider = connection.provider;
 
@@ -134,7 +139,7 @@ describe('StravaPortal Integration', () => {
     const mockRouterReceipt = await publicClient.waitForTransactionReceipt({
       hash: mockRouterHash,
     });
-    mockRouter = mockRouterReceipt.contractAddress!;
+    mockRouter = deployedAddress(mockRouterReceipt);
 
     // Get the portal registry address from the router
     mockPortalRegistry = (await publicClient.readContract({
@@ -151,7 +156,7 @@ describe('StravaPortal Integration', () => {
       args: [[], mockRouter, signerAddress, testSchemaId],
     });
     const harnessReceipt = await publicClient.waitForTransactionReceipt({ hash: harnessHash });
-    portalHarness = harnessReceipt.contractAddress!;
+    portalHarness = deployedAddress(harnessReceipt);
 
     // Deploy StravaPortal (regular version for admin tests)
     const portalArtifact = await hre.artifacts.readArtifact('StravaPortal');
@@ -161,7 +166,7 @@ describe('StravaPortal Integration', () => {
       args: [[], mockRouter, signerAddress, testSchemaId],
     });
     const portalReceipt = await publicClient.waitForTransactionReceipt({ hash: portalHash });
-    portal = portalReceipt.contractAddress!;
+    portal = deployedAddress(portalReceipt);
 
     // Register portals in the mock registry
     const mockPortalRegistryArtifact = await hre.artifacts.readArtifact('MockPortalRegistry');
@@ -441,7 +446,14 @@ describe('StravaPortal Integration', () => {
 
     it('should reject signatures bound to another chain or portal address', async () => {
       const harnessArtifact = await hre.artifacts.readArtifact('StravaPortalHarness');
-      const payload = (segmentId: bigint) => ({
+      const payload = (
+        segmentId: bigint,
+      ): {
+        schemaId: Hex;
+        expirationDate: bigint;
+        subject: Hex;
+        attestationData: Hex;
+      } => ({
         schemaId: testSchemaId,
         expirationDate: 0n,
         subject: encodeSubject(user),
@@ -666,7 +678,7 @@ describe('StravaPortal Integration', () => {
           address: portal,
           abi: portalArtifact.abi,
           functionName: 'setSchemaId',
-          args: [`0x${'11'.repeat(32)}` as Hex],
+          args: [`0x${'11'.repeat(32)}`],
         }),
       ).rejects.toThrow();
       await expect(
@@ -674,7 +686,7 @@ describe('StravaPortal Integration', () => {
           address: portal,
           abi: portalArtifact.abi,
           functionName: 'revoke',
-          args: [`0x${'22'.repeat(32)}` as Hex],
+          args: [`0x${'22'.repeat(32)}`],
         }),
       ).rejects.toThrow();
       await expect(
@@ -682,7 +694,7 @@ describe('StravaPortal Integration', () => {
           address: portal,
           abi: portalArtifact.abi,
           functionName: 'replace',
-          args: [`0x${'33'.repeat(32)}` as Hex, payload, []],
+          args: [`0x${'33'.repeat(32)}`, payload, []],
           value: testFee,
         }),
       ).rejects.toThrow();
@@ -884,7 +896,7 @@ describe('StravaPortal Integration', () => {
       const rejectingOwnerReceipt = await publicClient.waitForTransactionReceipt({
         hash: rejectingOwnerHash,
       });
-      const rejectingOwner = rejectingOwnerReceipt.contractAddress!;
+      const rejectingOwner = deployedAddress(rejectingOwnerReceipt);
       const setOwnerHash = await walletClient.writeContract({
         address: mockPortalRegistry,
         abi: registryArtifact.abi,

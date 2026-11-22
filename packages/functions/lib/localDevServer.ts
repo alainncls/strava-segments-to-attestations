@@ -79,7 +79,9 @@ async function handleRequest(
   handlers: LocalFunctionHandlers,
 ): Promise<void> {
   const abortController = new AbortController();
-  incoming.once('aborted', () => abortController.abort());
+  incoming.once('aborted', () => {
+    abortController.abort();
+  });
   outgoing.once('close', () => {
     if (!outgoing.writableEnded) abortController.abort();
   });

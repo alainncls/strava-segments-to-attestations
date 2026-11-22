@@ -140,7 +140,7 @@ export function yearTotals(
 ): { count: number; distance: number; duration: number } {
   const totals = { count: 0, distance: 0, duration: 0 };
   for (const [key, day] of days) {
-    if (!key.startsWith(`${year}-`)) continue;
+    if (!key.startsWith(`${String(year)}-`)) continue;
     totals.count += day.activities.length;
     totals.distance += day.distance;
     totals.duration += day.duration;

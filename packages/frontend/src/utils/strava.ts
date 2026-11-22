@@ -3,6 +3,9 @@ import { STRAVA_API_BASE } from '@strava-attestations/shared';
 const DEFAULT_RETRY_AFTER_MS = 30_000;
 const MAX_RETRY_AFTER_MS = 15 * 60_000;
 
+// Read through a call: TypeScript keeps `signal.aborted` narrowed across an await.
+export const isAborted = (signal: AbortSignal): boolean => signal.aborted;
+
 export function parseRetryAfter(value: string | null, now = Date.now()): number {
   if (!value) return DEFAULT_RETRY_AFTER_MS;
 
@@ -19,7 +22,7 @@ export class StravaHttpError extends Error {
   readonly hasRetryAfter: boolean;
 
   constructor(response: Response) {
-    super(`Strava request failed (HTTP ${response.status})`);
+    super(`Strava request failed (HTTP ${String(response.status)})`);
     this.status = response.status;
     const retryAfter = response.headers.get('Retry-After');
     this.retryAfterMs = parseRetryAfter(retryAfter);

@@ -23,20 +23,22 @@ export interface OAuthStateStore {
 export const createMemoryOAuthStateStore = (): OAuthStateStore => {
   const records = new Map<string, { record: OAuthStateRecord; version: number }>();
   return {
-    async create(key, record) {
-      if (records.has(key)) return false;
+    create(key, record) {
+      if (records.has(key)) return Promise.resolve(false);
       records.set(key, { record: structuredClone(record), version: 1 });
-      return true;
+      return Promise.resolve(true);
     },
-    async read(key) {
+    read(key) {
       const value = records.get(key);
-      return value ? { record: structuredClone(value.record), etag: String(value.version) } : null;
+      return Promise.resolve(
+        value ? { record: structuredClone(value.record), etag: String(value.version) } : null,
+      );
     },
-    async compareAndSet(key, etag, record) {
+    compareAndSet(key, etag, record) {
       const value = records.get(key);
-      if (!value || String(value.version) !== etag) return false;
+      if (!value || String(value.version) !== etag) return Promise.resolve(false);
       records.set(key, { record: structuredClone(record), version: value.version + 1 });
-      return true;
+      return Promise.resolve(true);
     },
   };
 };
@@ -50,7 +52,7 @@ export const createOAuthStateStore = (
   },
   async read(key) {
     const result = await store.getWithMetadata(key, { type: 'json', consistency: 'strong' });
-    if (!result || !result.etag || typeof result.data !== 'object' || result.data === null) {
+    if (!result?.etag || typeof result.data !== 'object' || result.data === null) {
       return null;
     }
     return { record: result.data as OAuthStateRecord, etag: result.etag };

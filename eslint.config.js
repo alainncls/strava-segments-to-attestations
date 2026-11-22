@@ -1,30 +1,48 @@
 import js from '@eslint/js';
+import { defineConfig } from 'eslint/config';
 import tseslint from 'typescript-eslint';
+import reactHooks from 'eslint-plugin-react-hooks';
+import reactRefresh from 'eslint-plugin-react-refresh';
 import eslintConfigPrettier from 'eslint-config-prettier';
 import globals from 'globals';
 
-const tsconfigRootDir = import.meta.dirname;
-
-export default tseslint.config(
+export default defineConfig(
+  {
+    ignores: [
+      '**/node_modules/**',
+      '**/dist/**',
+      '**/build/**',
+      '**/coverage/**',
+      '**/artifacts/**',
+      '**/cache/**',
+      '**/typechain-types/**',
+      '**/.netlify/**',
+      '**/playwright-report/**',
+      '**/test-results/**',
+    ],
+  },
+  {
+    linterOptions: {
+      reportUnusedDisableDirectives: 'error',
+      reportUnusedInlineConfigs: 'error',
+    },
+  },
   js.configs.recommended,
-  ...tseslint.configs.recommended,
-  eslintConfigPrettier,
+  tseslint.configs.strictTypeChecked,
+  tseslint.configs.stylisticTypeChecked,
   {
     languageOptions: {
-      ecmaVersion: 2022,
-      sourceType: 'module',
       parserOptions: {
-        tsconfigRootDir,
+        projectService: true,
+        tsconfigRootDir: import.meta.dirname,
       },
-      globals: {
-        ...globals.node,
-        ...globals.es2022,
-      },
+      globals: globals.node,
     },
     rules: {
+      '@typescript-eslint/consistent-type-imports': ['error', { prefer: 'type-imports' }],
       '@typescript-eslint/no-unused-vars': [
         'error',
-        { argsIgnorePattern: '^_', varsIgnorePattern: '^_' },
+        { argsIgnorePattern: '^_', varsIgnorePattern: '^_', caughtErrorsIgnorePattern: '^_' },
       ],
       '@typescript-eslint/explicit-function-return-type': [
         'error',
@@ -39,7 +57,11 @@ export default tseslint.config(
     },
   },
   {
-    files: ['packages/frontend/src/**'],
+    files: ['packages/frontend/src/**/*.{ts,tsx}'],
+    extends: [reactHooks.configs.flat.recommended, reactRefresh.configs.vite],
+    languageOptions: {
+      globals: globals.browser,
+    },
     rules: {
       'no-restricted-imports': [
         'error',
@@ -56,16 +78,15 @@ export default tseslint.config(
     },
   },
   {
-    ignores: [
-      '**/node_modules/**',
-      '**/dist/**',
-      '**/build/**',
-      '**/coverage/**',
-      '**/artifacts/**',
-      '**/cache/**',
-      '**/typechain-types/**',
-      '**/.netlify/**',
-      'packages/frontend/public/**',
-    ],
+    files: ['packages/frontend/public/**/*.js'],
+    languageOptions: {
+      sourceType: 'script',
+      globals: globals.browser,
+    },
   },
+  {
+    files: ['**/*.js'],
+    extends: [tseslint.configs.disableTypeChecked],
+  },
+  eslintConfigPrettier,
 );

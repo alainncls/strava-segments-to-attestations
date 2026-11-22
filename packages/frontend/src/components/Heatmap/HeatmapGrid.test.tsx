@@ -18,7 +18,7 @@ const props = {
 };
 
 const texts = (container: HTMLElement): string[] =>
-  Array.from(container.querySelectorAll('text')).map((t) => t.textContent ?? '');
+  Array.from(container.querySelectorAll('text')).map((t) => t.textContent);
 
 describe('HeatmapGrid on a narrow screen', () => {
   it('keeps the day names and all the months when the cells are large enough', () => {
@@ -33,12 +33,14 @@ describe('HeatmapGrid on a narrow screen', () => {
 
   it('hides the day names and spaces the month labels on small cells', () => {
     const { container } = render(<HeatmapGrid {...props} maxWidth={300} />);
-    const svg = container.querySelector('svg')!;
-    expect(Number(svg.getAttribute('width'))).toBeLessThanOrEqual(300);
+    const svg = container.querySelector('svg');
+    expect(Number(svg?.getAttribute('width'))).toBeLessThanOrEqual(300);
     expect(texts(container)).not.toContain('Mon');
     const xs = Array.from(container.querySelectorAll('text'))
-      .filter((t) => /^[A-Z][a-z]{2}$/.test(t.textContent ?? ''))
+      .filter((t) => /^[A-Z][a-z]{2}$/.test(t.textContent))
       .map((t) => Number(t.getAttribute('x')));
-    xs.slice(1).forEach((x, i) => expect(x - xs[i]!).toBeGreaterThanOrEqual(24));
+    xs.slice(1).forEach((x, i) => {
+      expect(x - Number(xs[i])).toBeGreaterThanOrEqual(24);
+    });
   });
 });

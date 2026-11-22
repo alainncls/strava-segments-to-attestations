@@ -4,13 +4,13 @@ import { buildExportSvg, downloadPng, downloadSvg, type ExportOptions } from './
 const SVG_NS = 'http://www.w3.org/2000/svg';
 
 const yearSvg = (year: number, width: number, height: number): string => `
-  <svg data-year="${year}" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" aria-label="Year ${year}">
-    <text fill="currentColor">${year}</text>
+  <svg data-year="${String(year)}" width="${String(width)}" height="${String(height)}" viewBox="0 0 ${String(width)} ${String(height)}" aria-label="Year ${String(year)}">
+    <text fill="currentColor">${String(year)}</text>
     <text>Mon</text>
-    <rect data-day="${year}-01-01" fill="#ebedf0"><title>Morning Run</title></rect>
-    <rect data-day="${year}-01-02" fill="#40c463" aria-label="Morning Run"></rect>
-    <rect data-day="${year}-12-31" fill="#ebedf0" data-future=""></rect>
-    <rect data-day="${year}-06-01" fill="#232327" data-level="0"></rect>
+    <rect data-day="${String(year)}-01-01" fill="#ebedf0"><title>Morning Run</title></rect>
+    <rect data-day="${String(year)}-01-02" fill="#40c463" aria-label="Morning Run"></rect>
+    <rect data-day="${String(year)}-12-31" fill="#ebedf0" data-future=""></rect>
+    <rect data-day="${String(year)}-06-01" fill="#232327" data-level="0"></rect>
   </svg>`;
 
 const defaults: ExportOptions = {
@@ -162,9 +162,9 @@ describe('downloadPng', () => {
     vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue({
       drawImage,
     } as unknown as CanvasRenderingContext2D);
-    vi.spyOn(HTMLCanvasElement.prototype, 'toBlob').mockImplementation((callback) =>
-      callback(blob),
-    );
+    vi.spyOn(HTMLCanvasElement.prototype, 'toBlob').mockImplementation((callback) => {
+      callback(blob);
+    });
     return drawImage;
   };
 
@@ -187,7 +187,9 @@ describe('downloadPng', () => {
     const drawImage = stubCanvas(new Blob(['png'], { type: 'image/png' }));
     const createObjectURL = vi.fn((_blob: Blob) => 'blob:png');
     vi.stubGlobal('URL', { createObjectURL, revokeObjectURL: vi.fn() });
-    const click = vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => {});
+    const click = vi
+      .spyOn(HTMLAnchorElement.prototype, 'click')
+      .mockImplementation(() => undefined);
 
     await downloadPng('<svg/>', 'effortprint-heatmap.png');
 

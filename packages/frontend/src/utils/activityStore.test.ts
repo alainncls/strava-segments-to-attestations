@@ -69,7 +69,9 @@ describe('activity cache', () => {
 });
 
 describe('heatmap settings', () => {
-  afterEach(() => localStorage.clear());
+  afterEach(() => {
+    localStorage.clear();
+  });
 
   const defaults: HeatmapSettings = {
     sport: null,
@@ -121,7 +123,9 @@ describe('blocked site data', () => {
     const remove = vi.spyOn(Storage.prototype, 'removeItem').mockImplementation(blocked);
     expect(readCache(42)).toBeNull();
     expect(readSettings().palette).toBe('ember');
-    expect(() => clearCache(42)).not.toThrow();
+    expect(() => {
+      clearCache(42);
+    }).not.toThrow();
     get.mockRestore();
     remove.mockRestore();
   });

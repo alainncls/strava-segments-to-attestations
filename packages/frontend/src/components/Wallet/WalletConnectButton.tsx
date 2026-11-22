@@ -1,8 +1,8 @@
 import React, { useEffect, useRef } from 'react';
 import { useAppKit } from '@reown/appkit/react';
-import { useAccount } from 'wagmi';
+import { useConnection } from 'wagmi';
 import { Web3Provider } from './Web3Provider';
-import { buttonClassName } from '@/components/Button/Button';
+import { buttonClassName } from '@/components/Button/buttonClassName';
 import styles from '@/components/Header/Header.module.css';
 
 interface WalletConnectButtonProps {
@@ -19,7 +19,7 @@ function WalletConnectButtonInner({
   onAutoOpenHandled,
 }: WalletConnectButtonProps): React.JSX.Element {
   const { open } = useAppKit();
-  const { address, isConnected } = useAccount();
+  const { address, isConnected } = useConnection();
   const didAutoOpen = useRef(false);
 
   useEffect(() => {

@@ -95,5 +95,5 @@ export interface ActivityDetails {
   name: string;
   type: string;
   start_date: string;
-  segment_efforts: SegmentEffort[];
+  segment_efforts?: SegmentEffort[];
 }

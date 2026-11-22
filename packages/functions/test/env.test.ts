@@ -10,7 +10,7 @@ describe('CORS Headers Logic', () => {
     const isAllowed = origin && allowedOrigins.includes(origin);
 
     return {
-      'Access-Control-Allow-Origin': isAllowed ? origin : allowedOrigins[0] || '',
+      'Access-Control-Allow-Origin': isAllowed ? origin : (allowedOrigins[0] ?? ''),
       'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
       'Access-Control-Allow-Headers': 'Content-Type, Authorization',
       'Access-Control-Allow-Credentials': 'true',
@@ -81,7 +81,9 @@ describe('Rate Limiting Logic', () => {
         entry.count++;
         return entry.count > maxRequests;
       },
-      clear: (): void => map.clear(),
+      clear: (): void => {
+        map.clear();
+      },
     };
   }
 
@@ -161,10 +163,12 @@ describe('Error Response Format', () => {
 
     const response = createErrorResponse('Missing required parameters', 400);
     expect(response.status).toBe(400);
-    expect(JSON.parse(response.body).error).toBe('Missing required parameters');
+    expect((JSON.parse(response.body) as { error: string }).error).toBe(
+      'Missing required parameters',
+    );
 
     const responseWithExtra = createErrorResponse('Invalid token', 401, { tokenExpired: true });
-    const parsed = JSON.parse(responseWithExtra.body);
+    const parsed = JSON.parse(responseWithExtra.body) as { error: string; tokenExpired: boolean };
     expect(parsed.error).toBe('Invalid token');
     expect(parsed.tokenExpired).toBe(true);
   });

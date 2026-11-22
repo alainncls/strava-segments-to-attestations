@@ -1,5 +1,10 @@
 import React, { useCallback, useMemo, useState } from 'react';
-import { useAccount, useReadContract, useWaitForTransactionReceipt, useWriteContract } from 'wagmi';
+import {
+  useConnection,
+  useReadContract,
+  useWaitForTransactionReceipt,
+  useWriteContract,
+} from 'wagmi';
 import {
   encodeAbiParameters,
   formatEther,
@@ -47,10 +52,10 @@ function SegmentsModalContent({
   onHide,
   accessToken,
 }: SegmentsModalProps): React.JSX.Element {
-  const { address, chainId } = useAccount();
+  const { address, chainId } = useConnection();
 
   const {
-    writeContract,
+    mutate: writeContract,
     data: txHash,
     isPending: isWritePending,
     reset: resetWrite,
@@ -125,13 +130,15 @@ function SegmentsModalContent({
           setError(
             errorData.tokenExpired
               ? 'Strava session expired. Reconnect Strava.'
-              : errorData.error || 'Could not sign this segment.',
+              : typeof errorData.error === 'string' && errorData.error !== ''
+                ? errorData.error
+                : 'Could not sign this segment.',
           );
           setLoadingSegmentId(null);
           return;
         }
 
-        const signedSegment: SignedSegment = await signResponse.json();
+        const signedSegment = (await signResponse.json()) as SignedSegment;
 
         setLoadingSegmentId(null);
         setAttestingSegmentId(segment.id);
@@ -199,7 +206,7 @@ function SegmentsModalContent({
     ],
   );
 
-  const modalTitle = activity?.name || 'Segments';
+  const modalTitle = activity === undefined || activity.name === '' ? 'Segments' : activity.name;
 
   const modalFooter = useMemo(
     () => (

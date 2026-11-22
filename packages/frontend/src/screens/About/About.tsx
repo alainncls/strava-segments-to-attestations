@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { buttonClassName } from '@/components/Button/Button';
+import { buttonClassName } from '@/components/Button/buttonClassName';
 import { SITE_URL, usePageMetadata } from '@/hooks/usePageMetadata';
 import { BRAND } from '@/utils/constants';
 import styles from './About.module.css';

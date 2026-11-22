@@ -6,7 +6,7 @@ import styles from './SegmentItem.module.css';
 
 interface SegmentItemProps {
   segment: Segment;
-  onAttest: (segment: Segment) => void;
+  onAttest: (segment: Segment) => Promise<void>;
   isLoading: boolean;
   isAttesting: boolean;
   isDisabled: boolean;
@@ -22,7 +22,7 @@ function SegmentItem({
   isWalletConnected,
 }: SegmentItemProps): React.JSX.Element {
   const handleAttest = useCallback((): void => {
-    onAttest(segment);
+    void onAttest(segment);
   }, [onAttest, segment]);
 
   const isBusy = isLoading || isAttesting;
