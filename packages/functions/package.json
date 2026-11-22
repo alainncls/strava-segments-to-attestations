@@ -20,6 +20,7 @@
     "@netlify/functions": "6.1.1",
     "@opentelemetry/api": "catalog:",
     "@types/node": "24.19.2",
+    "@typescript/native": "catalog:",
     "tsx": "catalog:",
     "typescript": "catalog:",
     "vitest": "catalog:"
