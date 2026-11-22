@@ -13,7 +13,7 @@ workspace:
 
 ```sh
 cp packages/functions/.env.example packages/functions/.env
-corepack pnpm@11.0.3 dev
+pnpm dev
 ```
 
 Vite remains at `http://localhost:5174`; the adapter binds only to
