@@ -31,6 +31,8 @@
     "@types/node": "24.19.2",
     "eslint": "catalog:",
     "eslint-config-prettier": "catalog:",
+    "eslint-plugin-react-hooks": "7.1.1",
+    "eslint-plugin-react-refresh": "0.5.8",
     "globals": "catalog:",
     "prettier": "catalog:",
     "prettier-plugin-solidity": "2.4.1",
