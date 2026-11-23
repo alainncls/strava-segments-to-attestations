@@ -5,7 +5,7 @@ import { IS_WALLET_CONFIGURED } from '@/utils/constants';
 import styles from './SegmentsModal.module.css';
 
 interface SegmentsModalProps {
-  activity?: Activity;
+  activity?: Activity | undefined;
   displayModal: boolean;
   onHide: () => void;
   accessToken: string;

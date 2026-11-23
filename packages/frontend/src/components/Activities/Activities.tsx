@@ -7,10 +7,10 @@ import styles from './Activities.module.css';
 interface ActivitiesProps {
   activities: Activity[];
   onActivityClick: (activityId: number) => Promise<void>;
-  loadingActivityId?: number;
+  loadingActivityId?: number | undefined;
   hasMore?: boolean;
   isLoadingMore?: boolean;
-  activitiesError?: string;
+  activitiesError?: string | undefined;
   isRetryBlocked?: boolean;
   isAuthenticationError?: boolean;
   segmentErrors?: Record<number, string>;

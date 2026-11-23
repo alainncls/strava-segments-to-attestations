@@ -25,6 +25,12 @@ function answerMulticall(data: Hex): Hex {
 test('attests a segment with an injected wallet and the fee of the contract', async ({ page }) => {
   const sent: unknown[] = [];
   const scripts: number[] = [];
+  const cspErrors: string[] = [];
+  page.on('console', (message) => {
+    if (message.type() === 'error' && message.text().includes('Content Security Policy')) {
+      cspErrors.push(message.text());
+    }
+  });
   page.on('response', async (response) => {
     if (response.request().resourceType() === 'script') {
       scripts.push((await response.body().catch(() => Buffer.alloc(0))).length);
@@ -173,4 +179,5 @@ test('attests a segment with an injected wallet and the fee of the contract', as
   await expect(page.getByRole('status')).toContainText('Attestation confirmed');
   expect(sent).toHaveLength(1);
   expect(sent[0]).toMatchObject({ from: ACCOUNT, to: PORTAL_MAINNET, value: FEE });
+  expect(cspErrors).toEqual([]);
 });

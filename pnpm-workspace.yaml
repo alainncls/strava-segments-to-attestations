@@ -15,8 +15,8 @@ catalog:
 
   # OpenZeppelin (must match verax-contracts requirements)
   '@openzeppelin/contracts': 4.9.6
-  '@reown/appkit': 1.8.24
-  '@reown/appkit-adapter-wagmi': 1.8.24
+  '@reown/appkit': 2.0.0
+  '@reown/appkit-adapter-wagmi': 2.0.0
 
   # Wagmi & Viem
   '@tanstack/react-query': 5.108.0
@@ -37,6 +37,7 @@ catalog:
   '@vitejs/plugin-react': 6.3.0
   '@vitest/coverage-v8': 5.1.1
   '@wagmi/connectors': 8.2.4
+  '@wagmi/core': 3.6.9
 
   # Linting & Formatting
   eslint: 10.15.0
@@ -111,13 +112,11 @@ minimumReleaseAgeExclude:
   - 'viem@2.58.0'
   - 'vitest@5.1.1'
 overrides:
-  # GHSA-mrhx-c7xc-m3w5 / CVE-2023-54404: Reown AppKit 1.8.24 still resolves
-  # Zod 3.x. Zod 4.6.6 is the first patched release; retain this exact override
+  # GHSA-mrhx-c7xc-m3w5 / CVE-2023-54404: Reown AppKit 2.0.0 (appkit-wallet) still
+  # resolves Zod 3.x. Zod 4.6.6 is the first patched release; retain this exact override
   # until the upstream graph publishes an explicitly compatible resolution.
   zod: 4.6.6
   '@graphql-tools/utils': 12.1.0
-  # GHSA-mmx7-hfxf-jppx, GHSA-gcfj-64vw-6mp9 and related axios advisories: @coinbase/cdp-sdk pins axios 1.16.0; 1.18.0 is the first patched 1.x release.
-  '@coinbase/cdp-sdk>axios': 1.20.0
   # Transitive @types/* packages accept any @types/node; keep a single version aligned with the Node 24 runtime.
   '@types/node': 24.19.2
   # GHSA-3g3m-2fjr-6pw4 and GHSA-g3hv-75wg-m249: solhint 6.2.5 pins glob ^13,
