@@ -27,7 +27,7 @@ interface HeatmapControlsProps {
 }
 
 interface SegmentedProps<T extends string> {
-  className?: string;
+  className?: string | undefined;
   legend: string;
   value: T;
   options: readonly (readonly [T, string])[];

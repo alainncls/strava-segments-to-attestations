@@ -1,6 +1,8 @@
 import React, { type ReactNode } from 'react';
 import { createAppKit } from '@reown/appkit/react';
-import { WagmiAdapter } from '@reown/appkit-adapter-wagmi';
+import { EvmWagmiAdapter } from './evmWagmiAdapter';
+import { baseAccount } from '@wagmi/connectors/baseAccount';
+import { coinbaseWallet } from '@wagmi/connectors/coinbaseWallet';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { WagmiProvider } from 'wagmi';
 import { http } from 'viem';
@@ -30,9 +32,14 @@ const networks: [AppKitNetwork, ...AppKitNetwork[]] = isDev
   ? [lineaSepolia, linea]
   : [linea, lineaSepolia];
 
-const wagmiAdapter = new WagmiAdapter({
+const wagmiAdapter = new EvmWagmiAdapter({
   projectId,
   networks,
+  // Their SDKs inject an inline telemetry script that the CSP blocks, so turn telemetry off.
+  connectors: [
+    baseAccount({ preference: { telemetry: false } }),
+    coinbaseWallet({ preference: { options: 'all', telemetry: false } }),
+  ],
   transports: {
     [linea.id]: http(
       INFURA_API_KEY ? `https://linea-mainnet.infura.io/v3/${INFURA_API_KEY}` : undefined,
@@ -56,6 +63,8 @@ function initializeAppKit(): void {
     defaultNetwork,
     projectId,
     metadata,
+    // Otherwise AppKit adds its own Coinbase connector, with telemetry, next to the one above.
+    enableCoinbase: false,
     themeMode: resolvedTheme(),
     themeVariables: {
       '--w3m-accent': getComputedStyle(document.documentElement)

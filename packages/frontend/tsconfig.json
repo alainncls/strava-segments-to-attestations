@@ -4,8 +4,6 @@
     "lib": ["ES2023", "DOM", "DOM.Iterable"],
     "types": ["vite/client", "node"],
     "jsx": "react-jsx",
-    // Reown AppKit 1.8 WagmiAdapter is not assignable to its own ChainAdapter type with this option.
-    "exactOptionalPropertyTypes": false,
     "noEmit": true,
     "allowImportingTsExtensions": true,
     "paths": {

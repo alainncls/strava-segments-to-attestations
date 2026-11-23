@@ -33,7 +33,7 @@ import SegmentItem from './SegmentItem';
 import styles from './SegmentsModal.module.css';
 
 interface SegmentsModalProps {
-  activity?: Activity;
+  activity?: Activity | undefined;
   displayModal: boolean;
   onHide: () => void;
   accessToken: string;
