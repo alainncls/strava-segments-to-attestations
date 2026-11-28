@@ -18,7 +18,13 @@ export function useInsights(): void {
   useEffect(() => {
     const isInsightsEnabled = import.meta.env.VITE_ENABLE_INSIGHTS === 'true';
 
-    if (!isInsightsEnabled || !INSIGHTS_ID || typeof window === 'undefined') return;
+    if (
+      !isInsightsEnabled ||
+      !INSIGHTS_ID ||
+      typeof window === 'undefined' ||
+      location.hostname === 'alainnicolas.fr'
+    )
+      return;
 
     if (window.insights) {
       return;
