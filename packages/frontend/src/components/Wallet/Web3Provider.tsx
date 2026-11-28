@@ -22,8 +22,8 @@ const projectId = WALLETCONNECT_PROJECT_ID;
 const metadata = {
   name: BRAND,
   description: 'Activity heatmap and segment attestations for your Strava activities',
-  url: 'https://strava.alainnicolas.fr',
-  icons: ['https://strava.alainnicolas.fr/favicon-dark.png'],
+  url: 'https://alainnicolas.fr/strava',
+  icons: ['https://alainnicolas.fr/strava/favicon-dark.png'],
 };
 
 const isDev = import.meta.env.DEV;
