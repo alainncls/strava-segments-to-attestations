@@ -12,7 +12,7 @@ if (!rootElement) {
 
 ReactDOM.createRoot(rootElement).render(
   <React.StrictMode>
-    <BrowserRouter>
+    <BrowserRouter basename={window.location.pathname.startsWith('/strava/') ? '/strava' : '/'}>
       <App />
     </BrowserRouter>
   </React.StrictMode>,

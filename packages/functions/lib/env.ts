@@ -63,9 +63,12 @@ export function getEnvConfig(): EnvConfig {
 }
 
 export function getAllowedOrigins(): string[] {
-  return [process.env.FRONTEND_URL, 'http://localhost:5174', 'http://localhost:8888'].filter(
-    (origin): origin is string => Boolean(origin),
-  );
+  return [
+    process.env.FRONTEND_URL,
+    'https://alainnicolas.fr',
+    'http://localhost:5174',
+    'http://localhost:8888',
+  ].filter((origin): origin is string => Boolean(origin));
 }
 
 export function getCorsHeaders(origin?: string): Record<string, string> {

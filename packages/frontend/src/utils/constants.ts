@@ -2,7 +2,9 @@ export const BRAND = 'Effortprint';
 
 export const STRAVA_CLIENT_ID = import.meta.env.VITE_STRAVA_CLIENT_ID || '';
 export const STRAVA_REDIRECT_URL = import.meta.env.VITE_STRAVA_REDIRECT_URL || '';
-export const API_URL = import.meta.env.VITE_API_URL || '';
+export const API_URL = window.location.pathname.startsWith('/strava/')
+  ? '/strava/.netlify/functions'
+  : import.meta.env.VITE_API_URL || '';
 export const WALLETCONNECT_PROJECT_ID = import.meta.env.VITE_WALLETCONNECT_PROJECT_ID || '';
 export const INFURA_API_KEY = import.meta.env.VITE_INFURA_API_KEY || '';
 export const INSIGHTS_ID = import.meta.env.VITE_INSIGHTS_ID || '';

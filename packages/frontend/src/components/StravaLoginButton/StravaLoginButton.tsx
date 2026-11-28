@@ -33,11 +33,16 @@ export default function StravaLoginButton(): React.JSX.Element {
       }
 
       sessionStorage.setItem(STORAGE_KEYS.OAUTH_STATE, state);
-      sessionStorage.setItem(STORAGE_KEYS.RETURN_PATH, window.location.pathname);
+      const pathname = window.location.pathname.startsWith('/strava/')
+        ? window.location.pathname.slice('/strava'.length)
+        : window.location.pathname;
+      sessionStorage.setItem(STORAGE_KEYS.RETURN_PATH, pathname);
 
       const params = new URLSearchParams({
         client_id: STRAVA_CLIENT_ID,
-        redirect_uri: STRAVA_REDIRECT_URL,
+        redirect_uri: window.location.pathname.startsWith('/strava/')
+          ? `${window.location.origin}/strava/oauth`
+          : STRAVA_REDIRECT_URL,
         response_type: 'code',
         scope,
         state,
