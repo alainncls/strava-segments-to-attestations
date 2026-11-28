@@ -15,6 +15,7 @@ const devCsp = csp
   .replace('; upgrade-insecure-requests', '');
 
 export default defineConfig({
+  base: './',
   plugins: [react()],
   resolve: {
     alias: {
