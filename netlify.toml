@@ -7,12 +7,6 @@
   node_bundler = "esbuild"
 
 [[redirects]]
-  from = "https://strava-attestations.netlify.app/*"
-  to = "https://strava.alainnicolas.fr/:splat"
-  status = 301
-  force = true
-
-[[redirects]]
   from = "/"
   to = "/index.html"
   status = 200
