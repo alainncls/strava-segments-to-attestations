@@ -91,7 +91,7 @@ describe('App routing integration', () => {
     expect(screen.getByText(/invalid authorization state/i)).toBeVisible();
     await waitFor(() => {
       expect(document.querySelector('link[rel="canonical"]')?.getAttribute('href')).toBe(
-        'https://strava.alainnicolas.fr/oauth',
+        'https://alainnicolas.fr/strava/oauth',
       );
     });
     expect(document.querySelector('meta[name="robots"]')?.getAttribute('content')).toBe(

@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 
-const SITE_URL = 'https://strava.alainnicolas.fr';
+const SITE_URL = 'https://alainnicolas.fr/strava';
 const DEFAULT_IMAGE = `${SITE_URL}/favicon-dark.png`;
 
 interface PageMetadata {
@@ -13,7 +13,7 @@ interface PageMetadata {
 }
 
 function absoluteUrl(path: string): string {
-  return new URL(path, SITE_URL).toString();
+  return `${SITE_URL}${path.startsWith('/') ? path : `/${path}`}`;
 }
 
 function upsertMeta(attribute: 'name' | 'property', key: string, content: string): void {
